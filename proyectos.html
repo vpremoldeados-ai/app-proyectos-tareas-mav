@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gestor de Proyectos · Marcelo Vassallo</title>
+<style>html,body{margin:0;padding:0;background:#E7E3DA}</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:13px;right:14px;z-index:40;background:#E0590C;color:#fff;font-family:Arial,sans-serif;font-weight:700;font-size:12px;text-decoration:none;padding:8px 12px;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.3);">← Tareas</a>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+
+const { useState, useEffect, useMemo, useRef } = React;
+// guardado en el navegador (localStorage), compatible con la API usada en el codigo
+window.storage = {
+  get: async (k) => { const v = localStorage.getItem(k); return v != null ? { key:k, value:v } : null; },
+  set: async (k, val) => { localStorage.setItem(k, val); return { key:k, value:val }; },
+};
+const _mk = (g) => (props) => React.createElement('span', {
+  style: { fontSize: ((props && props.size) || 14) + 'px', color: (props && props.color) || 'inherit', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }
+}, g);
+const LayoutDashboard=_mk('▦'), FolderKanban=_mk('🗂'), ListTodo=_mk('☑'),
+  Plus=_mk('＋'), ChevronLeft=_mk('‹'), Check=_mk('✓'), Circle=_mk('○'),
+  Clock=_mk('🕘'), AlertTriangle=_mk('⚠'), Trash2=_mk('🗑'),
+  Pencil=_mk('✏'), X=_mk('✕'), ChevronDown=_mk('▾'), ChevronRight=_mk('▸'),
+  Factory=_mk('🏭'), Megaphone=_mk('📣'), Home=_mk('🏠'),
+  Plane=_mk('✈'), User=_mk('👤'), ShoppingCart=_mk('🛒'),
+  TrendingUp=_mk('📈'), Truck=_mk('🚚'), Users=_mk('👥'), Car=_mk('🚗');
+
+/* ============================== ESTILOS ============================== */
+const STYLE = `
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --concrete:#E7E3DA; --paper:#F8F6F1; --ink:#191815; --ink-soft:#5b574e;
+  --line:#1d1b17; --amber:#E0590C; --steel:#2D4A5C;
+  --g-none:#8c887e; --g-curso:#E0590C; --g-block:#C0392B; --g-done:#2E7D4F;
+}
+*{box-sizing:border-box}
+.vph{font-family:'IBM Plex Sans',sans-serif;color:var(--ink);background:var(--concrete);
+  min-height:100vh;
+  background-image:linear-gradient(rgba(25,24,21,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(25,24,21,.035) 1px,transparent 1px);
+  background-size:26px 26px;}
+.vph-wrap{max-width:920px;margin:0 auto;padding:0 14px 90px}
+.meeting-banner{display:flex;align-items:center;gap:10px;background:var(--paper);border:2px solid #2D4A5C;border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.meeting-banner .mb-ico{font-size:24px}
+.meeting-banner .mb-body{flex:1;min-width:0}
+.meeting-banner .mb-title{font-weight:800;font-size:14px;color:var(--ink)}
+.meeting-banner .mb-sub{font-size:12px;color:var(--ink-soft)}
+.meeting-banner .mb-ok{color:#fff;border:none;border-radius:9px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
+.meeting-banner .mb-x{background:none;border:none;font-size:15px;color:var(--ink-soft);cursor:pointer;padding:4px 6px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.anton{font-family:'Anton',sans-serif;letter-spacing:.5px;text-transform:uppercase}
+.archivo{font-family:'Archivo',sans-serif}
+
+/* header */
+.hd{position:sticky;top:0;z-index:30;background:var(--ink);color:var(--paper);
+  margin:0 -14px 18px;padding:14px 16px;border-bottom:3px solid var(--amber)}
+.hd-row{display:flex;align-items:center;gap:12px;max-width:920px;margin:0 auto}
+.hd h1{font-size:22px;line-height:1;margin:0}
+.hd .sub{font-size:10px;letter-spacing:2px;color:#b7b2a6;margin-top:3px}
+.logo{width:38px;height:38px;background:var(--amber);display:flex;align-items:center;
+  justify-content:center;border-radius:3px;flex-shrink:0}
+
+/* nav */
+.nav{display:flex;gap:0;margin-bottom:16px;border:2px solid var(--line);border-radius:4px;
+  overflow:hidden;background:var(--paper)}
+.nav button{flex:1;border:none;background:transparent;padding:11px 6px;cursor:pointer;
+  font-family:'Archivo';font-weight:700;font-size:12px;letter-spacing:.5px;
+  display:flex;align-items:center;justify-content:center;gap:6px;color:var(--ink-soft);
+  border-right:2px solid var(--line)}
+.nav button:last-child{border-right:none}
+.nav button.on{background:var(--ink);color:var(--paper)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+.kpi{background:var(--paper);border:2px solid var(--line);border-radius:4px;padding:10px 8px;
+  box-shadow:3px 3px 0 var(--line)}
+.kpi .n{font-family:'Anton';font-size:30px;line-height:.9}
+.kpi .l{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-soft);margin-top:4px}
+.kpi.alert .n{color:var(--g-block)}
+
+/* section label */
+.seclab{font-family:'Archivo';font-weight:800;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--ink-soft);margin:0 0 8px;display:flex;
+  align-items:center;gap:8px}
+.seclab::after{content:"";flex:1;height:2px;background:var(--line);opacity:.25}
+
+/* project card */
+.pcard{background:var(--paper);border:2px solid var(--line);border-radius:5px;
+  box-shadow:4px 4px 0 var(--line);padding:14px;margin-bottom:14px;cursor:pointer;
+  transition:transform .08s}
+.pcard.drag-over{border:2px dashed var(--g-curso);background:rgba(224,89,12,.05)}
+.phase.drag-over{border:2px dashed var(--g-curso)}
+.task.drag-over{background:rgba(224,89,12,.07);border-radius:4px}
+.drag-h{cursor:grab;color:var(--ink-soft);padding:0 4px;font-size:16px;user-select:none;flex-shrink:0;line-height:1}
+.drag-h:hover{color:var(--g-curso)}
+.pcard:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--line)}
+.pcard-top{display:flex;align-items:flex-start;gap:10px}
+.areachip{font-family:'IBM Plex Mono';font-size:10px;font-weight:600;padding:3px 7px;
+  border-radius:3px;color:#fff;letter-spacing:.5px;white-space:nowrap;display:inline-flex;
+  align-items:center;gap:4px}
+.pcard h3{font-family:'Archivo';font-weight:800;font-size:17px;margin:9px 0 3px;line-height:1.1}
+.bar{height:9px;background:#dcd8cf;border:1.5px solid var(--line);border-radius:20px;
+  overflow:hidden;margin:10px 0 7px}
+.bar > i{display:block;height:100%;background:var(--g-done)}
+.pmeta{display:flex;justify-content:space-between;align-items:center;font-size:11px;
+  color:var(--ink-soft);font-family:'IBM Plex Mono'}
+.pmeta b{color:var(--ink)}
+.prio{font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;letter-spacing:.5px;
+  text-transform:uppercase;font-family:'IBM Plex Mono'}
+.prio.Alta{background:#fbe2d4;color:var(--g-block);border:1px solid var(--g-block)}
+.prio.Media{background:#fdf0d8;color:#9a6b00;border:1px solid #c79100}
+.prio.Baja{background:#e6ece9;color:var(--g-done);border:1px solid var(--g-done)}
+
+/* detail */
+.back{display:inline-flex;align-items:center;gap:5px;background:none;border:none;
+  font-family:'Archivo';font-weight:700;font-size:13px;cursor:pointer;color:var(--ink);
+  padding:6px 0;margin-bottom:6px}
+.dtitle{font-family:'Anton';font-size:30px;line-height:.95;margin:6px 0}
+.phase{border:2px solid var(--line);border-radius:5px;background:var(--paper);
+  margin-bottom:12px;overflow:hidden}
+.phase-h{display:flex;align-items:center;gap:8px;padding:11px 12px;cursor:pointer;
+  background:#efece5;border-bottom:2px solid var(--line)}
+.phase-h h4{font-family:'Archivo';font-weight:800;font-size:14px;margin:0;flex:1}
+.phase-h .cnt{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-soft)}
+.task{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border-bottom:1px solid #e3dfd5}
+.task:last-child{border-bottom:none}
+.tcheck{flex-shrink:0;width:22px;height:22px;border:2px solid var(--line);border-radius:4px;
+  background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.tcheck.done{background:var(--g-done);border-color:var(--g-done)}
+.task .body{flex:1;min-width:0}
+.task .ttl{font-size:14px;font-weight:500;line-height:1.25}
+.task.done .ttl{text-decoration:line-through;color:var(--ink-soft)}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font-family:'IBM Plex Mono';font-size:10px;padding:2px 6px;border-radius:3px;
+  background:#eceae3;border:1px solid #cdc9bf;color:var(--ink-soft)}
+.tag.due.late{background:#fbe2d4;color:var(--g-block);border-color:var(--g-block);font-weight:600}
+.stbadge{font-family:'IBM Plex Mono';font-size:10px;font-weight:600;padding:2px 7px;
+  border-radius:20px;color:#fff;letter-spacing:.3px}
+.iconbtn{background:none;border:none;cursor:pointer;color:var(--ink-soft);padding:3px;
+  flex-shrink:0}
+
+/* buttons */
+.btn{font-family:'Archivo';font-weight:700;font-size:13px;border:2px solid var(--line);
+  background:var(--paper);padding:9px 13px;border-radius:4px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;box-shadow:3px 3px 0 var(--line)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--line)}
+.btn.primary{background:var(--amber);color:#fff;border-color:var(--line)}
+.btn.dark{background:var(--ink);color:var(--paper)}
+.btn.sm{font-size:11px;padding:6px 9px;box-shadow:2px 2px 0 var(--line)}
+.btn.ghost{box-shadow:none;background:transparent;border-style:dashed}
+.addrow{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 2px;padding:0 12px 12px}
+
+/* modal */
+.ovl{position:fixed;inset:0;background:rgba(25,24,21,.55);z-index:50;display:flex;
+  align-items:flex-end;justify-content:center;padding:0}
+.sheet{background:var(--paper);width:100%;max-width:520px;border-radius:14px 14px 0 0;
+  border-top:4px solid var(--amber);padding:18px 16px 26px;max-height:92vh;overflow-y:auto}
+.sheet h3{font-family:'Anton';font-size:22px;margin:0 0 14px}
+.fld{margin-bottom:13px}
+.fld label{display:block;font-family:'Archivo';font-weight:700;font-size:11px;
+  letter-spacing:1px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px}
+.fld input,.fld select,.fld textarea{width:100%;font-family:'IBM Plex Sans';font-size:15px;
+  padding:10px;border:2px solid var(--line);border-radius:4px;background:#fff;color:var(--ink)}
+.fld textarea{resize:vertical;min-height:54px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:'IBM Plex Mono';font-size:12px;padding:7px 10px;border:2px solid var(--line);
+  border-radius:4px;background:#fff;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--paper)}
+.sheet-actions{display:flex;gap:10px;margin-top:8px}
+.sheet-actions .btn{flex:1;justify-content:center}
+
+.segm{display:flex;gap:6px;margin-bottom:16px}
+.segm button{flex:1;border:2px solid var(--line);background:var(--paper);padding:9px 6px;
+  border-radius:4px;font-family:'Archivo';font-weight:700;font-size:12px;letter-spacing:.5px;
+  cursor:pointer;color:var(--ink-soft);box-shadow:2px 2px 0 var(--line)}
+.segm button.on{background:var(--amber);color:#fff}
+.segm button:active{transform:translate(2px,2px);box-shadow:0 0 0}
+.scopehead{font-family:'Anton';font-size:17px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--paper);background:var(--ink);padding:9px 13px;border-radius:5px;
+  margin:6px 0 14px;display:flex;align-items:center;gap:9px;border-left:7px solid var(--amber)}
+.scopehead .c{margin-left:auto;font-family:'IBM Plex Mono';font-size:12px;font-weight:500;
+  background:rgba(255,255,255,.16);padding:2px 9px;border-radius:20px;letter-spacing:0}
+.areahead{display:flex;align-items:center;gap:8px;margin:6px 0 10px;padding:5px 0 5px 11px;
+  border-left:4px solid var(--line);font-family:'Archivo';font-weight:800;font-size:13px;
+  letter-spacing:1px;text-transform:uppercase;color:var(--ink)}
+.areahead .c{margin-left:auto;font-family:'IBM Plex Mono';font-size:11px;font-weight:500;
+  color:var(--ink-soft);letter-spacing:0}
+.empty{text-align:center;padding:34px 16px;color:var(--ink-soft)}
+.backup{margin-top:26px;padding:14px;border:2px dashed var(--line);border-radius:5px;
+  background:rgba(255,255,255,.4)}
+.backup .t{font-family:'Archivo';font-weight:800;font-size:11px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
+.backup .d{font-size:12px;color:var(--ink-soft);margin-bottom:10px;line-height:1.4}
+.backup .row{display:flex;gap:8px;flex-wrap:wrap}
+.backup label.btn{cursor:pointer}
+.empty .anton{font-size:20px;color:var(--ink);margin-bottom:6px}
+.loading{display:flex;align-items:center;justify-content:center;height:60vh;
+  font-family:'Anton';font-size:18px;color:var(--ink-soft)}
+@media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
+`;
+
+/* ============================== DATOS ============================== */
+const TEAM = ["Marcelo", "Sofía", "Gustavo", "Antonio", "Darío", "Ariel", "Eduardo", "Demian", "Externo"];
+const AREAS = {
+  // Empresa
+  "Producción":       { scope: "Empresa",  color: "#2D4A5C", icon: Factory },
+  "Compras":          { scope: "Empresa",  color: "#8A5A2B", icon: ShoppingCart },
+  "Ventas":           { scope: "Empresa",  color: "#1F7A8C", icon: TrendingUp },
+  "Logística":        { scope: "Empresa",  color: "#5C6B2E", icon: Truck },
+  "Marketing":        { scope: "Empresa",  color: "#E0590C", icon: Megaphone },
+  "Recursos Humanos": { scope: "Empresa",  color: "#8A4F7D", icon: Users },
+  // Personal
+  "Inmuebles":        { scope: "Personal", color: "#6A4C93", icon: Home },
+  "Vehículo":         { scope: "Personal", color: "#444038", icon: Car },
+  "Viajes":           { scope: "Personal", color: "#2E7D4F", icon: Plane },
+  "Personal":         { scope: "Personal", color: "#9A7B3F", icon: User },
+};
+// Migración de nombres de área viejos
+const AREA_MIGRATE = { "Marketing/Ventas": "Marketing" };
+const fixArea = (a) => (AREAS[a] ? a : (AREA_MIGRATE[a] || "Producción"));
+const STATUS = {
+  "Sin empezar": "var(--g-none)",
+  "En curso":    "var(--g-curso)",
+  "Bloqueado":   "var(--g-block)",
+  "Hecho":       "var(--g-done)",
+};
+const PRIOS = ["Alta", "Media", "Baja"];
+const SCOPES = ["Empresa", "Personal"];
+const SCOPE_META = {
+  "Empresa":  { label: "Proyectos de la empresa", border: "#E0590C", icon: Factory },
+  "Personal": { label: "Proyectos personales",    border: "#2E7D4F", icon: User },
+};
+// Para datos viejos sin ámbito: lo deducimos del área
+const inferScope = (area) => AREAS[fixArea(area)]?.scope || "Empresa";
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+// Helper para reordenar arrays (drag & drop)
+const reorder = (arr, fromIdx, toIdx) => {
+  const a = [...arr];
+  const [item] = a.splice(fromIdx, 1);
+  a.splice(toIdx, 0, item);
+  return a;
+};
+
+const SEED = {
+  projects: [
+    {
+      id: uid(), name: "Auditoría de procesos productivos", area: "Producción",
+      scope: "Empresa", priority: "Alta", owner: "Marcelo",
+      phases: [
+        { id: uid(), name: "Relevamiento de tiempos", open: true, tasks: [
+          { id: uid(), title: "Cronometrar proceso de mezclado (mixer 400L)", owner: "Gustavo", due: "", status: "Sin empezar", notes: "" },
+          { id: uid(), title: "Cronometrar llenado de moldes en mesa vibradora", owner: "Gustavo", due: "", status: "Sin empezar", notes: "" },
+          { id: uid(), title: "Medir tiempo de traslado con carretilla", owner: "Darío", due: "", status: "Sin empezar", notes: "" },
+        ]},
+        { id: uid(), name: "Análisis de cuellos de botella", open: false, tasks: [
+          { id: uid(), title: "Identificar el proceso más lento del día", owner: "Marcelo", due: "", status: "Sin empezar", notes: "" },
+        ]},
+        { id: uid(), name: "Implementar mejoras", open: false, tasks: [] },
+      ],
+    },
+    {
+      id: uid(), name: "Mejoras en planta", area: "Producción",
+      scope: "Empresa", priority: "Media", owner: "Marcelo",
+      phases: [
+        { id: uid(), name: "Trabajos de herrería", open: true, tasks: [
+          { id: uid(), title: "Definir espacios específicos a intervenir", owner: "Marcelo", due: "", status: "Sin empezar", notes: "" },
+        ]},
+        { id: uid(), name: "Máquina nueva (taller metalúrgico)", open: false, tasks: [
+          { id: uid(), title: "Pedir presupuesto al taller metalúrgico", owner: "Marcelo", due: "", status: "Sin empezar", notes: "" },
+        ]},
+      ],
+    },
+    {
+      id: uid(), name: "Videos para redes (3 por semana)", area: "Marketing",
+      scope: "Empresa", priority: "Alta", owner: "Marcelo",
+      phases: [
+        { id: uid(), name: "Planificación de contenido", open: true, tasks: [
+          { id: uid(), title: "Definir 3 temas de la semana", owner: "Marcelo", due: "", status: "Sin empezar", notes: "" },
+        ]},
+        { id: uid(), name: "Grabación", open: false, tasks: [] },
+        { id: uid(), name: "Publicación (Instagram + TikTok)", open: false, tasks: [] },
+      ],
+    },
+    {
+      id: uid(), name: "Mejorar Google Ads", area: "Marketing",
+      scope: "Empresa", priority: "Media", owner: "Marcelo", phases: [
+        { id: uid(), name: "Revisión de campañas", open: true, tasks: [
+          { id: uid(), title: "Revisar palabras clave y costo por clic", owner: "Marcelo", due: "", status: "Sin empezar", notes: "" },
+        ]},
+      ],
+    },
+    {
+      id: uid(), name: "Iniciar publicidad en Instagram", area: "Marketing",
+      scope: "Empresa", priority: "Media", owner: "Marcelo", phases: [
+        { id: uid(), name: "Puesta en marcha", open: true, tasks: [
+          { id: uid(), title: "Crear primera campaña de prueba", owner: "Marcelo", due: "", status: "Sin empezar", notes: "" },
+        ]},
+      ],
+    },
+    {
+      id: uid(), name: "Vender departamento", area: "Inmuebles",
+      scope: "Personal", priority: "Media", owner: "Marcelo", phases: [
+        { id: uid(), name: "Seguimiento inmobiliaria", open: true, tasks: [
+          { id: uid(), title: "Pedir reporte de visitas a la inmobiliaria", owner: "Marcelo", due: "", status: "Sin empezar", notes: "" },
+        ]},
+      ],
+    },
+    {
+      id: uid(), name: "Agenda de viajes", area: "Viajes",
+      scope: "Personal", priority: "Baja", owner: "Marcelo", phases: [
+        { id: uid(), name: "Próximos viajes", open: true, tasks: [
+          { id: uid(), title: "Listar viajes empresariales y personales del trimestre", owner: "Marcelo", due: "", status: "Sin empezar", notes: "" },
+        ]},
+      ],
+    },
+  ],
+  looseTasks: [
+    { id: uid(), title: "Comprar materiales pendientes Dpto Beccar Varela", owner: "Marcelo", due: "", status: "Sin empezar" },
+    { id: uid(), title: "Cambio de aceite Strada", owner: "Marcelo", due: "", status: "Sin empezar" },
+  ],
+};
+
+const KEY = "vph_pm_v1";
+
+// Normaliza datos: garantiza que cada proyecto tenga fases, cada fase tareas, etc.
+const migrate = (d) => ({
+  projects: (d?.projects || []).map((p) => {
+    const area = fixArea(p.area);
+    return {
+      id: p.id || uid(),
+      name: p.name || "Proyecto",
+      area,
+      scope: p.scope || AREAS[area].scope,
+      priority: p.priority || "Media",
+      owner: p.owner || "Marcelo",
+      phases: (p.phases || []).map((ph) => ({
+        id: ph.id || uid(),
+        name: ph.name || "Fase",
+        open: ph.open !== false,
+        tasks: (ph.tasks || []).map((t) => ({
+          id: t.id || uid(),
+          title: t.title || "",
+          owner: t.owner || "Marcelo",
+          due: t.due || "",
+          status: t.status || "Sin empezar",
+          notes: t.notes || "",
+          today: !!t.today,
+        })),
+      })),
+    };
+  }),
+  looseTasks: (d?.looseTasks || []).map((t) => ({
+    id: t.id || uid(),
+    title: t.title || "",
+    owner: t.owner || "Marcelo",
+    due: t.due || "",
+    status: t.status || "Sin empezar",
+    today: !!t.today,
+  })),
+});
+
+/* ============================== APP ============================== */
+
+// Proyecto a inyectar una sola vez (mejoras en cortadora, acordado con Gustavo)
+const PROY_CORTADORA = {
+  id: uid(), name: "Mejoras en cortadora de hierro", area: "Producción",
+  scope: "Empresa", priority: "Alta", owner: "Marcelo",
+  phases: [
+    { id: uid(), name: "Seguridad y montaje", open: true, tasks: [
+      { id: uid(), title: "Soldar protección de hierros cortados en máquina cortadora", owner: "Gustavo", due: "2026-06-09", status: "Sin empezar", notes: "Seguridad — prioridad. ~1h = 2 jornadas de 30 min (lun+mar). Tiene todo el material.", today: false },
+      { id: uid(), title: "Posicionar y nivelar mesa de rodillos para barras de hierro", owner: "Gustavo", due: "2026-06-10", status: "Sin empezar", notes: "~0,5h = 1 jornada de 30 min. Tiene todo el material.", today: false },
+      { id: uid(), title: "Hacer piso debajo de la máquina cortadora", owner: "Gustavo", due: "2026-06-16", status: "Sin empezar", notes: "~3,5h. Asignar ayuda de otro operario de producción para cerrar el 16/6. Tiene todo el material.", today: false },
+    ]},
+  ],
+};
+
+// Proyecto a inyectar una sola vez (orden zona acopio exterior, definido en reunión Gustavo 09/06/2026)
+const PROY_ACOPIO = {
+  id: uid(), name: "Orden zona acopio exterior", area: "Producción",
+  scope: "Empresa", priority: "Media", owner: "Gustavo",
+  phases: [
+    { id: uid(), name: "Semana 09/06", open: true, tasks: [
+      { id: uid(), title: "Acomodar listones separando buenos de rotos", owner: "Ariel", due: "2026-06-12", status: "Sin empezar", notes: "Junto con Demian. Definido en reunión con Gustavo 09/06.", today: false },
+      { id: uid(), title: "Agrupar topes trapecio 15x12x50 sobre pallets", owner: "Demian", due: "2026-06-12", status: "Sin empezar", notes: "Junto con Ariel. Definido en reunión con Gustavo 09/06.", today: false },
+      { id: uid(), title: "Mover de lugar topes trapecio 15x12x100", owner: "Demian", due: "2026-06-12", status: "Sin empezar", notes: "Junto con Ariel. Definido en reunión con Gustavo 09/06.", today: false },
+    ]},
+  ],
+};
+
+function App() {
+  const [data, setData] = useState(null);
+  const [view, setView] = useState("hoy");
+  const [scopeFilter, setScopeFilter] = useState("Todos");
+  const [selId, setSelId] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [meetingAlert, setMeetingAlert] = useState(null);
+  const [dragOverProjId, setDragOverProjId] = useState(null);
+  const dragProjRef = useRef(null);
+
+  /* cargar */
+  useEffect(() => {
+    (async () => {
+      let loaded;
+      try {
+        if (window.storage) {
+          const r = await window.storage.get(KEY);
+          loaded = migrate(r && r.value ? JSON.parse(r.value) : SEED);
+        } else {
+          loaded = migrate(SEED);
+        }
+      } catch (e) { loaded = migrate(SEED); }
+      // Inyección única del proyecto de cortadora (no borra nada; se hace una sola vez)
+      try {
+        if (!localStorage.getItem("vph_inject_cortadora_v1")) {
+          loaded.projects.push(migrate({ projects: [PROY_CORTADORA] }).projects[0]);
+          localStorage.setItem("vph_inject_cortadora_v1", "1");
+          if (window.storage) await window.storage.set(KEY, JSON.stringify(loaded));
+        }
+      } catch (e) { /* sin localStorage */ }
+      // Inyección única del proyecto de orden acopio exterior (reunión Gustavo 09/06/2026)
+      try {
+        if (!localStorage.getItem("vph_inject_acopio_v1")) {
+          loaded.projects.push(migrate({ projects: [PROY_ACOPIO] }).projects[0]);
+          localStorage.setItem("vph_inject_acopio_v1", "1");
+          if (window.storage) await window.storage.set(KEY, JSON.stringify(loaded));
+        }
+      } catch (e) { /* sin localStorage */ }
+      setData(loaded);
+    })();
+  }, []);
+
+  /* recordatorios de reunión (Lun y Jue) */
+  useEffect(() => {
+    const REU = {
+      "Gustavo": { dias: [1, 4], hora: "11:00", color: "#2D4A5C" },
+      "Sofía":   { dias: [1, 4], hora: "16:00", color: "#1F7A8C" },
+    };
+    const AVISO_MIN = 10; // avisar 10 minutos antes
+    const yaAvisado = {};
+
+    const beep = () => {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator(); const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.type = "sine"; osc.frequency.value = 880;
+        g.gain.setValueAtTime(0.25, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        osc.start(); osc.stop(ctx.currentTime + 0.6);
+      } catch (e) {}
+    };
+
+    const check = () => {
+      const now = new Date();
+      const dow = now.getDay(); // 0=Dom 1=Lun ... 4=Jue
+      Object.entries(REU).forEach(([person, r]) => {
+        if (!r.dias.includes(dow)) return;
+        const [h, m] = r.hora.split(":").map(Number);
+        const target = new Date(now); target.setHours(h, m, 0, 0);
+        const aviso = new Date(target.getTime() - AVISO_MIN * 60000);
+        const key = person + now.toDateString();
+        if (now >= aviso && now < target.getTime() + 60000 && !yaAvisado[key]) {
+          yaAvisado[key] = true;
+          setMeetingAlert({ person, hora: r.hora, color: r.color });
+          beep();
+          if ("Notification" in window && Notification.permission === "granted") {
+            try { new Notification("🔔 Reunión con " + person, { body: "En " + AVISO_MIN + " min (" + r.hora + " hs)" }); } catch (e) {}
+          }
+        }
+      });
+    };
+
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+    check();
+    const id = setInterval(check, 30000); // revisa cada 30 seg
+    return () => clearInterval(id);
+  }, []);
+
+  /* guardar */
+  const persist = async (next) => {
+    setData(next);
+    try { if (window.storage) await window.storage.set(KEY, JSON.stringify(next)); }
+    catch (e) { console.error("No se pudo guardar:", e); }
+  };
+
+  const sel = useMemo(
+    () => data?.projects.find((p) => p.id === selId) || null,
+    [data, selId]
+  );
+
+  /* respaldo: exportar / importar */
+  const exportData = () => {
+    try {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `respaldo-proyectos-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { alert("No se pudo exportar la copia."); }
+  };
+  const importData = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (!parsed.projects) throw new Error("formato");
+        if (window.confirm("Esto reemplaza los datos actuales por los de la copia. ¿Continuar?")) {
+          persist(migrate(parsed));
+          alert("Copia restaurada correctamente.");
+        }
+      } catch (err) { alert("El archivo no es una copia válida."); }
+    };
+    reader.readAsText(file);
+  };
+
+  if (!data) return (<div className="vph"><style>{STYLE}</style><div className="loading">Cargando tablero…</div></div>);
+
+  /* ---- helpers de mutación ---- */
+  const updateProject = (pid, fn) =>
+    persist({ ...data, projects: data.projects.map((p) => (p.id === pid ? fn(p) : p)) });
+
+  // Actualiza una tarea venga de un proyecto o de las sueltas
+  const updateAnyTask = (item, patch) => {
+    if (item.ref === "loose") {
+      persist({ ...data, looseTasks: data.looseTasks.map((t) => (t.id === item.id ? { ...t, ...patch } : t)) });
+    } else {
+      updateProject(item.projectId, (p) => ({
+        ...p, phases: p.phases.map((ph) => ph.id !== item.phaseId ? ph : {
+          ...ph, tasks: ph.tasks.map((t) => (t.id === item.id ? { ...t, ...patch } : t)),
+        }),
+      }));
+    }
+  };
+
+  const isLate = (due, status) =>
+    due && status !== "Hecho" && new Date(due) < new Date(new Date().toDateString());
+
+  /* ---- métricas (cálculo normal, no hook) ---- */
+  const metrics = (() => {
+    let total = 0, done = 0, pend = 0, late = 0;
+    (data.projects || []).forEach((p) =>
+      (p.phases || []).forEach((ph) =>
+        (ph.tasks || []).forEach((t) => {
+          total++;
+          if (t.status === "Hecho") done++; else pend++;
+          if (isLate(t.due, t.status)) late++;
+        })
+      )
+    );
+    (data.looseTasks || []).forEach((t) => {
+      total++;
+      if (t.status === "Hecho") done++; else pend++;
+      if (isLate(t.due, t.status)) late++;
+    });
+    return { total, done, pend, late, pct: total ? Math.round((done / total) * 100) : 0 };
+  })();
+
+  const projStats = (p) => {
+    let t = 0, d = 0, next = null;
+    (p.phases || []).forEach((ph) => (ph.tasks || []).forEach((tk) => {
+      t++; if (tk.status === "Hecho") d++;
+      if (tk.status !== "Hecho" && tk.due && (!next || new Date(tk.due) < new Date(next.due))) next = tk;
+    }));
+    return { t, d, pct: t ? Math.round((d / t) * 100) : 0, next };
+  };
+
+  /* ============================== RENDER ============================== */
+  return (
+    <div className="vph">
+      <style>{STYLE}</style>
+
+      <header className="hd">
+        <div className="hd-row">
+          <div className="logo"><Factory size={22} color="#191815" /></div>
+          <div>
+            <h1 className="anton" style={{ fontSize: 20 }}>Marcelo Vassallo</h1>
+            <div className="sub mono">GESTOR DE PROYECTOS · DIRECCIÓN</div>
+          </div>
+        </div>
+      </header>
+
+      <div className="vph-wrap">
+        {meetingAlert && (
+          <div className="meeting-banner" style={{ borderColor: meetingAlert.color }}>
+            <span className="mb-ico">🔔</span>
+            <div className="mb-body">
+              <div className="mb-title">Reunión con {meetingAlert.person}</div>
+              <div className="mb-sub">Empieza a las {meetingAlert.hora} hs (en 10 min)</div>
+            </div>
+            <button className="mb-ok" style={{ background: meetingAlert.color }}
+              onClick={() => { setMeetingAlert(null); setView("reunion"); }}>Ver tareas</button>
+            <button className="mb-x" onClick={() => setMeetingAlert(null)}>✕</button>
+          </div>
+        )}
+        <nav className="nav">
+          <button className={view === "hoy" ? "on" : ""} onClick={() => { setView("hoy"); setSelId(null); }}>
+            <Clock size={15} /> Hoy
+          </button>
+          <button className={view === "dash" ? "on" : ""} onClick={() => { setView("dash"); setSelId(null); }}>
+            <LayoutDashboard size={15} /> Tablero
+          </button>
+          <button className={view === "loose" ? "on" : ""} onClick={() => { setView("loose"); setSelId(null); }}>
+            <ListTodo size={15} /> Sueltas
+          </button>
+          <button className={view === "reunion" ? "on" : ""} onClick={() => { setView("reunion"); setSelId(null); }}>
+            <Users size={15} /> Reuniones
+          </button>
+        </nav>
+
+        {/* ---------- HOY ---------- */}
+        {view === "hoy" && !sel && (
+          <TodayView data={data} updateAnyTask={updateAnyTask}
+            openProject={(pid) => { setSelId(pid); setView("proj"); }} />
+        )}
+
+        {/* ---------- DASHBOARD ---------- */}
+        {view === "dash" && !sel && (
+          <>
+            <div className="kpis">
+              <div className="kpi"><div className="n anton">{data.projects.length}</div><div className="l">Proyectos</div></div>
+              <div className="kpi"><div className="n anton">{metrics.pct}%</div><div className="l">Avance global</div></div>
+              <div className="kpi"><div className="n anton">{metrics.pend}</div><div className="l">Tareas pend.</div></div>
+              <div className={"kpi" + (metrics.late ? " alert" : "")}><div className="n anton">{metrics.late}</div><div className="l">Vencidas</div></div>
+            </div>
+
+            <div className="segm">
+              {["Todos", ...SCOPES].map((s) => (
+                <button key={s} className={scopeFilter === s ? "on" : ""} onClick={() => setScopeFilter(s)}>{s}</button>
+              ))}
+            </div>
+
+            {SCOPES.filter((sc) => scopeFilter === "Todos" || scopeFilter === sc).map((sc) => {
+              const list = data.projects.filter((p) => (p.scope || inferScope(p.area)) === sc);
+              const M = SCOPE_META[sc]; const SIcon = M.icon;
+              const areasInScope = Object.keys(AREAS).filter(
+                (a) => AREAS[a].scope === sc && list.some((p) => p.area === a)
+              );
+              return (
+                <div key={sc}>
+                  <div className="scopehead" style={{ borderLeftColor: M.border }}>
+                    <SIcon size={18} /> {M.label}
+                    <span className="c">{list.length}</span>
+                  </div>
+                  {list.length === 0 && (
+                    <div className="empty" style={{ padding: "14px 16px" }}>Sin proyectos en este ámbito todavía.</div>
+                  )}
+                  {areasInScope.map((areaName) => {
+                    const A = AREAS[areaName]; const AIcon = A.icon;
+                    const aprojects = list.filter((p) => p.area === areaName);
+                    return (
+                      <div key={areaName}>
+                        <div className="areahead" style={{ borderLeftColor: A.color, color: A.color }}>
+                          <AIcon size={15} /> {areaName}
+                          <span className="c">{aprojects.length}</span>
+                        </div>
+                        {aprojects.map((p) => {
+                          const s = projStats(p);
+                          return (
+                            <div key={p.id}
+                              className={"pcard" + (dragOverProjId === p.id ? " drag-over" : "")}
+                              draggable={true}
+                              onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; dragProjRef.current = { id: p.id, area: p.area }; }}
+                              onDragOver={(e) => { e.preventDefault(); setDragOverProjId(p.id); }}
+                              onDragLeave={() => setDragOverProjId(null)}
+                              onDragEnd={() => { setDragOverProjId(null); dragProjRef.current = null; }}
+                              onDrop={(e) => {
+                                e.preventDefault(); setDragOverProjId(null);
+                                const dr = dragProjRef.current;
+                                if (!dr || dr.id === p.id || dr.area !== p.area) return;
+                                const projs = [...data.projects];
+                                const fi = projs.findIndex(x => x.id === dr.id);
+                                const ti = projs.findIndex(x => x.id === p.id);
+                                persist({ ...data, projects: reorder(projs, fi, ti) });
+                                dragProjRef.current = null;
+                              }}
+                              onClick={() => { setSelId(p.id); setView("proj"); }}>
+                              <div className="pcard-top">
+                                <span className="drag-h" title="Arrastrar para reordenar" onClick={(e) => e.stopPropagation()}>⠿</span>
+                                <span className="areachip" style={{ background: A.color }}><AIcon size={11} /> {p.area}</span>
+                                <span className={"prio " + p.priority} style={{ marginLeft: "auto" }}>{p.priority}</span>
+                                <button className="iconbtn" style={{ marginLeft: 6 }}
+                                  onClick={(e) => { e.stopPropagation(); setModal({ type: "editProject", payload: p }); }}>
+                                  <Pencil size={16} />
+                                </button>
+                                <button className="iconbtn" style={{ marginLeft: 2 }}
+                                  onClick={(e) => { e.stopPropagation(); setModal({ type: "deleteProject", payload: p }); }}>
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                              <h3>{p.name}</h3>
+                              <div className="bar"><i style={{ width: s.pct + "%" }} /></div>
+                              <div className="pmeta">
+                                <span><b>{s.d}/{s.t}</b> tareas · {s.pct}%</span>
+                                <span>👤 <b>{p.owner}</b></span>
+                              </div>
+                              {s.next && (
+                                <div className="pmeta" style={{ marginTop: 6 }}>
+                                  <span style={{ color: isLate(s.next.due, s.next.status) ? "var(--g-block)" : "" }}>
+                                    ▸ Próx: {s.next.title.slice(0, 34)}{s.next.title.length > 34 ? "…" : ""} ({s.next.due})
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            <button className="btn ghost" style={{ width: "100%", justifyContent: "center" }}
+              onClick={() => setModal({ type: "newProject" })}>
+              <Plus size={16} /> Nuevo proyecto
+            </button>
+
+            <div className="backup">
+              <div className="t">Copia de seguridad</div>
+              <div className="d">Tus datos se guardan solos en tu cuenta. Igual, podés bajar una copia por las dudas y restaurarla cuando quieras.</div>
+              <div className="row">
+                <button className="btn sm" onClick={exportData}>⬇ Exportar copia</button>
+                <label className="btn sm">
+                  ⬆ Importar copia
+                  <input type="file" accept="application/json,.json" style={{ display: "none" }}
+                    onChange={(e) => e.target.files[0] && importData(e.target.files[0])} />
+                </label>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ---------- DETALLE PROYECTO ---------- */}
+        {view === "proj" && sel && (
+          <ProjectDetail
+            project={sel} updateProject={updateProject} persist={persist} data={data}
+            onBack={() => { setView("dash"); setSelId(null); }}
+            setModal={setModal} isLate={isLate}
+          />
+        )}
+
+        {/* ---------- TAREAS SUELTAS ---------- */}
+        {view === "loose" && (
+          <LooseTasks data={data} persist={persist} setModal={setModal} isLate={isLate} />
+        )}
+
+        {/* ---------- REUNIONES ---------- */}
+        {view === "reunion" && !sel && (
+          <MeetingView data={data} updateAnyTask={updateAnyTask}
+            openProject={(pid) => { setSelId(pid); setView("proj"); }} />
+        )}
+      </div>
+
+      {/* ---------- MODALES ---------- */}
+      {modal && (
+        <ModalRouter modal={modal} setModal={setModal} data={data}
+          persist={persist} updateProject={updateProject} setSelId={setSelId} setView={setView} />
+      )}
+    </div>
+  );
+}
+
+/* ============================== HOY / MI DÍA ============================== */
+function TodayView({ data, updateAnyTask, openProject }) {
+  const parseDue = (s) => new Date(s + "T00:00:00");
+  const today = new Date(new Date().toDateString());
+  const in7 = new Date(today); in7.setDate(in7.getDate() + 7);
+
+  const flat = [];
+  (data.projects || []).forEach((p) =>
+    (p.phases || []).forEach((ph) =>
+      (ph.tasks || []).forEach((t) =>
+        flat.push({ ...t, ref: "proj", projectId: p.id, phaseId: ph.id,
+          origin: p.name, color: (AREAS[p.area] || {}).color || "#8c887e" })
+      )
+    )
+  );
+  (data.looseTasks || []).forEach((t) =>
+    flat.push({ ...t, ref: "loose", origin: "Tareas sueltas", color: "#8c887e" })
+  );
+
+  const pending = flat.filter((t) => t.status !== "Hecho");
+  const myDay = pending.filter((t) => t.today);
+  const rest = pending.filter((t) => !t.today);
+
+  const bucketOf = (t) => {
+    if (!t.due) return "sinfecha";
+    const d = parseDue(t.due);
+    if (d < today) return "vencida";
+    if (d.getTime() === today.getTime()) return "hoy";
+    if (d <= in7) return "semana";
+    return "futuro";
+  };
+  const groups = [
+    { key: "vencida", label: "Vencidas", color: "#C0392B" },
+    { key: "hoy", label: "Vence hoy", color: "#E0590C" },
+    { key: "semana", label: "Esta semana", color: "#9A6B00" },
+    { key: "sinfecha", label: "Sin fecha", color: "#8C887E" },
+    { key: "futuro", label: "Más adelante", color: "#2D4A5C" },
+  ];
+
+  const Row = ({ t, inDay }) => (
+    <div className="task">
+      <div className="tcheck" title="Marcar como hecha"
+        onClick={() => updateAnyTask(t, { status: "Hecho", today: false })} />
+      <div className="body"
+        style={{ cursor: t.ref === "proj" ? "pointer" : "default" }}
+        onClick={() => t.ref === "proj" && openProject(t.projectId)}>
+        <div className="ttl">{t.title}</div>
+        <div className="tagrow">
+          <span className="tag" style={{ borderColor: t.color, color: t.color }}>{t.origin}</span>
+          {t.due && <span className="tag">📅 {t.due}</span>}
+          <span className="tag">👤 {t.owner}</span>
+        </div>
+      </div>
+      <button className="btn sm" onClick={() => updateAnyTask(t, { today: !inDay })}>
+        {inDay ? "Quitar" : "+ día"}
+      </button>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="scopehead" style={{ borderLeftColor: "#E0590C" }}>
+        <Clock size={18} /> Mi día <span className="c">{myDay.length}</span>
+      </div>
+      <div className="phase">
+        {myDay.length === 0 && (
+          <div className="empty" style={{ padding: "16px" }}>
+            Tu lista de hoy está vacía. Sumá tareas con "+ día" desde la lista de abajo.
+          </div>
+        )}
+        {myDay.map((t) => <Row key={t.ref + t.id} t={t} inDay={true} />)}
+      </div>
+
+      <p className="seclab" style={{ marginTop: 18 }}>Pendientes por urgencia</p>
+      {pending.length === 0 && (
+        <div className="empty"><div className="anton">¡Todo al día!</div>No tenés tareas pendientes.</div>
+      )}
+      {groups.map((g) => {
+        const items = rest.filter((t) => bucketOf(t) === g.key);
+        if (items.length === 0) return null;
+        return (
+          <div key={g.key}>
+            <div className="areahead" style={{ borderLeftColor: g.color, color: g.color }}>
+              {g.label} <span className="c">{items.length}</span>
+            </div>
+            <div className="phase">
+              {items.map((t) => <Row key={t.ref + t.id} t={t} inDay={false} />)}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+/* ============================== REUNIONES ============================== */
+const REUNIONES = {
+  "Gustavo": { dias: "Lunes y Jueves", hora: "11:00", nota: "En la pausa de producción", color: "#2D4A5C" },
+  "Sofía":   { dias: "Lunes y Jueves", hora: "16:00", nota: "Ventas y marketing", color: "#1F7A8C" },
+};
+
+function MeetingView({ data, updateAnyTask, openProject }) {
+  const [person, setPerson] = useState("Gustavo");
+  const parseDue = (s) => new Date(s + "T00:00:00");
+  const today = new Date(new Date().toDateString());
+  const in7 = new Date(today); in7.setDate(in7.getDate() + 7);
+
+  // Aplanar todas las tareas (proyectos + sueltas) del responsable elegido
+  const flat = [];
+  (data.projects || []).forEach((p) =>
+    (p.phases || []).forEach((ph) =>
+      (ph.tasks || []).forEach((t) => {
+        if (t.owner === person)
+          flat.push({ ...t, ref: "proj", projectId: p.id, phaseId: ph.id,
+            origin: p.name, color: (AREAS[p.area] || {}).color || "#8c887e" });
+      })
+    )
+  );
+  (data.looseTasks || []).forEach((t) => {
+    if (t.owner === person)
+      flat.push({ ...t, ref: "loose", origin: "Tareas sueltas", color: "#8c887e" });
+  });
+
+  const pending = flat.filter((t) => t.status !== "Hecho");
+  const doneCount = flat.filter((t) => t.status === "Hecho").length;
+
+  const bucketOf = (t) => {
+    if (!t.due) return "sinfecha";
+    const d = parseDue(t.due);
+    if (d < today) return "vencida";
+    if (d.getTime() === today.getTime()) return "hoy";
+    if (d <= in7) return "semana";
+    return "futuro";
+  };
+  const groups = [
+    { key: "vencida", label: "⚠️ Vencidas", color: "#C0392B" },
+    { key: "hoy", label: "Vence hoy", color: "#E0590C" },
+    { key: "semana", label: "Esta semana", color: "#9A6B00" },
+    { key: "sinfecha", label: "Sin fecha", color: "#8C887E" },
+    { key: "futuro", label: "Más adelante", color: "#2D4A5C" },
+  ];
+
+  const r = REUNIONES[person];
+
+  const Row = ({ t }) => (
+    <div className="task">
+      <div className="tcheck" title="Marcar como hecha"
+        onClick={() => updateAnyTask(t, { status: "Hecho" })} />
+      <div className="body"
+        style={{ cursor: t.ref === "proj" ? "pointer" : "default" }}
+        onClick={() => t.ref === "proj" && openProject(t.projectId)}>
+        <div className="ttl">{t.title}</div>
+        <div className="tagrow">
+          <span className="tag" style={{ borderColor: t.color, color: t.color }}>{t.origin}</span>
+          {t.due && <span className="tag">📅 {t.due}</span>}
+          {t.notes && <span className="tag" title={t.notes}>📝 nota</span>}
+        </div>
+      </div>
+      <select className="btn sm" value={t.status}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => updateAnyTask(t, { status: e.target.value })}
+        style={{ cursor: "pointer", borderColor: STATUS[t.status] }}>
+        <option>Sin empezar</option>
+        <option>En curso</option>
+        <option>Bloqueado</option>
+        <option>Hecho</option>
+      </select>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Selector de persona */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        {Object.keys(REUNIONES).map((name) => (
+          <button key={name}
+            onClick={() => setPerson(name)}
+            className="btn"
+            style={{
+              flex: 1, fontWeight: 700,
+              background: person === name ? REUNIONES[name].color : "var(--paper)",
+              color: person === name ? "#fff" : "var(--ink)",
+              borderColor: REUNIONES[name].color,
+            }}>
+            👤 {name}
+          </button>
+        ))}
+      </div>
+
+      {/* Tarjeta de horario de reunión */}
+      <div className="scopehead" style={{ borderLeftColor: r.color, flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+        <div><Users size={18} /> Reunión con {person}</div>
+        <div style={{ fontSize: 12, fontWeight: 500, color: "var(--ink-soft)" }}>
+          📅 {r.dias} · 🕐 {r.hora} hs · {r.nota}
+        </div>
+      </div>
+
+      {/* Resumen */}
+      <p className="seclab" style={{ marginTop: 14 }}>
+        {pending.length} pendiente{pending.length !== 1 ? "s" : ""} · {doneCount} hecha{doneCount !== 1 ? "s" : ""}
+      </p>
+
+      {pending.length === 0 && (
+        <div className="empty"><div className="anton">¡Todo al día!</div>{person} no tiene tareas pendientes.</div>
+      )}
+
+      {groups.map((g) => {
+        const items = pending.filter((t) => bucketOf(t) === g.key);
+        if (items.length === 0) return null;
+        return (
+          <div key={g.key}>
+            <div className="areahead" style={{ borderLeftColor: g.color, color: g.color }}>
+              {g.label} <span className="c">{items.length}</span>
+            </div>
+            <div className="phase">
+              {items.map((t) => <Row key={t.ref + t.id} t={t} />)}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+/* ============================== DETALLE ============================== */
+function ProjectDetail({ project, updateProject, onBack, setModal, isLate }) {
+  const A = AREAS[project.area] || AREAS["Producción"]; const Icon = A.icon;
+  const dragPhaseRef = useRef(null);
+  const dragTaskRef  = useRef(null);
+  const [dragOverPhaseId, setDragOverPhaseId] = useState(null);
+  const [dragOverTaskId,  setDragOverTaskId]  = useState(null);
+
+  const reorderPhases = (fromId, toId) =>
+    updateProject(project.id, (p) => {
+      const fi = p.phases.findIndex(x => x.id === fromId);
+      const ti = p.phases.findIndex(x => x.id === toId);
+      return { ...p, phases: reorder(p.phases, fi, ti) };
+    });
+
+  const reorderTasks = (phId, fromId, toId) =>
+    updateProject(project.id, (p) => ({
+      ...p, phases: p.phases.map(ph => ph.id !== phId ? ph : {
+        ...ph, tasks: reorder(ph.tasks,
+          ph.tasks.findIndex(x => x.id === fromId),
+          ph.tasks.findIndex(x => x.id === toId))
+      })
+    }));
+
+  const toggleTask = (phId, tId) =>
+    updateProject(project.id, (p) => ({
+      ...p, phases: p.phases.map((ph) => ph.id !== phId ? ph : {
+        ...ph, tasks: ph.tasks.map((t) => t.id !== tId ? t :
+          { ...t, status: t.status === "Hecho" ? "En curso" : "Hecho" }),
+      }),
+    }));
+
+  const togglePhase = (phId) =>
+    updateProject(project.id, (p) => ({
+      ...p, phases: p.phases.map((ph) => ph.id === phId ? { ...ph, open: !ph.open } : ph),
+    }));
+
+  const delTask = (phId, tId) =>
+    updateProject(project.id, (p) => ({
+      ...p, phases: p.phases.map((ph) => ph.id !== phId ? ph :
+        { ...ph, tasks: ph.tasks.filter((t) => t.id !== tId) }),
+    }));
+
+  const delPhase = (phId) =>
+    updateProject(project.id, (p) => ({ ...p, phases: p.phases.filter((ph) => ph.id !== phId) }));
+
+  return (
+    <>
+      <button className="back" onClick={onBack}><ChevronLeft size={18} /> Volver al tablero</button>
+      <span className="areachip" style={{ background: A.color }}><Icon size={11} /> {project.area}</span>
+      <span className={"prio " + project.priority} style={{ marginLeft: 8 }}>{project.priority}</span>
+      <h2 className="dtitle">{project.name}</h2>
+      <div className="pmeta" style={{ marginBottom: 16 }}>
+        <span>Responsable: <b>{project.owner}</b></span>
+        <button className="iconbtn" onClick={() => setModal({ type: "editProject", payload: project })}>
+          <Pencil size={15} /> editar
+        </button>
+        <button className="iconbtn" style={{ color: "var(--g-block)" }} onClick={() => setModal({ type: "deleteProject", payload: project })}>
+          <Trash2 size={15} /> eliminar
+        </button>
+      </div>
+
+      {(project.phases || []).map((ph) => {
+        const d = ph.tasks.filter((t) => t.status === "Hecho").length;
+        return (
+          <div key={ph.id}
+            className={"phase" + (dragOverPhaseId === ph.id ? " drag-over" : "")}
+            draggable={true}
+            onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; dragPhaseRef.current = ph.id; }}
+            onDragOver={(e) => { e.preventDefault(); if (dragPhaseRef.current && dragPhaseRef.current !== ph.id) setDragOverPhaseId(ph.id); }}
+            onDragLeave={() => setDragOverPhaseId(null)}
+            onDragEnd={() => { setDragOverPhaseId(null); dragPhaseRef.current = null; }}
+            onDrop={(e) => {
+              e.preventDefault(); setDragOverPhaseId(null);
+              if (!dragPhaseRef.current || dragPhaseRef.current === ph.id) return;
+              reorderPhases(dragPhaseRef.current, ph.id);
+              dragPhaseRef.current = null;
+            }}>
+            <div className="phase-h" onClick={() => togglePhase(ph.id)}>
+              <span className="drag-h" title="Arrastrar fase" onClick={(e) => e.stopPropagation()}>⠿</span>
+              {ph.open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              <h4>{ph.name}</h4>
+              <span className="cnt">{d}/{ph.tasks.length}</span>
+              <button className="iconbtn" onClick={(e) => { e.stopPropagation(); setModal({ type: "editPhase", payload: { projectId: project.id, phaseId: ph.id, name: ph.name } }); }}>
+                <Pencil size={14} />
+              </button>
+              <button className="iconbtn" onClick={(e) => { e.stopPropagation(); delPhase(ph.id); }}>
+                <Trash2 size={14} />
+              </button>
+            </div>
+            {ph.open && (
+              <>
+                {ph.tasks.map((t) => (
+                  <div key={t.id}
+                    className={"task" + (t.status === "Hecho" ? " done" : "") + (dragOverTaskId === t.id ? " drag-over" : "")}
+                    draggable={true}
+                    onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; dragTaskRef.current = { phId: ph.id, id: t.id }; }}
+                    onDragOver={(e) => { e.preventDefault(); const dr = dragTaskRef.current; if (dr && dr.phId === ph.id && dr.id !== t.id) setDragOverTaskId(t.id); }}
+                    onDragLeave={() => setDragOverTaskId(null)}
+                    onDragEnd={() => { setDragOverTaskId(null); dragTaskRef.current = null; }}
+                    onDrop={(e) => {
+                      e.preventDefault(); setDragOverTaskId(null);
+                      const dr = dragTaskRef.current;
+                      if (!dr || dr.phId !== ph.id || dr.id === t.id) return;
+                      reorderTasks(ph.id, dr.id, t.id);
+                      dragTaskRef.current = null;
+                    }}>
+                    <span className="drag-h" title="Arrastrar tarea">⠿</span>
+                    <div className={"tcheck" + (t.status === "Hecho" ? " done" : "")}
+                      onClick={() => toggleTask(ph.id, t.id)}>
+                      {t.status === "Hecho" && <Check size={15} color="#fff" />}
+                    </div>
+                    <div className="body">
+                      <div className="ttl">{t.title}</div>
+                      <div className="tagrow">
+                        <span className="stbadge" style={{ background: STATUS[t.status] }}>{t.status}</span>
+                        <span className="tag">👤 {t.owner}</span>
+                        {t.due && <span className={"tag due" + (isLate(t.due, t.status) ? " late" : "")}>📅 {t.due}</span>}
+                      </div>
+                      {t.notes && <div className="tag" style={{ marginTop: 6, display: "inline-block" }}>📝 {t.notes}</div>}
+                    </div>
+                    <button className="iconbtn" onClick={() => setModal({ type: "editTask", payload: { project, phId: ph.id, task: t } })}>
+                      <Pencil size={14} />
+                    </button>
+                    <button className="iconbtn" onClick={() => delTask(ph.id, t.id)}><Trash2 size={14} /></button>
+                  </div>
+                ))}
+                <div className="addrow">
+                  <button className="btn sm" onClick={() => setModal({ type: "newTask", payload: { project, phId: ph.id } })}>
+                    <Plus size={13} /> Tarea
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })}
+
+      <button className="btn ghost" style={{ width: "100%", justifyContent: "center" }}
+        onClick={() => setModal({ type: "newPhase", payload: { project } })}>
+        <Plus size={15} /> Nueva fase
+      </button>
+    </>
+  );
+}
+
+/* ============================== TAREAS SUELTAS ============================== */
+function LooseTasks({ data, persist, setModal, isLate }) {
+  const toggle = (id) => persist({
+    ...data, looseTasks: data.looseTasks.map((t) => t.id !== id ? t :
+      { ...t, status: t.status === "Hecho" ? "Sin empezar" : "Hecho" }),
+  });
+  const del = (id) => persist({ ...data, looseTasks: data.looseTasks.filter((t) => t.id !== id) });
+
+  return (
+    <>
+      <p className="seclab">Tareas sueltas</p>
+      {data.looseTasks.length === 0 && (
+        <div className="empty"><div className="anton">Sin tareas sueltas</div>
+          <div>Acá van los pendientes rápidos que no son parte de un proyecto.</div></div>
+      )}
+      <div className="phase">
+        {data.looseTasks.map((t) => (
+          <div key={t.id} className={"task" + (t.status === "Hecho" ? " done" : "")}>
+            <div className={"tcheck" + (t.status === "Hecho" ? " done" : "")} onClick={() => toggle(t.id)}>
+              {t.status === "Hecho" && <Check size={15} color="#fff" />}
+            </div>
+            <div className="body">
+              <div className="ttl">{t.title}</div>
+              <div className="tagrow">
+                <span className="tag">👤 {t.owner}</span>
+                {t.due && <span className={"tag due" + (isLate(t.due, t.status) ? " late" : "")}>📅 {t.due}</span>}
+              </div>
+            </div>
+            <button className="iconbtn" onClick={() => del(t.id)}><Trash2 size={14} /></button>
+          </div>
+        ))}
+      </div>
+      <button className="btn ghost" style={{ width: "100%", justifyContent: "center" }}
+        onClick={() => setModal({ type: "newLoose" })}>
+        <Plus size={15} /> Nueva tarea suelta
+      </button>
+    </>
+  );
+}
+
+/* ============================== MODALES ============================== */
+function ModalRouter({ modal, setModal, data, persist, updateProject, setSelId, setView }) {
+  const close = () => setModal(null);
+
+  /* --- Proyecto nuevo / editar --- */
+  if (modal.type === "newProject" || modal.type === "editProject") {
+    const edit = modal.type === "editProject";
+    return <ProjectForm initial={edit ? modal.payload : null} close={close}
+      onSave={(vals) => {
+        if (edit) {
+          updateProject(modal.payload.id, (p) => ({ ...p, ...vals }));
+        } else {
+          const np = { id: uid(), ...vals, phases: [] };
+          persist({ ...data, projects: [...data.projects, np] });
+          setSelId(np.id); setView("proj");
+        }
+        close();
+      }} />;
+  }
+
+  /* --- Fase nueva --- */
+  if (modal.type === "newPhase") {
+    return <SimpleForm title="Nueva fase" label="Nombre de la fase" close={close}
+      onSave={(name) => {
+        updateProject(modal.payload.project.id, (p) => ({
+          ...p, phases: [...p.phases, { id: uid(), name, open: true, tasks: [] }],
+        }));
+        close();
+      }} />;
+  }
+
+  /* --- Editar fase --- */
+  if (modal.type === "editPhase") {
+    return <SimpleForm title="Editar fase" label="Nombre de la fase"
+      initial={modal.payload.name} close={close}
+      onSave={(name) => {
+        updateProject(modal.payload.projectId, (p) => ({
+          ...p, phases: p.phases.map((ph) => ph.id !== modal.payload.phaseId ? ph : { ...ph, name }),
+        }));
+        close();
+      }} />;
+  }
+
+  /* --- Tarea nueva / editar dentro de proyecto --- */
+  if (modal.type === "newTask" || modal.type === "editTask") {
+    const edit = modal.type === "editTask";
+    const { project, phId } = modal.payload;
+    return <TaskForm initial={edit ? modal.payload.task : null} close={close}
+      onSave={(vals) => {
+        updateProject(project.id, (p) => ({
+          ...p, phases: p.phases.map((ph) => ph.id !== phId ? ph : {
+            ...ph, tasks: edit
+              ? ph.tasks.map((t) => t.id === modal.payload.task.id ? { ...t, ...vals } : t)
+              : [...ph.tasks, { id: uid(), ...vals }],
+          }),
+        }));
+        close();
+      }} />;
+  }
+
+  /* --- Eliminar proyecto --- */
+  if (modal.type === "deleteProject") {
+    const p = modal.payload;
+    return (
+      <Shell title="Eliminar proyecto" close={close}>
+        <p style={{ margin: "12px 0 6px", color: "var(--ink)" }}>
+          ¿Seguro que querés eliminar <b>"{p.name}"</b>?
+        </p>
+        <p style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 20 }}>
+          Se borran el proyecto y todas sus fases y tareas. Esta acción no se puede deshacer.
+        </p>
+        <div className="sheet-actions">
+          <button className="btn" onClick={close}>Cancelar</button>
+          <button className="btn primary" style={{ background: "var(--g-block)", borderColor: "var(--g-block)" }}
+            onClick={() => {
+              persist({ ...data, projects: data.projects.filter((x) => x.id !== p.id) });
+              close();
+              setView("dash"); setSelId(null);
+            }}>
+            Sí, eliminar
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  /* --- Tarea suelta --- */
+  if (modal.type === "newLoose") {
+    return <TaskForm initial={null} simple close={close}
+      onSave={(vals) => {
+        persist({ ...data, looseTasks: [...data.looseTasks, { id: uid(), ...vals }] });
+        close();
+      }} />;
+  }
+  return null;
+}
+
+function Shell({ title, close, children }) {
+  return (
+    <div className="ovl" onClick={close}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <h3 style={{ flex: 1 }}>{title}</h3>
+          <button className="iconbtn" onClick={close}><X size={22} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ProjectForm({ initial, onSave, close }) {
+  const [name, setName] = useState(initial?.name || "");
+  const [scope, setScope] = useState(initial?.scope || "Empresa");
+  const [area, setArea] = useState(initial?.area || "Producción");
+  const [owner, setOwner] = useState(initial?.owner || "Marcelo");
+  const [priority, setPriority] = useState(initial?.priority || "Media");
+  const areaOptions = Object.keys(AREAS).filter((a) => AREAS[a].scope === scope);
+  const pickScope = (s) => {
+    setScope(s);
+    const opts = Object.keys(AREAS).filter((a) => AREAS[a].scope === s);
+    if (!opts.includes(area)) setArea(opts[0]);
+  };
+  return (
+    <Shell title={initial ? "Editar proyecto" : "Nuevo proyecto"} close={close}>
+      <div className="fld"><label>Nombre</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Auditoría de procesos" autoFocus /></div>
+      <div className="fld"><label>Ámbito</label>
+        <div className="chips">{SCOPES.map((s) =>
+          <div key={s} className={"chip" + (scope === s ? " on" : "")} onClick={() => pickScope(s)}>{s}</div>)}</div></div>
+      <div className="fld"><label>Área</label>
+        <div className="chips">{areaOptions.map((a) =>
+          <div key={a} className={"chip" + (area === a ? " on" : "")} onClick={() => setArea(a)}>{a}</div>)}</div></div>
+      <div className="fld"><label>Responsable</label>
+        <select value={owner} onChange={(e) => setOwner(e.target.value)}>{TEAM.map((m) => <option key={m}>{m}</option>)}</select></div>
+      <div className="fld"><label>Prioridad</label>
+        <div className="chips">{PRIOS.map((p) =>
+          <div key={p} className={"chip" + (priority === p ? " on" : "")} onClick={() => setPriority(p)}>{p}</div>)}</div></div>
+      <div className="sheet-actions">
+        <button className="btn" onClick={close}>Cancelar</button>
+        <button className="btn primary" onClick={() => name.trim() && onSave({ name: name.trim(), scope, area, owner, priority })}>Guardar</button>
+      </div>
+    </Shell>
+  );
+}
+
+function TaskForm({ initial, onSave, close, simple }) {
+  const [title, setTitle] = useState(initial?.title || "");
+  const [owner, setOwner] = useState(initial?.owner || "Marcelo");
+  const [due, setDue] = useState(initial?.due || "");
+  const [status, setStatus] = useState(initial?.status || "Sin empezar");
+  const [notes, setNotes] = useState(initial?.notes || "");
+  return (
+    <Shell title={initial ? "Editar tarea" : "Nueva tarea"} close={close}>
+      <div className="fld"><label>Tarea</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="¿Qué hay que hacer?" autoFocus /></div>
+      <div className="fld"><label>Responsable</label>
+        <select value={owner} onChange={(e) => setOwner(e.target.value)}>{TEAM.map((m) => <option key={m}>{m}</option>)}</select></div>
+      <div className="fld"><label>Fecha límite</label>
+        <input type="date" value={due} onChange={(e) => setDue(e.target.value)} /></div>
+      {!simple && (
+        <>
+          <div className="fld"><label>Estado</label>
+            <div className="chips">{Object.keys(STATUS).map((s) =>
+              <div key={s} className={"chip" + (status === s ? " on" : "")} onClick={() => setStatus(s)}>{s}</div>)}</div></div>
+          <div className="fld"><label>Notas</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalles, materiales, links…" /></div>
+        </>
+      )}
+      <div className="sheet-actions">
+        <button className="btn" onClick={close}>Cancelar</button>
+        <button className="btn primary" onClick={() => title.trim() &&
+          onSave(simple ? { title: title.trim(), owner, due, status: "Sin empezar" }
+            : { title: title.trim(), owner, due, status, notes })}>Guardar</button>
+      </div>
+    </Shell>
+  );
+}
+
+function SimpleForm({ title, label, onSave, close, initial = "" }) {
+  const [val, setVal] = useState(initial);
+  return (
+    <Shell title={title} close={close}>
+      <div className="fld"><label>{label}</label>
+        <input value={val} onChange={(e) => setVal(e.target.value)} autoFocus /></div>
+      <div className="sheet-actions">
+        <button className="btn" onClick={close}>Cancelar</button>
+        <button className="btn primary" onClick={() => val.trim() && onSave(val.trim())}>Guardar</button>
+      </div>
+    </Shell>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+
+</script>
+</body>
+</html>
