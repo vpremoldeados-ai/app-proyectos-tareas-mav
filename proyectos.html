@@ -478,7 +478,10 @@
             draggedTaskId = null;
         }
     }
-
+function fabClick() {
+        if (currentProjectId) openNewTask();
+        else openNewProject();
+    }
     function openNewProject() {
         editingProjectId = null;
         document.getElementById('projectType').value = 'empresa';
