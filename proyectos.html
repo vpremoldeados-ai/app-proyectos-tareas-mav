@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Proyectos Kanban — VPH</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f9fa; --surface: #ffffff; --surface-2: #f3f4f6; --border: #e5e7eb;
+            --accent: #6366f1; --accent-2: #8b5cf6; --success: #10b981; --warning: #f59e0b;
+            --danger: #ef4444; --text: #1f2937; --text-2: #6b7280; --text-3: #9ca3af; --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
+            min-height: 100vh; padding: 16px; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        header { display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; padding: 18px 24px; background: var(--surface);
+            border-radius: var(--radius); border: 2px solid var(--accent); }
+        header h1 { font-size: 20px; font-weight: 800;
+            background: linear-gradient(130deg,#e2e8f0 30%,#a5b4fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        
+        .nav { display: flex; gap: 3px; margin-bottom: 18px; background: var(--surface);
+            padding: 6px; border-radius: var(--radius); border: 1px solid var(--border);
+            overflow-x: auto; }
+        .nav button { padding: 8px 14px; border: none; background: transparent; cursor: pointer;
+            font-size: 12px; font-weight: 500; color: var(--text-3); border-radius: 8px;
+            transition: all 0.18s; }
+        .nav button.active { color: #fff; background: linear-gradient(135deg,var(--accent),var(--accent-2)); }
+        
+        .filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+            align-items: center; background: var(--surface); padding: 12px 16px;
+            border-radius: var(--radius); border: 1px solid var(--border); }
+        .filter-btn { padding: 8px 12px; border: 1px solid var(--border); background: var(--surface-2);
+            color: var(--text); cursor: pointer; border-radius: 6px; font-size: 12px; font-weight: 500;
+            transition: all 0.15s; }
+        .filter-btn.active { background: linear-gradient(135deg,var(--accent),var(--accent-2));
+            color: #fff; border-color: var(--accent); }
+        
+        .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px; margin-bottom: 20px; }
+        .project-card { background: var(--surface); padding: 14px; border-radius: var(--radius);
+            border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+        .project-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .project-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+        .project-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; font-size: 10px; }
+        .project-meta span { background: var(--surface-2); padding: 2px 5px; border-radius: 3px;
+            color: var(--text-3); }
+        
+        .kanban { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+        .kanban-column { background: var(--surface-2); border-radius: var(--radius); padding: 12px;
+            min-height: 500px; border: 1px solid var(--border); }
+        .kanban-column h3 { font-size: 11px; font-weight: 700; color: var(--text);
+            margin-bottom: 10px; text-transform: uppercase; }
+        .kanban-lane { min-height: 50px; border: 2px dashed var(--border); border-radius: 6px;
+            padding: 8px; transition: all 0.2s; }
+        .kanban-lane.drag-over { background: rgba(99,102,241,0.1); border-color: var(--accent); }
+        
+        .task-card { background: var(--surface); padding: 10px; border-radius: 6px;
+            border-left: 3px solid var(--accent); margin-bottom: 8px; cursor: grab;
+            transition: all 0.15s; user-select: none; }
+        .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .task-card.dragging { opacity: 0.5; }
+        .task-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px;
+            cursor: pointer; }
+        .task-title:hover { text-decoration: underline; }
+        .task-meta { font-size: 9px; color: var(--text-3); margin-bottom: 4px; }
+        .task-actions { display: flex; gap: 4px; }
+        .task-actions button { width: 18px; height: 18px; border: none; background: transparent;
+            cursor: pointer; font-size: 10px; border-radius: 3px; transition: all 0.15s; }
+        .task-actions button:hover { background: var(--danger); color: #fff; }
+        
+        .week-view { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+        .day-column { background: var(--surface); border-radius: var(--radius); padding: 12px;
+            border: 1px solid var(--border); min-height: 400px; }
+        .day-column h3 { font-size: 12px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+        .day-column.today { border: 2px solid var(--accent); background: rgba(99,102,241,0.05); }
+        .day-label { font-size: 11px; color: var(--text-3); }
+        
+        .fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
+            border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: white; border: none; cursor: pointer; font-size: 24px; display: flex;
+            align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+            transition: all 0.2s; z-index: 100; }
+        .fab:hover { transform: scale(1.1); }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-box { background: var(--surface); padding: 24px; border-radius: var(--radius);
+            width: 90%; max-width: 500px; border: 1px solid var(--border); }
+        .modal-box h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text);
+            margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 13px; font-family: 'Inter'; background: var(--surface-2);
+            color: var(--text); }
+        .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+        .modal-btns button { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: 600;
+            cursor: pointer; font-size: 13px; }
+        .btn-save { background: var(--success); color: #fff; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-cancel { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+        
+        .empty-state { text-align: center; padding: 40px; color: var(--text-3); }
+        .empty-icon { font-size: 48px; opacity: 0.5; margin-bottom: 12px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .breadcrumb { margin-bottom: 16px; font-size: 13px; }
+        .breadcrumb button { background: none; border: none; color: var(--accent); cursor: pointer;
+            font-weight: 600; }
+        
+        .btn-new { padding: 10px 14px; border: none; background: linear-gradient(135deg,var(--accent),var(--accent-2));
+            color: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 16px; }
+        
+        .vision-banner { background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%);
+            border: 1.5px solid var(--accent); border-radius: var(--radius); padding: 18px 24px;
+            margin-bottom: 18px; display: flex; align-items: center; gap: 16px; }
+        .vision-icon { font-size: 32px; flex-shrink: 0; }
+        .vision-text { flex: 1; }
+        .vision-text h3 { font-size: 12px; font-weight: 700; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .vision-text p { font-size: 15px; font-weight: 600; color: var(--text);
+            background: linear-gradient(130deg,#6366f1,#8b5cf6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        @media (max-width: 1200px) { .kanban { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) {
+            .kanban { grid-template-columns: 1fr; }
+            .week-view { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+            .projects-grid { grid-template-columns: 1fr; }
+            .fab { bottom: 16px; right: 16px; }
+            .vision-banner { padding: 14px 16px; gap: 12px; }
+            .vision-icon { font-size: 24px; }
+            .vision-text p { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>VASSALLO Fábrica de Premoldeados de Hormigón</h1>
+            <p>Gestor de Proyectos</p>
+        </div>
+        <a href="index.html" style="padding:10px 16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;transition:all 0.2s;">📋 Tareas</a>
+    </header>
+
+    <div class="vision-banner">
+        <div class="vision-icon">🚀</div>
+        <div class="vision-text">
+            <h3>Nuestra Visión</h3>
+            <p>Ser una empresa con equipos, sistemas y máquinas muy eficientes</p>
+        </div>
+    </div>
+
+    <div class="nav" id="navTabs"></div>
+
+    <!-- PROYECTOS -->
+    <div id="tab-proyectos" class="tab-content active">
+        <button class="btn-new" onclick="openNewProject()">➕ Nuevo Proyecto</button>
+        <div class="filters" id="filters"></div>
+        <div class="projects-grid" id="projectsGrid"></div>
+    </div>
+
+    <!-- REUNIONES -->
+    <div id="tab-reuniones" class="tab-content">
+        <div class="filters" id="respButtons"></div>
+        <div class="kanban" id="reunionesKanban"></div>
+    </div>
+
+    <!-- SEMANAL -->
+    <div id="tab-semanal" class="tab-content">
+        <div class="week-view" id="weekView"></div>
+    </div>
+
+    <!-- PROYECTO DETAIL -->
+    <div id="tab-proyecto-detail" class="tab-content">
+        <div class="breadcrumb">
+            <button onclick="backToProjects()">📋 Proyectos</button> / <span id="projectDetailTitle"></span>
+        </div>
+        <button class="btn-new" onclick="openNewTask()">➕ Nueva Tarea</button>
+        <div class="kanban" id="kanbanBoard"></div>
+    </div>
+
+</div>
+
+<button class="fab" onclick="openNewProject()" id="fabBtn">➕</button>
+
+<!-- Modal Proyecto -->
+<div id="projectModal" class="modal">
+    <div class="modal-box">
+        <h2>Nuevo Proyecto</h2>
+        <div class="form-group">
+            <label>Tipo:</label>
+            <select id="projectType" onchange="updateResponsableField()">
+                <option value="empresa">🏢 Empresa</option>
+                <option value="personal">👤 Personal</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Nombre:</label>
+            <input type="text" id="projectName">
+        </div>
+        <div class="form-group">
+            <label>Área:</label>
+            <select id="projectArea">
+                <option value="Producción">Producción</option>
+                <option value="Ventas">Ventas</option>
+                <option value="Compras">Compras</option>
+                <option value="Marketing">Marketing</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Responsable:</label>
+            <select id="projectResp">
+                <option value="">Sin asignar</option>
+                <option value="Marcelo">Marcelo</option>
+                <option value="Sofia">Sofía</option>
+                <option value="Gustavo">Gustavo</option>
+            </select>
+        </div>
+        <div class="modal-btns">
+            <button class="btn-save" onclick="saveProject()">Guardar</button>
+            <button id="deleteProjectBtn" class="btn-danger" style="display:none;" onclick="deleteProject()">Borrar</button>
+            <button class="btn-cancel" onclick="closeProjectModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tarea -->
+<div id="taskModal" class="modal">
+    <div class="modal-box">
+        <h2>Nueva Tarea</h2>
+        <div class="form-group">
+            <label>Tarea:</label>
+            <input type="text" id="taskTitle">
+        </div>
+        <div class="form-group">
+            <label>Estado:</label>
+            <select id="taskState">
+                <option value="backlog">Backlog</option>
+                <option value="planificado">Planificado</option>
+                <option value="en-curso">En Curso</option>
+                <option value="revision">Revisión</option>
+                <option value="hecho">Hecho</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Fecha Límite:</label>
+            <input type="date" id="taskDueDate">
+        </div>
+        <div class="modal-btns">
+            <button class="btn-save" onclick="saveTask()">Guardar</button>
+            <button id="deleteTaskBtn" class="btn-danger" style="display:none;" onclick="deleteTask()">Borrar</button>
+            <button class="btn-cancel" onclick="closeTaskModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const STATES = ['backlog', 'planificado', 'en-curso', 'revision', 'hecho'];
+    const STATE_LABELS = {backlog:'Backlog', planificado:'Planificado', 'en-curso':'En Curso',
+        revision:'Revisión', hecho:'Hecho'};
+    const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+    const initialData = {
+        projects: [
+            {id:'zxfo73z',name:'Auditoría de procesos productivos',type:'empresa',area:'Producción',responsable:'Marcelo',priority:'baja',tasks:[{id:'1z18o1d',title:'Datallar proceso de preparación de hormigón',state:'en-curso',dueDate:'2026-06-15'},{id:'9p6slv3',title:'Medir tiempos y queien hace cada tarea',state:'backlog',dueDate:''}]},
+            {id:'jucfnyg',name:'Videos para redes (2 por semana)',type:'empresa',area:'Marketing',responsable:'Sofia',priority:'Alta',tasks:[{id:'eeabu61',title:'Editar VIdeo de varios video cortos en Capcut',state:'en-curso',dueDate:'2026-06-11'},{id:'vns3bh9',title:'Editar y publicar foto CC10',state:'en-curso',dueDate:'2026-06-11'},{id:'3ykrqhv',title:'Precio referencia el m2 en web',state:'en-curso',dueDate:'2026-06-11'},{id:'0enorpq',title:'En los productos en Formas de pago que aparezca lo de las cuotas sin interés',state:'en-curso',dueDate:'2026-06-11'},{id:'t1781792578728',title:'Gtabar video en obra Quickwash',state:'planificado',dueDate:'2026-06-18'},{id:'t1781792608288',title:'Editar video en cupcut',state:'backlog',dueDate:''},{id:'t1781792634522',title:'Publicar en ig tiktok Youtube',state:'backlog',dueDate:''}]},
+            {id:'qj99ufe',name:'Mejorar Google Ads',type:'empresa',area:'Marketing',responsable:'Marcelo',priority:'Media',tasks:[{id:'5eb3eil',title:'Revisar palabras clave y costo por clic',state:'en-curso',dueDate:''},{id:'3yax1ya',title:'Videos para red display',state:'backlog',dueDate:''},{id:'vl0p0nu',title:'Anuncio Topes',state:'backlog',dueDate:'2026-06-15'}]},
+            {id:'i92dg7j',name:'Vender departamento',type:'personal',area:'',responsable:'Marcelo',priority:'Media',tasks:[{id:'at3pod8',title:'Reconsultar a interesador por wapp',state:'en-curso',dueDate:'2026-06-16'},{id:'5jvek2i',title:'Comprar timbre y colocarlo',state:'backlog',dueDate:''}]},
+            {id:'bb3rcro',name:'Agenda de viajes',type:'personal',area:'',responsable:'Marcelo',priority:'Baja',tasks:[{id:'hwu98d4',title:'Listar viajes empresariales y personales del trimestre',state:'backlog',dueDate:''}]},
+            {id:'99t46wb',name:'Orden zona acopio exterior',type:'empresa',area:'Producción',responsable:'Gustavo',priority:'Media',tasks:[{id:'67fah1j',title:'Colgar reloj lugar visibre y que no lo golpeen',state:'en-curso',dueDate:'2026-06-11'},{id:'xvmi70s',title:'Acomodar listones separando buenos de rotos',state:'en-curso',dueDate:'2026-06-11'},{id:'wwk87pd',title:'Agrupar topes trapecio 15x12x50 sobre pallets',state:'en-curso',dueDate:'2026-06-11'},{id:'5fzefwp',title:'Mover de lugar topes trapecio 15x12x100',state:'en-curso',dueDate:'2026-06-11'}]},
+        ]
+    };
+
+    let data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
+    if (data.tasks) data = initialData;
+    
+    let editingProjectId = null;
+    let editingTaskId = null;
+    let selectedResp = null;
+    let currentProjectId = null;
+    let filterArea = null;
+    let filterResp = null;
+    let filterType = null;
+    let draggedTaskId = null;
+
+    function saveData() { localStorage.setItem('vph_pm_v1', JSON.stringify(data)); }
+
+    function renderTabs() {
+        const tabs = [{id:'proyectos', label:'📋 Proyectos'}, {id:'reuniones', label:'👥 Reuniones'},
+                     {id:'semanal', label:'📅 Semanal'}];
+        const html = tabs.map((t,i) => 
+            `<button class="nav-btn ${i===0?'active':''}" onclick="switchTab('${t.id}')">${t.label}</button>`
+        ).join('');
+        document.getElementById('navTabs').innerHTML = html;
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-'+tabId).classList.add('active');
+        document.querySelector(`[onclick*="'${tabId}'"]`).classList.add('active');
+        if (tabId === 'reuniones') renderReunionesButtons();
+        if (tabId === 'semanal') renderWeekly();
+    }
+
+    function renderFilters() {
+        const areas = [...new Set(data.projects.map(p => p.area))];
+        const resps = [...new Set(data.projects.map(p => p.responsable).filter(Boolean))];
+
+        let html = `<label style="font-weight:600;">Tipo:</label>`;
+        html += `<button class="filter-btn ${!filterType?'active':''}" onclick="setFilter('type',null)">Todos</button>`;
+        html += `<button class="filter-btn ${filterType==='empresa'?'active':''}" onclick="setFilter('type','empresa')">🏢 Empresa</button>`;
+        html += `<button class="filter-btn ${filterType==='personal'?'active':''}" onclick="setFilter('type','personal')">👤 Personales</button>`;
+
+        html += `<label style="font-weight:600;margin-left:20px;">Área:</label>`;
+        html += `<button class="filter-btn ${!filterArea?'active':''}" onclick="setFilter('area',null)">Todas</button>`;
+        html += areas.map(a => `<button class="filter-btn ${filterArea===a?'active':''}" onclick="setFilter('area','${a}')">${a}</button>`).join('');
+
+        html += `<label style="font-weight:600;margin-left:20px;">Responsable:</label>`;
+        html += `<button class="filter-btn ${!filterResp?'active':''}" onclick="setFilter('resp',null)">Todos</button>`;
+        html += resps.map(r => `<button class="filter-btn ${filterResp===r?'active':''}" onclick="setFilter('resp','${r}')">${r}</button>`).join('');
+
+        document.getElementById('filters').innerHTML = html;
+    }
+
+    function setFilter(type, val) {
+        if (type === 'area') filterArea = val;
+        if (type === 'resp') filterResp = val;
+        if (type === 'type') filterType = val;
+        renderFilters();
+        renderProjects();
+    }
+
+    function renderProjects() {
+        let projects = data.projects;
+        if (filterType) projects = projects.filter(p => p.type === filterType);
+        if (filterArea) projects = projects.filter(p => p.area === filterArea);
+        if (filterResp) projects = projects.filter(p => p.responsable === filterResp);
+
+        const html = projects.map(p => {
+            if (!p.tasks) p.tasks = [];
+            const done = p.tasks.filter(t => t.state === 'hecho').length;
+            const total = p.tasks.length;
+            const typeIcon = p.type === 'personal' ? '👤' : '🏢';
+
+            return `
+                <div class="project-card" onclick="openProjectKanban('${p.id}')">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                        <h3 style="flex:1;margin:0;">${p.name}</h3>
+                        <div style="display:flex;gap:4px;">
+                            <button onclick="event.stopPropagation();editProject('${p.id}')" style="width:28px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:4px;font-size:14px;transition:all 0.15s;">✏️</button>
+                            <button onclick="event.stopPropagation();deleteProjectDirect('${p.id}')" style="width:28px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:4px;font-size:14px;transition:all 0.15s;">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="project-meta">
+                        <span>${typeIcon} ${p.type === 'personal' ? 'Personal' : 'Empresa'}</span>
+                        <span>${p.area}</span>
+                        <span>👤 ${p.responsable || '—'}</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-3);">
+                        <div><strong style="color:var(--accent);">${done}/${total}</strong> Hecho</div>
+                        <div><strong style="color:var(--accent);">${p.tasks.filter(t=>t.state!=='hecho').length}</strong> Por hacer</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('projectsGrid').innerHTML = html || 
+            '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📦</div>Sin proyectos</div>';
+    }
+
+    function openProjectKanban(projectId) {
+        currentProjectId = projectId;
+        const p = data.projects.find(x => x.id === projectId);
+        document.getElementById('projectDetailTitle').textContent = p.name;
+        document.getElementById('tab-proyectos').classList.remove('active');
+        document.getElementById('tab-reuniones').classList.remove('active');
+        document.getElementById('tab-semanal').classList.remove('active');
+        document.getElementById('tab-proyecto-detail').classList.add('active');
+        renderProjectKanban();
+    }
+
+    function backToProjects() {
+        currentProjectId = null;
+        document.getElementById('tab-proyecto-detail').classList.remove('active');
+        document.getElementById('tab-proyectos').classList.add('active');
+    }
+
+    function renderProjectKanban() {
+        const p = data.projects.find(x => x.id === currentProjectId);
+        if (!p || !p.tasks) return;
+
+        const html = STATES.map(state => {
+            const tasks = p.tasks.filter(t => t.state === state);
+            return `
+                <div class="kanban-column">
+                    <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
+                    <div class="kanban-lane" ondrop="drop(event,'${state}')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        ${tasks.map(t => `
+                            <div class="task-card" draggable="true" ondragstart="dragStart(event,'${t.id}')">
+                                <div class="task-title" onclick="editTask('${t.id}')">${t.title}</div>
+                                <div class="task-meta">${t.dueDate || '—'}</div>
+                                <div class="task-actions">
+                                    <button onclick="editTask('${t.id}')">✏️</button>
+                                    <button onclick="deleteTaskDirect('${t.id}')">🗑️</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('kanbanBoard').innerHTML = html;
+    }
+
+    function dragStart(e, taskId) { draggedTaskId = taskId; e.target.closest('.task-card').classList.add('dragging'); }
+    function allowDrop(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+    function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+
+    function drop(e, state) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        if (draggedTaskId && currentProjectId) {
+            const p = data.projects.find(x => x.id === currentProjectId);
+            const t = p.tasks.find(x => x.id === draggedTaskId);
+            if (t) { t.state = state; saveData(); renderProjectKanban(); renderReuniones(); renderWeekly(); }
+            draggedTaskId = null;
+        }
+    }
+
+    function openNewProject() {
+        editingProjectId = null;
+        document.getElementById('projectType').value = 'empresa';
+        document.getElementById('projectName').value = '';
+        document.getElementById('projectArea').value = 'Producción';
+        document.getElementById('projectResp').value = '';
+        document.getElementById('projectResp').disabled = false;
+        document.getElementById('deleteProjectBtn').style.display = 'none';
+        document.getElementById('projectModal').classList.add('show');
+    }
+
+    function editProject(projectId) {
+        editingProjectId = projectId;
+        const p = data.projects.find(x => x.id === projectId);
+        document.getElementById('projectType').value = p.type || 'empresa';
+        document.getElementById('projectName').value = p.name;
+        document.getElementById('projectArea').value = p.area;
+        document.getElementById('projectResp').value = p.responsable;
+        updateResponsableField();
+        document.getElementById('deleteProjectBtn').style.display = 'block';
+        document.getElementById('projectModal').classList.add('show');
+    }
+
+    function deleteProjectDirect(projectId) {
+        if (confirm('¿Borrar proyecto y todas sus tareas?')) {
+            data.projects = data.projects.filter(p => p.id !== projectId);
+            saveData();
+            renderProjects();
+            renderFilters();
+        }
+    }
+
+    function closeProjectModal() { document.getElementById('projectModal').classList.remove('show'); }
+
+    function updateResponsableField() {
+        const type = document.getElementById('projectType').value;
+        const respSelect = document.getElementById('projectResp');
+        if (type === 'personal') {
+            respSelect.value = 'Marcelo';
+            respSelect.disabled = true;
+        } else {
+            respSelect.disabled = false;
+            respSelect.value = '';
+        }
+    }
+
+    function saveProject() {
+        const name = document.getElementById('projectName').value.trim();
+        if (!name) return alert('Ingresá nombre');
+
+        const type = document.getElementById('projectType').value;
+        const resp = type === 'personal' ? 'Marcelo' : document.getElementById('projectResp').value;
+
+        if (editingProjectId) {
+            const p = data.projects.find(x => x.id === editingProjectId);
+            p.name = name;
+            p.type = type;
+            p.area = document.getElementById('projectArea').value;
+            p.responsable = resp;
+        } else {
+            data.projects.push({
+                id: 'p' + Date.now(), name, type,
+                area: document.getElementById('projectArea').value,
+                responsable: resp,
+                priority: 'media',
+                tasks: []
+            });
+        }
+        saveData(); renderProjects(); renderFilters(); closeProjectModal();
+    }
+
+    function deleteProject() {
+        if (confirm('¿Borrar proyecto?')) {
+            data.projects = data.projects.filter(p => p.id !== editingProjectId);
+            saveData(); renderProjects(); renderFilters(); closeProjectModal();
+        }
+    }
+
+    function openNewTask() {
+        editingTaskId = null;
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskState').value = 'backlog';
+        document.getElementById('taskDueDate').value = '';
+        document.getElementById('deleteTaskBtn').style.display = 'none';
+        document.getElementById('taskModal').classList.add('show');
+    }
+
+    function closeTaskModal() { document.getElementById('taskModal').classList.remove('show'); }
+
+    function editTask(taskId) {
+        editingTaskId = taskId;
+        const p = data.projects.find(x => x.id === currentProjectId);
+        const t = p.tasks.find(x => x.id === taskId);
+        document.getElementById('taskTitle').value = t.title;
+        document.getElementById('taskState').value = t.state;
+        document.getElementById('taskDueDate').value = t.dueDate;
+        document.getElementById('deleteTaskBtn').style.display = 'block';
+        document.getElementById('taskModal').classList.add('show');
+    }
+
+    function saveTask() {
+        const title = document.getElementById('taskTitle').value.trim();
+        if (!title) return alert('Ingresá tarea');
+        
+        const p = data.projects.find(x => x.id === currentProjectId);
+        if (editingTaskId) {
+            const t = p.tasks.find(x => x.id === editingTaskId);
+            t.title = title;
+            t.state = document.getElementById('taskState').value;
+            t.dueDate = document.getElementById('taskDueDate').value;
+        } else {
+            if (!p.tasks) p.tasks = [];
+            p.tasks.push({
+                id: 't' + Date.now(),
+                title,
+                state: document.getElementById('taskState').value,
+                dueDate: document.getElementById('taskDueDate').value
+            });
+        }
+        saveData(); renderProjectKanban(); renderWeekly(); closeTaskModal();
+    }
+
+    function deleteTask() {
+        if (confirm('¿Borrar?')) {
+            const p = data.projects.find(x => x.id === currentProjectId);
+            p.tasks = p.tasks.filter(t => t.id !== editingTaskId);
+            saveData(); renderProjectKanban(); closeTaskModal();
+        }
+    }
+
+    function deleteTaskDirect(taskId) {
+        if (confirm('¿Borrar?')) {
+            const p = data.projects.find(x => x.id === currentProjectId);
+            p.tasks = p.tasks.filter(t => t.id !== taskId);
+            saveData(); renderProjectKanban();
+        }
+    }
+
+    function renderReunionesButtons() {
+        const resps = ['Marcelo', 'Sofia', 'Gustavo'];
+        const html = resps.map(r => 
+            `<button class="filter-btn ${selectedResp === r ? 'active' : ''}" onclick="selectResp('${r}')">${r}</button>`
+        ).join('');
+        document.getElementById('respButtons').innerHTML = html;
+    }
+
+    function selectResp(resp) {
+        selectedResp = resp;
+        renderReunionesButtons();
+        renderReuniones();
+    }
+
+    function renderReuniones() {
+        if (!selectedResp) {
+            document.getElementById('reunionesKanban').innerHTML = 
+                '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">👥</div>Selecciona responsable</div>';
+            return;
+        }
+
+        const projects = data.projects.filter(p => p.responsable === selectedResp);
+        const html = STATES.map(state => {
+            let tasks = [];
+            projects.forEach(p => {
+                if (p.tasks) tasks = tasks.concat(p.tasks.filter(t => t.state === state).map(t => ({...t, projectName: p.name})));
+            });
+
+            return `
+                <div class="kanban-column">
+                    <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
+                    <div class="kanban-lane">
+                        ${tasks.map(t => `
+                            <div class="task-card">
+                                <div class="task-title">${t.title}</div>
+                                <div class="task-meta">${t.projectName} • ${t.dueDate || '—'}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('reunionesKanban').innerHTML = html;
+    }
+
+    function renderWeekly() {
+        const today = new Date();
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay() + 1);
+
+        const allTasks = [];
+        data.projects.forEach(p => {
+            if (p.tasks) allTasks.push(...p.tasks.map(t => ({...t, projectName: p.name})));
+        });
+
+        const html = DAYS.map((day, idx) => {
+            const dayDate = new Date(weekStart);
+            dayDate.setDate(weekStart.getDate() + idx);
+            const dayStr = dayDate.toISOString().split('T')[0];
+            const isToday = dayDate.getTime() === new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+            
+            const dayTasks = allTasks.filter(t => t.dueDate === dayStr);
+
+            return `
+                <div class="day-column ${isToday ? 'today' : ''}">
+                    <h3>${day}</h3>
+                    <div class="day-label">${dayStr}</div>
+                    ${dayTasks.map(t => `
+                        <div class="task-card" style="cursor:default;">
+                            <div class="task-title">${t.title}</div>
+                            <div class="task-meta">${t.projectName}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }).join('');
+        document.getElementById('weekView').innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderTabs();
+        renderProjects();
+        renderFilters();
+    });
+</script>
+</body>
+</html>
