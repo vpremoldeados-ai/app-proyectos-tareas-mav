@@ -120,12 +120,26 @@
         .btn-new { padding: 10px 14px; border: none; background: linear-gradient(135deg,var(--accent),var(--accent-2));
             color: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 16px; }
         
+        .vision-banner { background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%);
+            border: 1.5px solid var(--accent); border-radius: var(--radius); padding: 18px 24px;
+            margin-bottom: 18px; display: flex; align-items: center; gap: 16px; }
+        .vision-icon { font-size: 32px; flex-shrink: 0; }
+        .vision-text { flex: 1; }
+        .vision-text h3 { font-size: 12px; font-weight: 700; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .vision-text p { font-size: 15px; font-weight: 600; color: var(--text);
+            background: linear-gradient(130deg,#6366f1,#8b5cf6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
         @media (max-width: 1200px) { .kanban { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 768px) {
             .kanban { grid-template-columns: 1fr; }
             .week-view { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
             .projects-grid { grid-template-columns: 1fr; }
             .fab { bottom: 16px; right: 16px; }
+            .vision-banner { padding: 14px 16px; gap: 12px; }
+            .vision-icon { font-size: 24px; }
+            .vision-text p { font-size: 13px; }
         }
     </style>
 </head>
@@ -134,11 +148,19 @@
 <div class="container">
     <header>
         <div>
-            <h1>Gestor de Proyectos Kanban</h1>
-            <p>VPH — Proyectos • Reuniones • Semana</p>
+            <h1>VASSALLO Fábrica de Premoldeados de Hormigón</h1>
+            <p>Gestor de Proyectos</p>
         </div>
         <a href="index.html" style="padding:10px 16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;transition:all 0.2s;">📋 Tareas</a>
     </header>
+
+    <div class="vision-banner">
+        <div class="vision-icon">🚀</div>
+        <div class="vision-text">
+            <h3>Nuestra Visión</h3>
+            <p>Ser una empresa con equipos, sistemas y máquinas muy eficientes</p>
+        </div>
+    </div>
 
     <div class="nav" id="navTabs"></div>
 
