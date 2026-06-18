@@ -20,9 +20,7 @@
         header { display: flex; align-items: center; justify-content: space-between;
             margin-bottom: 20px; padding: 18px 24px; background: var(--surface);
             border-radius: var(--radius); border: 2px solid var(--accent); }
-        header h1 { font-size: 20px; font-weight: 800;
-            background: linear-gradient(130deg,#e2e8f0 30%,#a5b4fc);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        header h1 { font-size: 20px; font-weight: 800; color: #10b981; }
         
         .nav { display: flex; gap: 3px; margin-bottom: 18px; background: var(--surface);
             padding: 6px; border-radius: var(--radius); border: 1px solid var(--border);
@@ -166,7 +164,6 @@
 
     <!-- PROYECTOS -->
     <div id="tab-proyectos" class="tab-content active">
-        <button class="btn-new" onclick="openNewProject()">➕ Nuevo Proyecto</button>
         <div class="filters" id="filters"></div>
         <div class="projects-grid" id="projectsGrid"></div>
     </div>
@@ -187,7 +184,6 @@
         <div class="breadcrumb">
             <button onclick="backToProjects()">📋 Proyectos</button> / <span id="projectDetailTitle"></span>
         </div>
-        <button class="btn-new" onclick="openNewTask()">➕ Nueva Tarea</button>
         <div class="kanban" id="kanbanBoard"></div>
     </div>
 
@@ -316,17 +312,20 @@
     }
 
     function renderFilters() {
-        const areas = [...new Set(data.projects.map(p => p.area))];
+        const areas = [...new Set(data.projects.map(p => p.area).filter(Boolean))];
         const resps = [...new Set(data.projects.map(p => p.responsable).filter(Boolean))];
 
-        let html = `<label style="font-weight:600;">Tipo:</label>`;
+        let html = `<button class="filter-btn ${filterArea==='EN_CURSO'?'active':''}" onclick="setFilter('area','EN_CURSO')" style="background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:var(--accent);">⚡ En Curso</button>`;
+
+        html += `<label style="font-weight:600;margin-left:20px;">Tipo:</label>`;
         html += `<button class="filter-btn ${!filterType?'active':''}" onclick="setFilter('type',null)">Todos</button>`;
         html += `<button class="filter-btn ${filterType==='empresa'?'active':''}" onclick="setFilter('type','empresa')">🏢 Empresa</button>`;
         html += `<button class="filter-btn ${filterType==='personal'?'active':''}" onclick="setFilter('type','personal')">👤 Personales</button>`;
 
         html += `<label style="font-weight:600;margin-left:20px;">Área:</label>`;
-        html += `<button class="filter-btn ${!filterArea?'active':''}" onclick="setFilter('area',null)">Todas</button>`;
+        html += `<button class="filter-btn ${!filterArea || filterArea==='EN_CURSO'?'active':''}" onclick="setFilter('area',null)">Todas</button>`;
         html += areas.map(a => `<button class="filter-btn ${filterArea===a?'active':''}" onclick="setFilter('area','${a}')">${a}</button>`).join('');
+        html += `<button class="filter-btn" onclick="openNewArea()" style="color:var(--accent);font-weight:700;">+ Nueva Área</button>`;
 
         html += `<label style="font-weight:600;margin-left:20px;">Responsable:</label>`;
         html += `<button class="filter-btn ${!filterResp?'active':''}" onclick="setFilter('resp',null)">Todos</button>`;
@@ -340,7 +339,48 @@
         if (type === 'resp') filterResp = val;
         if (type === 'type') filterType = val;
         renderFilters();
-        renderProjects();
+        if (val === 'EN_CURSO') renderEnCurso();
+        else renderProjects();
+    }
+
+    function renderEnCurso() {
+        let projects = data.projects;
+        if (filterType) projects = projects.filter(p => p.type === filterType);
+        if (filterResp) projects = projects.filter(p => p.responsable === filterResp);
+
+        const html = projects.map(p => {
+            if (!p.tasks) p.tasks = [];
+            const enCurso = p.tasks.filter(t => t.state === 'en-curso');
+            if (enCurso.length === 0) return '';
+
+            return `
+                <div class="project-card" onclick="openProjectKanban('${p.id}')">
+                    <h3>${p.name}</h3>
+                    <div class="project-meta">
+                        <span>${p.type === 'personal' ? '👤 Personal' : '🏢 Empresa'}</span>
+                        <span>${p.area || '—'}</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-3);">
+                        <div><strong style="color:var(--accent);">${enCurso.length}</strong> Tareas en curso:</div>
+                        <ul style="margin-left:16px;margin-top:4px;font-size:10px;">
+                            ${enCurso.map(t => `<li>${t.title}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('projectsGrid').innerHTML = html ||
+            '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">✅</div>Sin tareas en curso</div>';
+    }
+
+    function openNewArea() {
+        const area = prompt('Nombre de la nueva área:');
+        if (area && area.trim()) {
+            document.getElementById('projectArea').innerHTML += `<option value="${area.trim()}">${area.trim()}</option>`;
+            saveData();
+            renderFilters();
+        }
     }
 
     function renderProjects() {
@@ -611,56 +651,4 @@
                     <div class="kanban-lane">
                         ${tasks.map(t => `
                             <div class="task-card">
-                                <div class="task-title">${t.title}</div>
-                                <div class="task-meta">${t.projectName} • ${t.dueDate || '—'}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }).join('');
-        document.getElementById('reunionesKanban').innerHTML = html;
-    }
-
-    function renderWeekly() {
-        const today = new Date();
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - today.getDay() + 1);
-
-        const allTasks = [];
-        data.projects.forEach(p => {
-            if (p.tasks) allTasks.push(...p.tasks.map(t => ({...t, projectName: p.name})));
-        });
-
-        const html = DAYS.map((day, idx) => {
-            const dayDate = new Date(weekStart);
-            dayDate.setDate(weekStart.getDate() + idx);
-            const dayStr = dayDate.toISOString().split('T')[0];
-            const isToday = dayDate.getTime() === new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-            
-            const dayTasks = allTasks.filter(t => t.dueDate === dayStr);
-
-            return `
-                <div class="day-column ${isToday ? 'today' : ''}">
-                    <h3>${day}</h3>
-                    <div class="day-label">${dayStr}</div>
-                    ${dayTasks.map(t => `
-                        <div class="task-card" style="cursor:default;">
-                            <div class="task-title">${t.title}</div>
-                            <div class="task-meta">${t.projectName}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }).join('');
-        document.getElementById('weekView').innerHTML = html;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        renderTabs();
-        renderProjects();
-        renderFilters();
-    });
-</script>
-</body>
-</html>
+      
