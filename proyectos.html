@@ -302,19 +302,16 @@
     let data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
     if (data.tasks) data = initialData;
 
+    // Función para actualizar el indicador de conexión
+    function setSyncStatus(state, text) {
+        const syncDot = document.getElementById("syncDot");
+        const syncText = document.getElementById("syncText");
+        if (syncDot) syncDot.className = "sync-dot " + state;
+        if (syncText) syncText.textContent = text;
+    }
+
     // SINCRONIZACIÓN TEMPORAL VIA LOCALSTORAGE (mientras Firebase se arrugla)
     setInterval(() => {
-        // Función para actualizar el indicador de conexión
-
-        function setSyncStatus(state, text) {
-
-            document.getElementById("syncDot").className = "sync-dot " + state;
-
-            document.getElementById("syncText").textContent = text;
-
-        }
-
-
         try {
             const localData = JSON.parse(localStorage.getItem('vph_pm_v1'));
             if (localData && JSON.stringify(localData) !== JSON.stringify(data)) {
@@ -390,6 +387,7 @@
                 console.log('Firebase tardó mucho, usando localStorage');
                 data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
                 render();
+                setSyncStatus('connected', 'Conectado (local)');
                 setupRealtimeSync();
             }
         }, 3000);
@@ -406,6 +404,7 @@
                 data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
             }
             render();
+            setSyncStatus('connected', 'Conectado');
             setupRealtimeSync();
         }).catch(err => {
             if (firebaseLoaded) return; // Ya se ejecutó el timeout
@@ -414,6 +413,7 @@
             console.log('Firebase error:', err.message);
             data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
             render();
+            setSyncStatus('connected', 'Conectado (local)');
             setupRealtimeSync();
         });
     }
@@ -873,10 +873,4 @@
                 </div>
             `;
         }).join('');
-        document.getElementById('weekView').innerHTML = html;
-    }
-
-    // Firebase Config - Esperar a que Firebase esté disponible
-    const firebaseConfig = {
-        apiKey: "AIzaSyDXer9dyas1P-OYXgDR2UugdtzqPtBoLcs",
-        authDomain: "vpremoldeados-tareas.firebaseapp.com"
+        document.getElementById
