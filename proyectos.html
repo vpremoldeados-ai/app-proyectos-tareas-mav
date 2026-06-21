@@ -362,7 +362,7 @@
                 setSyncStatus('connected', 'Conectado (local)');
                 setupRealtimeSync();
             }
-        }, 3000);
+        }, 8000);
 
         dbRef.once('value').then(snapshot => {
             if (firebaseLoaded) return;
