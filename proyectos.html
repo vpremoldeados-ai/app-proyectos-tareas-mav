@@ -38,9 +38,14 @@
         .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 14px; margin-bottom: 20px; }
         .project-card { background: var(--surface); padding: 14px; border-radius: var(--radius);
-            border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+            border: 1px solid var(--border); transition: all 0.2s; position: relative; }
         .project-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-        .project-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+        .project-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; cursor: pointer; }
+        .project-card h3:hover { text-decoration: underline; }
+        .project-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; }
+        .project-actions button { padding: 6px 8px; border: none; background: var(--surface-2);
+            color: var(--text-3); cursor: pointer; border-radius: 4px; font-size: 12px; transition: all 0.15s; }
+        .project-actions button:hover { background: var(--danger); color: #fff; }
         .kanban { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
         .kanban-column { background: var(--surface-2); border-radius: var(--radius); padding: 12px;
             min-height: 500px; border: 1px solid var(--border); }
@@ -66,6 +71,7 @@
         .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
         .modal-btns button { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; }
         .btn-save { background: var(--success); color: #fff; }
+        .btn-delete { background: var(--danger); color: #fff; }
         .btn-cancel { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -115,21 +121,33 @@
 
 <div id="projectModal" class="modal">
     <div class="modal-box">
-        <h2>Nuevo Proyecto</h2>
+        <h2 id="modalTitle">Nuevo Proyecto</h2>
+        <div class="form-group">
+            <label>Tipo:</label>
+            <select id="projectType">
+                <option value="empresa">🏢 Empresa</option>
+                <option value="personal">👤 Personal</option>
+            </select>
+        </div>
         <div class="form-group">
             <label>Nombre:</label>
             <input type="text" id="projectName">
         </div>
         <div class="form-group">
             <label>Área:</label>
-            <select id="projectArea">
-                <option value="Producción">Producción</option>
-                <option value="Ventas">Ventas</option>
-                <option value="Marketing">Marketing</option>
-            </select>
+            <div style="display:flex;gap:8px;">
+                <select id="projectArea" style="flex:1;">
+                    <option value="">-- Nueva Área --</option>
+                    <option value="Producción">Producción</option>
+                    <option value="Ventas">Ventas</option>
+                    <option value="Marketing">Marketing</option>
+                </select>
+            </div>
+            <input type="text" id="projectAreaNew" placeholder="O escribe una nueva área" style="margin-top:8px;">
         </div>
         <div class="modal-btns">
             <button class="btn-save" onclick="saveProject()">Guardar</button>
+            <button class="btn-delete" style="display:none;" id="deleteBtn" onclick="deleteProject()">Borrar</button>
             <button class="btn-cancel" onclick="closeProjectModal()">Cancelar</button>
         </div>
     </div>
@@ -173,6 +191,8 @@
 
     let data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
     let currentProjectId = null;
+    let editingProjectId = null;
+    let filterType = null;
     let filterArea = null;
     let filterResp = null;
 
@@ -216,13 +236,18 @@
 
     function renderProjects() {
         let filtered = data.projects;
+        if (filterType) filtered = filtered.filter(p => p.type === filterType);
         if (filterArea) filtered = filtered.filter(p => p.area === filterArea);
         if (filterResp) filtered = filtered.filter(p => p.responsable === filterResp);
 
         document.getElementById('projectsGrid').innerHTML = filtered.map(p => `
-            <div class="project-card" onclick="openProjectDetail('${p.id}')">
-                <h3>${p.name}</h3>
-                <div style="font-size:11px;color:var(--text-3);">${p.area || ''} • ${p.responsable || ''}</div>
+            <div class="project-card">
+                <div class="project-actions">
+                    <button onclick="editProject('${p.id}')" title="Editar">✏️</button>
+                    <button onclick="deleteProjectDirect('${p.id}')" title="Borrar">🗑️</button>
+                </div>
+                <h3 onclick="openProjectDetail('${p.id}')">${p.name}</h3>
+                <div style="font-size:11px;color:var(--text-3);">${p.type === 'empresa' ? '🏢' : '👤'} ${p.area || ''} • ${p.responsable || ''}</div>
                 <div style="font-size:11px;color:var(--text-3);">${p.tasks?.length || 0} tareas</div>
             </div>
         `).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3);">Sin proyectos</div>';
@@ -232,17 +257,19 @@
         const areas = [...new Set(data.projects.map(p => p.area).filter(Boolean))];
         const resps = [...new Set(data.projects.map(p => p.responsable).filter(Boolean))];
 
-        let html = `<button class="filter-btn ${!filterArea && !filterResp ? 'active' : ''}" onclick="filterArea = null; filterResp = null; render();">Todos</button>`;
+        let html = `<button class="filter-btn ${!filterType && !filterArea && !filterResp ? 'active' : ''}" onclick="filterType = null; filterArea = null; filterResp = null; render();">Todos</button>
+                    <button class="filter-btn ${filterType === 'empresa' ? 'active' : ''}" onclick="filterType = 'empresa'; filterArea = null; filterResp = null; render();">🏢 Empresa</button>
+                    <button class="filter-btn ${filterType === 'personal' ? 'active' : ''}" onclick="filterType = 'personal'; filterArea = null; filterResp = null; render();">👤 Personal</button>`;
         
         if (areas.length > 0) {
             areas.forEach(a => {
-                html += `<button class="filter-btn ${filterArea === a ? 'active' : ''}" onclick="filterArea = '${a}'; filterResp = null; render();">${a}</button>`;
+                html += `<button class="filter-btn ${filterArea === a ? 'active' : ''}" onclick="filterType = null; filterArea = '${a}'; filterResp = null; render();">${a}</button>`;
             });
         }
 
         if (resps.length > 0) {
             resps.forEach(r => {
-                html += `<button class="filter-btn ${filterResp === r ? 'active' : ''}" onclick="filterResp = '${r}'; filterArea = null; render();">${r}</button>`;
+                html += `<button class="filter-btn ${filterResp === r ? 'active' : ''}" onclick="filterType = null; filterArea = null; filterResp = '${r}'; render();">${r}</button>`;
             });
         }
 
@@ -290,7 +317,36 @@
     }
 
     function fabClick() {
+        editingProjectId = null;
+        document.getElementById('modalTitle').textContent = 'Nuevo Proyecto';
+        document.getElementById('projectType').value = 'empresa';
+        document.getElementById('projectName').value = '';
+        document.getElementById('projectArea').value = '';
+        document.getElementById('projectAreaNew').value = '';
+        document.getElementById('deleteBtn').style.display = 'none';
         document.getElementById('projectModal').classList.add('show');
+    }
+
+    function editProject(projectId) {
+        event.stopPropagation();
+        editingProjectId = projectId;
+        const p = data.projects.find(x => x.id === projectId);
+        document.getElementById('modalTitle').textContent = 'Editar Proyecto';
+        document.getElementById('projectType').value = p.type || 'empresa';
+        document.getElementById('projectName').value = p.name;
+        document.getElementById('projectArea').value = p.area || '';
+        document.getElementById('projectAreaNew').value = '';
+        document.getElementById('deleteBtn').style.display = 'block';
+        document.getElementById('projectModal').classList.add('show');
+    }
+
+    function deleteProjectDirect(projectId) {
+        event.stopPropagation();
+        if (confirm('¿Borrar proyecto y todas sus tareas?')) {
+            data.projects = data.projects.filter(p => p.id !== projectId);
+            saveData();
+            render();
+        }
     }
 
     function closeProjectModal() {
@@ -299,19 +355,41 @@
 
     function saveProject() {
         const name = document.getElementById('projectName').value.trim();
+        const type = document.getElementById('projectType').value;
+        const areaSelect = document.getElementById('projectArea').value;
+        const areaNew = document.getElementById('projectAreaNew').value.trim();
+        const area = areaNew || areaSelect;
+
         if (!name) return alert('Ingresá nombre');
-        data.projects.push({
-            id: 'p' + Date.now(),
-            name,
-            type: 'empresa',
-            area: document.getElementById('projectArea').value,
-            responsable: '',
-            tasks: []
-        });
+        if (!area) return alert('Selecciona o escribe una área');
+
+        if (editingProjectId) {
+            const p = data.projects.find(x => x.id === editingProjectId);
+            p.name = name;
+            p.type = type;
+            p.area = area;
+        } else {
+            data.projects.push({
+                id: 'p' + Date.now(),
+                name,
+                type,
+                area,
+                responsable: '',
+                tasks: []
+            });
+        }
         saveData();
         render();
         closeProjectModal();
-        document.getElementById('projectName').value = '';
+    }
+
+    function deleteProject() {
+        if (confirm('¿Borrar proyecto?')) {
+            data.projects = data.projects.filter(p => p.id !== editingProjectId);
+            saveData();
+            render();
+            closeProjectModal();
+        }
     }
 
     function openProjectDetail(projectId) {
