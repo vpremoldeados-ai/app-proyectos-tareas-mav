@@ -125,6 +125,7 @@
             <select id="projectArea">
                 <option value="Producción">Producción</option>
                 <option value="Ventas">Ventas</option>
+                <option value="Marketing">Marketing</option>
             </select>
         </div>
         <div class="modal-btns">
@@ -172,6 +173,8 @@
 
     let data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
     let currentProjectId = null;
+    let filterArea = null;
+    let filterResp = null;
 
     function setSyncStatus(state, text) {
         const syncDot = document.getElementById("syncDot");
@@ -203,24 +206,87 @@
     function render() {
         const tabs = ['Proyectos', 'Reuniones'];
         document.getElementById('navTabs').innerHTML = tabs.map((t, i) =>
-            `<button class="nav-btn" onclick="switchTab('${i === 0 ? 'proyectos' : 'reuniones'}')" style="padding:8px 14px;">${t}</button>`
+            `<button class="nav-btn" onclick="switchTab('${i === 0 ? 'proyectos' : 'reuniones'}')">${t}</button>`
         ).join('');
         document.querySelectorAll('.nav-btn')[0].classList.add('active');
         
-        document.getElementById('projectsGrid').innerHTML = data.projects.map(p => `
+        renderProjects();
+        renderFilters();
+    }
+
+    function renderProjects() {
+        let filtered = data.projects;
+        if (filterArea) filtered = filtered.filter(p => p.area === filterArea);
+        if (filterResp) filtered = filtered.filter(p => p.responsable === filterResp);
+
+        document.getElementById('projectsGrid').innerHTML = filtered.map(p => `
             <div class="project-card" onclick="openProjectDetail('${p.id}')">
                 <h3>${p.name}</h3>
+                <div style="font-size:11px;color:var(--text-3);">${p.area || ''} • ${p.responsable || ''}</div>
                 <div style="font-size:11px;color:var(--text-3);">${p.tasks?.length || 0} tareas</div>
             </div>
-        `).join('');
+        `).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3);">Sin proyectos</div>';
+    }
+
+    function renderFilters() {
+        const areas = [...new Set(data.projects.map(p => p.area).filter(Boolean))];
+        const resps = [...new Set(data.projects.map(p => p.responsable).filter(Boolean))];
+
+        let html = `<button class="filter-btn ${!filterArea && !filterResp ? 'active' : ''}" onclick="filterArea = null; filterResp = null; render();">Todos</button>`;
+        
+        if (areas.length > 0) {
+            areas.forEach(a => {
+                html += `<button class="filter-btn ${filterArea === a ? 'active' : ''}" onclick="filterArea = '${a}'; filterResp = null; render();">${a}</button>`;
+            });
+        }
+
+        if (resps.length > 0) {
+            resps.forEach(r => {
+                html += `<button class="filter-btn ${filterResp === r ? 'active' : ''}" onclick="filterResp = '${r}'; filterArea = null; render();">${r}</button>`;
+            });
+        }
+
+        document.getElementById('filters').innerHTML = html;
     }
 
     function switchTab(tab) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         if (tab === 'proyectos') document.getElementById('tab-proyectos').classList.add('active');
-        else if (tab === 'reuniones') document.getElementById('tab-reuniones').classList.add('active');
+        else if (tab === 'reuniones') renderReuniones();
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         event.target.classList.add('active');
+    }
+
+    function renderReuniones() {
+        document.getElementById('tab-reuniones').classList.add('active');
+        const resps = ['Marcelo', 'Sofia', 'Gustavo'];
+        document.getElementById('respButtons').innerHTML = resps.map(r =>
+            `<button class="filter-btn" onclick="showReuniones('${r}')">${r}</button>`
+        ).join('');
+    }
+
+    function showReuniones(resp) {
+        const projects = data.projects.filter(p => p.responsable === resp);
+        const html = STATES.map(state => {
+            let tasks = [];
+            projects.forEach(p => {
+                if (p.tasks) tasks = tasks.concat(p.tasks.filter(t => t.state === state).map(t => ({...t, projectName: p.name})));
+            });
+            return `
+                <div class="kanban-column">
+                    <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
+                    <div>
+                        ${tasks.map(t => `
+                            <div class="task-card">
+                                <div class="task-title">${t.title}</div>
+                                <div class="task-meta">${t.projectName}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('reunionesKanban').innerHTML = html;
     }
 
     function fabClick() {
@@ -266,7 +332,7 @@
                             </div>
                         `).join('')}
                     </div>
-                    <button class="filter-btn" onclick="editingTaskId = null; document.getElementById('taskModal').classList.add('show');" style="width:100%; margin-top:8px;">+ Tarea</button>
+                    <button class="filter-btn" onclick="document.getElementById('taskModal').classList.add('show');" style="width:100%; margin-top:8px;">+ Tarea</button>
                 </div>
             `;
         }).join('');
@@ -309,11 +375,9 @@
     // Cargar desde Firebase
     if (dbRef) {
         const timeout = setTimeout(() => {
-            console.log('Firebase timeout, using local storage');
             setSyncStatus('connected', 'Conectado (local)');
             render();
         }, 8000);
-
         dbRef.once('value').then(snapshot => {
             clearTimeout(timeout);
             if (snapshot.exists()) {
