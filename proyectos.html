@@ -6,6 +6,8 @@
     <title>Gestor de Proyectos Kanban — VPH</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" crossorigin="anonymous"></script>
     <style>
         :root {
             --bg: #f8f9fa; --surface: #ffffff; --surface-2: #f3f4f6; --border: #e5e7eb;
@@ -129,6 +131,13 @@
             background: linear-gradient(130deg,#6366f1,#8b5cf6);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
+        .sync-status { display: flex; align-items: center; gap: 8px; }
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .sync-dot.connected { background: #10b981; animation: pulse-green 2s infinite; }
+        .sync-dot.error { background: #ef4444; }
+        .sync-label { font-size: 12px; font-weight: 600; }
+        @keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
         @media (max-width: 1200px) { .kanban { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 768px) {
             .kanban { grid-template-columns: 1fr; }
@@ -149,7 +158,14 @@
             <h1>VASSALLO Fábrica de Premoldeados de Hormigón</h1>
             <p>Gestor de Proyectos</p>
         </div>
-        <a href="index.html" style="padding:10px 16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;transition:all 0.2s;">📋 Tareas</a>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <button onclick="syncFromPC()" style="padding:10px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;">⟳ Sincronizar</button>
+            <a href="index.html" style="padding:10px 16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;transition:all 0.2s;">📋 Tareas</a>
+            <div class="sync-status">
+                <div class="sync-dot" id="syncDot"></div>
+                <span class="sync-label" id="syncText">Conectando...</span>
+            </div>
+        </div>
     </header>
 
     <div class="vision-banner">
@@ -263,6 +279,10 @@
 </div>
 
 <script>
+    // Variables de Firebase (igual que en index.html)
+    let db;
+    let dbRef;
+
     const STATES = ['backlog', 'planificado', 'en-curso', 'revision', 'hecho'];
     const STATE_LABELS = {backlog:'Backlog', planificado:'Planificado', 'en-curso':'En Curso',
         revision:'Revisión', hecho:'Hecho'};
@@ -281,7 +301,34 @@
 
     let data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
     if (data.tasks) data = initialData;
-    
+
+    // SINCRONIZACIÓN TEMPORAL VIA LOCALSTORAGE (mientras Firebase se arrugla)
+    setInterval(() => {
+        // Función para actualizar el indicador de conexión
+
+        function setSyncStatus(state, text) {
+
+            document.getElementById("syncDot").className = "sync-dot " + state;
+
+            document.getElementById("syncText").textContent = text;
+
+        }
+
+
+        try {
+            const localData = JSON.parse(localStorage.getItem('vph_pm_v1'));
+            if (localData && JSON.stringify(localData) !== JSON.stringify(data)) {
+                data = localData;
+                if (currentProjectId) {
+                    renderProjectKanban();
+                } else {
+                    render();
+                }
+                console.log('✅ Sincronizado desde localStorage');
+            }
+        } catch(e) {}
+    }, 2000);
+
     let editingProjectId = null;
     let editingTaskId = null;
     let selectedResp = null;
@@ -291,7 +338,140 @@
     let filterType = null;
     let draggedTaskId = null;
 
-    function saveData() { localStorage.setItem('vph_pm_v1', JSON.stringify(data)); }
+    function saveData() {
+        // Guardar en localStorage SIEMPRE (es lo más rápido)
+        localStorage.setItem('vph_pm_v1', JSON.stringify(data));
+
+        // Guardar en Firebase (con reintentos)
+        saveToFirebase(data, 0);
+    }
+
+    function saveToFirebase(dataToSave, retryCount = 0) {
+        if (!dbRef) {
+            console.warn('⚠️ Firebase no disponible, guardado solo en localStorage');
+            return;
+        }
+
+        dbRef.set(dataToSave)
+            .then(() => {
+                console.log('✅ Datos guardados en Firebase correctamente');
+            })
+            .catch(err => {
+                console.warn(`⚠️ Error guardando en Firebase (intento ${retryCount + 1}):`, err.message);
+                // Reintentar hasta 3 veces con delay
+                if (retryCount < 3) {
+                    setTimeout(() => {
+                        saveToFirebase(dataToSave, retryCount + 1);
+                    }, 1000 * (retryCount + 1));
+                } else {
+                    console.error('❌ Error persistente al guardar en Firebase');
+                }
+            });
+    }
+
+    function loadFromFirebase() {
+        currentProjectId = null;
+
+        // Si Firebase no está disponible, usar localStorage
+        if (!dbRef) {
+            console.log('Firebase no disponible, usando localStorage');
+            data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
+            render();
+            setupRealtimeSync();
+            return;
+        }
+
+        // Cargar desde Firebase con timeout de 3 segundos
+        let firebaseLoaded = false;
+
+        const firebaseTimeout = setTimeout(() => {
+            if (!firebaseLoaded) {
+                firebaseLoaded = true;
+                console.log('Firebase tardó mucho, usando localStorage');
+                data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
+                render();
+                setupRealtimeSync();
+            }
+        }, 3000);
+
+        dbRef.once('value').then(snapshot => {
+            if (firebaseLoaded) return; // Ya se ejecutó el timeout
+            firebaseLoaded = true;
+            clearTimeout(firebaseTimeout);
+
+            if (snapshot.exists()) {
+                data = snapshot.val();
+                localStorage.setItem('vph_pm_v1', JSON.stringify(data));
+            } else {
+                data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
+            }
+            render();
+            setupRealtimeSync();
+        }).catch(err => {
+            if (firebaseLoaded) return; // Ya se ejecutó el timeout
+            firebaseLoaded = true;
+            clearTimeout(firebaseTimeout);
+            console.log('Firebase error:', err.message);
+            data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
+            render();
+            setupRealtimeSync();
+        });
+    }
+
+    function render() {
+        renderTabs();
+        renderProjects();
+        renderFilters();
+    }
+
+    function setupRealtimeSync() {
+        if (!dbRef) {
+            console.log('Firebase no disponible, sincronización en tiempo real deshabilitada');
+            return;
+        }
+
+        dbRef.on('value', snapshot => {
+            if (snapshot.exists()) {
+                data = snapshot.val();
+                localStorage.setItem('vph_pm_v1', JSON.stringify(data));
+                // Re-renderizar sin cambiar la pestaña actual
+                if (currentProjectId) {
+                    renderProjectKanban();
+                } else {
+                    renderProjects();
+                }
+            }
+        });
+    }
+
+    function syncFromPC() {
+        const btn = event.target;
+        btn.textContent = '⟳ Sincronizando...';
+        btn.disabled = true;
+
+        dbRef.once('value').then(snapshot => {
+            if (snapshot.exists()) {
+                data = snapshot.val();
+                localStorage.setItem('vph_pm_v1', JSON.stringify(data));
+                renderProjects();
+                renderFilters();
+                btn.textContent = '⟳ ¡Sincronizado!';
+                setTimeout(() => {
+                    btn.textContent = '⟳ Sincronizar';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        }).catch(err => {
+            btn.textContent = '⟳ Sincronizar';
+            btn.disabled = false;
+            alert('Error al sincronizar');
+        });
+    }
+
+    function fabClick() {
+        if (currentProjectId) openNewTask();
+        else openNewProject();
+    }
 
     function renderTabs() {
         const tabs = [{id:'proyectos', label:'📋 Proyectos'}, {id:'reuniones', label:'👥 Reuniones'},
@@ -478,10 +658,7 @@
             draggedTaskId = null;
         }
     }
-function fabClick() {
-        if (currentProjectId) openNewTask();
-        else openNewProject();
-    }
+
     function openNewProject() {
         editingProjectId = null;
         document.getElementById('projectType').value = 'empresa';
@@ -699,11 +876,7 @@ function fabClick() {
         document.getElementById('weekView').innerHTML = html;
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        renderTabs();
-        renderProjects();
-        renderFilters();
-    });
-</script>
-</body>
-</html>
+    // Firebase Config - Esperar a que Firebase esté disponible
+    const firebaseConfig = {
+        apiKey: "AIzaSyDXer9dyas1P-OYXgDR2UugdtzqPtBoLcs",
+        authDomain: "vpremoldeados-tareas.firebaseapp.com"
