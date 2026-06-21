@@ -139,6 +139,9 @@
         @keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
         @media (max-width: 1200px) { .kanban { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 1024px) { header { flex-wrap: wrap; gap: 12px; } }
+        @media (max-width: 640px) { header { padding: 12px 16px; } header h1 { font-size: 16px; } }
+        @media (max-width: 480px) { .filters { flex-wrap: wrap; overflow-x: auto; } }
         @media (max-width: 768px) {
             .kanban { grid-template-columns: 1fr; }
             .week-view { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
@@ -159,7 +162,6 @@
             <p>Gestor de Proyectos</p>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-            <button onclick="syncFromPC()" style="padding:10px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;">⟳ Sincronizar</button>
             <a href="index.html" style="padding:10px 16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;transition:all 0.2s;">📋 Tareas</a>
             <div class="sync-status">
                 <div class="sync-dot" id="syncDot"></div>
@@ -317,6 +319,7 @@
     }, 2000);
 
     let editingProjectId = null, editingTaskId = null, selectedResp = null;
+    let showOnlyInProgress = false;
     let currentProjectId = null, filterArea = null, filterResp = null, filterType = null;
     let draggedTaskId = null;
 
@@ -435,9 +438,10 @@
         if (filterType) filtered = filtered.filter(p => p.type === filterType);
         if (filterArea) filtered = filtered.filter(p => p.area === filterArea);
         if (filterResp) filtered = filtered.filter(p => p.responsable === filterResp);
+        if (showOnlyInProgress) filtered = filtered.filter(p => p.tasks && p.tasks.some(t => t.state === "en-curso"));
 
         document.getElementById('projectsGrid').innerHTML = filtered.map(p => `
-            <div class="project-card" onclick="editProject('${p.id}')">
+            <div class="project-card" onclick="openProjectDetail('${p.id}')">
                 <h3>${p.name}</h3>
                 <div class="project-meta">
                     <span>${p.type === 'empresa' ? '🏢 Empresa' : '👤 Personal'}</span>
@@ -473,6 +477,8 @@
         }
         
         document.getElementById('filters').innerHTML = html;
+        if (showOnlyInProgress) html += `<button class="filter-btn active" onclick="showOnlyInProgress = false; render();" style="margin-left:auto;">⚡ En Curso</button>`;
+        else html += `<button class="filter-btn" onclick="showOnlyInProgress = true; render();" style="margin-left:auto;">⚡ En Curso</button>`;
     }
 
     function openNewProject() {
@@ -613,7 +619,8 @@
         }
 
         const projects = data.projects.filter(p => p.responsable === selectedResp);
-        const html = STATES.map(state => {
+        const statesToShow = showOnlyInProgress ? ["en-curso"] : STATES;
+        const html = statesToShow.map(state => {
             let tasks = [];
             projects.forEach(p => {
                 if (p.tasks) tasks = tasks.concat(p.tasks.filter(t => t.state === state).map(t => ({...t, projectName: p.name})));
@@ -688,7 +695,8 @@
     function renderProjectKanban() {
         if (!currentProjectId) return;
         const p = data.projects.find(x => x.id === currentProjectId);
-        const html = STATES.map(state => {
+        const statesToShow = showOnlyInProgress ? ["en-curso"] : STATES;
+        const html = statesToShow.map(state => {
             const tasks = (p.tasks || []).filter(t => t.state === state);
             return `
                 <div class="kanban-column">
@@ -792,3 +800,4 @@
 
 </body>
 </html>
+<!-- Actualización: Mejorar CSS para móvil -->
