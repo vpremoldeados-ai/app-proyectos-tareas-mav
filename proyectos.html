@@ -52,9 +52,21 @@
         .kanban-column h3 { font-size: 11px; font-weight: 700; color: var(--text);
             margin-bottom: 10px; text-transform: uppercase; }
         .task-card { background: var(--surface); padding: 10px; border-radius: 6px;
-            border-left: 3px solid var(--accent); margin-bottom: 8px; cursor: grab; }
-        .task-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-        .task-meta { font-size: 9px; color: var(--text-3); }
+            border-left: 4px solid var(--accent); margin-bottom: 8px; cursor: grab;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s; }
+        .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
+        .task-card.overdue { border-left-color: var(--danger); background: rgba(239,68,68,0.05); }
+        .task-card.today { border-left-color: var(--warning); background: rgba(245,158,11,0.05); }
+        .task-card.soon { border-left-color: #f97316; }
+        .task-card.on-time { border-left-color: var(--success); }
+        .task-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+        .task-meta { font-size: 10px; color: var(--text-3); display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+        .task-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px;
+            border-radius: 12px; font-size: 9px; font-weight: 600; }
+        .badge-overdue { background: rgba(239,68,68,0.2); color: var(--danger); }
+        .badge-today { background: rgba(245,158,11,0.2); color: var(--warning); }
+        .badge-soon { background: rgba(249,115,22,0.2); color: #f97316; }
+        .badge-on-time { background: rgba(16,185,129,0.2); color: var(--success); }
         .fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
             border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2));
             color: white; border: none; cursor: pointer; font-size: 24px; display: flex;
@@ -237,6 +249,35 @@
         if (syncText) syncText.textContent = text;
     }
 
+    function getTaskStatus(dueDate) {
+        if (!dueDate) return {class: '', badge: '', icon: ''};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(dueDate);
+        due.setHours(0, 0, 0, 0);
+        const daysLeft = Math.floor((due - today) / (1000 * 60 * 60 * 24));
+
+        if (daysLeft < 0) return {class: 'overdue', badge: 'badge-overdue', icon: '🚨', text: 'Vencida'};
+        if (daysLeft === 0) return {class: 'today', badge: 'badge-today', icon: '⏰', text: 'Hoy'};
+        if (daysLeft <= 3) return {class: 'soon', badge: 'badge-soon', icon: '⚠️', text: daysLeft + 'd'};
+        return {class: 'on-time', badge: 'badge-on-time', icon: '✓', text: daysLeft + 'd'};
+    }
+
+    function renderTaskCard(task, projectId) {
+        const status = getTaskStatus(task.dueDate);
+        const cardClass = status.class ? ` ${status.class}` : '';
+        const badge = status.badge && task.dueDate ? `<span class="task-badge ${status.badge}">${status.icon} ${status.text}</span>` : '';
+
+        return `
+            <div class="task-card${cardClass}" draggable="true" ondragstart="handleTaskDragStart(event, '${projectId}', '${task.id}', '${task.state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
+                <div class="task-title" onclick="editTaskFromView('${projectId}', '${task.id}')" style="cursor:pointer;">${task.title}</div>
+                <div class="task-meta">
+                    👤 ${task.responsable || '—'} ${badge}
+                </div>
+            </div>
+        `;
+    }
+
     const firebaseConfig = {
         apiKey: "AIzaSyC41xVzaA03K9WCLpX-5vL4QhN4Lb7rD6M",
         authDomain: "vpremoldeados-tareas.firebaseapp.com",
@@ -357,17 +398,22 @@
         console.log('By responsable:', byResp);
 
         const html = resps.map(resp => {
-            const tasks = byResp[resp] || [];
+            const tasks = (byResp[resp] || []).sort((a, b) => (a.order || 0) - (b.order || 0));
             return `
                 <div class="kanban-column">
                     <h3>👤 ${resp} (${tasks.length})</h3>
                     <div ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
-                        ${tasks.length > 0 ? tasks.map(t => `
-                            <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', 'en-curso')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
-                                <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
-                                <div class="task-meta">${t.projectName} • 👤 ${t.responsable || '—'}</div>
-                            </div>
-                        `).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
+                        ${tasks.length > 0 ? tasks.map(t => {
+                            const status = getTaskStatus(t.dueDate);
+                            const cardClass = status.class ? ` ${status.class}` : '';
+                            const badge = status.badge && t.dueDate ? `<span class="task-badge ${status.badge}">${status.icon} ${status.text}</span>` : '';
+                            return `
+                                <div class="task-card${cardClass}" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', 'en-curso')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
+                                    <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;">${t.title}</div>
+                                    <div class="task-meta">${t.projectName} • 👤 ${t.responsable || '—'} ${badge}</div>
+                                </div>
+                            `;
+                        }).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
                     </div>
                 </div>
             `;
@@ -396,19 +442,24 @@
             }
         });
 
-        // Agrupar por estado
+        // Agrupar por estado y ordenar por order
         const html = STATES.map(state => {
-            const tasks = allTasks.filter(t => t.state === state);
+            const tasks = allTasks.filter(t => t.state === state).sort((a, b) => (a.order || 0) - (b.order || 0));
             return `
                 <div class="kanban-column">
                     <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
                     <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
-                        ${tasks.length > 0 ? tasks.map(t => `
-                            <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
-                                <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
-                                <div class="task-meta">${t.projectName} • 👤 ${t.responsable || '—'}</div>
-                            </div>
-                        `).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
+                        ${tasks.length > 0 ? tasks.map(t => {
+                            const status = getTaskStatus(t.dueDate);
+                            const cardClass = status.class ? ` ${status.class}` : '';
+                            const badge = status.badge && t.dueDate ? `<span class="task-badge ${status.badge}">${status.icon} ${status.text}</span>` : '';
+                            return `
+                                <div class="task-card${cardClass}" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
+                                    <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;">${t.title}</div>
+                                    <div class="task-meta">${t.projectName} ${badge}</div>
+                                </div>
+                            `;
+                        }).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
                     </div>
                 </div>
             `;
@@ -503,17 +554,12 @@
         document.getElementById('projectDetailTitle').textContent = `📋 ${p.name}`;
 
         const html = STATES.map(state => {
-            const tasks = (p.tasks || []).filter(t => t.state === state);
+            const tasks = (p.tasks || []).filter(t => t.state === state).sort((a, b) => (a.order || 0) - (b.order || 0));
             return `
                 <div class="kanban-column">
                     <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
                     <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
-                        ${tasks.length > 0 ? tasks.map(t => `
-                            <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
-                                <div class="task-title" onclick="editTaskFromView('${projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
-                                <div class="task-meta">👤 ${t.responsable || '—'} • ${t.dueDate || '—'}</div>
-                            </div>
-                        `).join('') : ''}
+                        ${tasks.length > 0 ? tasks.map(t => renderTaskCard(t, projectId)).join('') : ''}
                     </div>
                     <button class="filter-btn" onclick="openNewTask()" style="width:100%; margin-top:8px;">+ Tarea</button>
                 </div>
@@ -658,7 +704,21 @@
         const task = project.tasks.find(t => t.id === draggedTask.taskId);
         if (!task) return;
 
-        task.state = newState;
+        // Si es el mismo estado, solo reordenar
+        if (newState === draggedFromState) {
+            // Reordenar: quitar la tarea y ponerla al final del estado
+            const stateTasks = project.tasks.filter(t => t.state === newState);
+            const lastOrder = Math.max(...stateTasks.map(t => t.order || 0), 0);
+            task.order = lastOrder + 1;
+        } else {
+            // Si cambia de estado
+            task.state = newState;
+            // Resetear order para nuevas tareas
+            const newStateTasks = project.tasks.filter(t => t.state === newState);
+            const lastOrder = Math.max(...newStateTasks.map(t => t.order || 0), 0);
+            task.order = lastOrder + 1;
+        }
+
         saveData();
 
         // Renderizar según la vista actual
