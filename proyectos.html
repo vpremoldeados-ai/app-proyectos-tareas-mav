@@ -11,7 +11,7 @@
     <style>
         :root {
             --bg: #f8f9fa; --surface: #ffffff; --surface-2: #f3f4f6; --border: #e5e7eb;
-            --accent: #6366f1; --accent-2: #8b5cf6; --success: #10b981; --warning: #f59e0b;
+            --accent: #059669; --accent-2: #34d399; --success: #10b981; --warning: #f59e0b;
             --danger: #ef4444; --text: #1f2937; --text-2: #6b7280; --text-3: #9ca3af; --radius: 12px;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -748,7 +748,10 @@
 
     function saveTask() {
         const title = document.getElementById('taskTitle').value.trim();
-        if (!title) return alert('Ingresá título');
+        if (!title) {
+            alert('Ingresá título');
+            return;
+        }
 
         // Detectar qué vista estaba activa ANTES de guardar
         const todasWasActive = document.getElementById('tab-todas').classList.contains('active');
@@ -758,26 +761,40 @@
         if (editingTaskId && editingTaskProjectId) {
             // Editar tarea existente
             const p = data.projects.find(x => x.id === editingTaskProjectId);
-            if (!p) return alert('Proyecto no encontrado');
+            if (!p) {
+                alert('Proyecto no encontrado');
+                return;
+            }
             const t = p.tasks.find(x => x.id === editingTaskId);
-            if (!t) return alert('Tarea no encontrada');
+            if (!t) {
+                alert('Tarea no encontrada');
+                return;
+            }
             t.title = title;
             t.state = document.getElementById('taskState').value;
             t.dueDate = document.getElementById('taskDueDate').value;
             t.responsable = document.getElementById('taskResponsable').value;
         } else {
-            // Crear tarea nueva - usar proyecto seleccionado en modal O currentProjectId
-            const projectId = document.getElementById('taskProject').value || currentProjectId;
-            if (!projectId) return alert('Selecciona un proyecto');
+            // Crear tarea nueva
+            const projectId = document.getElementById('taskProject').value;
+            if (!projectId) {
+                alert('Selecciona un proyecto');
+                return;
+            }
 
             const p = data.projects.find(x => x.id === projectId);
-            if (!p) return alert('Proyecto no encontrado');
+            if (!p) {
+                alert('Proyecto no encontrado');
+                return;
+            }
+            if (!p.tasks) p.tasks = [];
+
             p.tasks.push({
                 id: 't' + Date.now(),
                 title,
-                state: document.getElementById('taskState').value,
-                dueDate: document.getElementById('taskDueDate').value,
-                responsable: document.getElementById('taskResponsable').value
+                state: document.getElementById('taskState').value || 'backlog',
+                dueDate: document.getElementById('taskDueDate').value || '',
+                responsable: document.getElementById('taskResponsable').value || ''
             });
         }
 
