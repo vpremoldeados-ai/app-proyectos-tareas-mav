@@ -110,15 +110,8 @@
         <div class="projects-grid" id="projectsGrid"></div>
     </div>
 
-    <!-- TODAS LAS TAREAS -->
+    <!-- EN CURSO -->
     <div id="tab-todas" class="tab-content">
-        <div class="filters">
-            <label style="font-weight:600;">Responsable:</label>
-            <button class="filter-btn" onclick="setTodasFilter(null)" style="margin-left:8px;">Todos</button>
-            <button class="filter-btn" onclick="setTodasFilter('Marcelo')">Marcelo</button>
-            <button class="filter-btn" onclick="setTodasFilter('Sofia')">Sofía</button>
-            <button class="filter-btn" onclick="setTodasFilter('Gustavo')">Gustavo</button>
-        </div>
         <div class="kanban" id="todasKanban"></div>
     </div>
 
@@ -262,10 +255,10 @@
     }
 
     function render() {
-        const tabs = ['Proyectos', 'Todas', 'Reuniones'];
+        const tabs = ['Proyectos', 'En curso', 'Reuniones'];
         document.getElementById('navTabs').innerHTML = tabs.map((t, i) => {
             let tabId = i === 0 ? 'proyectos' : (i === 1 ? 'todas' : 'reuniones');
-            return `<button class="nav-btn" onclick="switchTab('${tabId}')">${t === 'Todas' ? '📋 Todas' : t}</button>`;
+            return `<button class="nav-btn" onclick="switchTab('${tabId}')">${t === 'En curso' ? '⚡ En curso' : t}</button>`;
         }).join('');
         document.querySelectorAll('.nav-btn')[0].classList.add('active');
 
@@ -330,28 +323,13 @@
         event.target.classList.add('active');
     }
 
-    function setTodasFilter(resp) {
-        todasFilterResp = resp;
-        renderAllTasks();
-        // Actualizar botones activos
-        const btns = document.querySelectorAll('#tab-todas .filter-btn');
-        btns.forEach(btn => {
-            const txt = btn.textContent.trim();
-            if ((resp === null && txt === 'Todos') || (resp === 'Marcelo' && txt === 'Marcelo') ||
-                (resp === 'Sofia' && txt === 'Sofía') || (resp === 'Gustavo' && txt === 'Gustavo')) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
-    }
-
     function renderAllTasks() {
-        const allTasks = [];
+        // Solo tareas "en-curso", agrupadas por responsable del proyecto
+        const enCursoTasks = [];
         data.projects.forEach(p => {
             if (p.tasks) {
-                p.tasks.forEach(t => {
-                    allTasks.push({
+                p.tasks.filter(t => t.state === 'en-curso').forEach(t => {
+                    enCursoTasks.push({
                         ...t,
                         projectName: p.name,
                         projectResp: p.responsable,
@@ -361,21 +339,27 @@
             }
         });
 
-        let filtered = allTasks;
-        if (todasFilterResp) {
-            filtered = allTasks.filter(t => t.projectResp === todasFilterResp);
-        }
+        // Agrupar por responsable del proyecto
+        const byResp = {};
+        const resps = ['Marcelo', 'Sofia', 'Gustavo'];
+        resps.forEach(r => byResp[r] = []);
 
-        const html = STATES.map(state => {
-            const tasks = filtered.filter(t => t.state === state);
+        enCursoTasks.forEach(t => {
+            const resp = t.projectResp || 'Sin asignar';
+            if (!byResp[resp]) byResp[resp] = [];
+            byResp[resp].push(t);
+        });
+
+        const html = resps.map(resp => {
+            const tasks = byResp[resp];
             return `
                 <div class="kanban-column">
-                    <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
-                    <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
+                    <h3>👤 ${resp} (${tasks.length})</h3>
+                    <div ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
                         ${tasks.length > 0 ? tasks.map(t => `
-                            <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
+                            <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', 'en-curso')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
                                 <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
-                                <div class="task-meta">${t.projectName} • ${t.projectResp || '—'}</div>
+                                <div class="task-meta">${t.projectName}</div>
                             </div>
                         `).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
                     </div>
