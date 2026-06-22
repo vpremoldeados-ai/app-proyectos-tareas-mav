@@ -123,7 +123,10 @@
 
     <!-- PROYECTO DETAIL -->
     <div id="tab-proyecto-detail" class="tab-content">
-        <button onclick="backToProjects()">📋 Proyectos</button>
+        <div style="margin-bottom:20px;">
+            <button onclick="backToProjects()" style="padding:10px 16px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-weight:600;">← Volver a Proyectos</button>
+            <h2 id="projectDetailTitle" style="font-size:20px;font-weight:700;margin-top:12px;color:var(--accent);">📋 Proyecto</h2>
+        </div>
         <div class="kanban" id="kanbanBoard"></div>
     </div>
 </div>
@@ -327,8 +330,8 @@
         // Solo tareas "en-curso", agrupadas por responsable del proyecto
         const enCursoTasks = [];
         data.projects.forEach(p => {
-            if (p.tasks) {
-                p.tasks.filter(t => t.state === 'en-curso').forEach(t => {
+            if (p && p.tasks) {
+                p.tasks.filter(t => t && t.state === 'en-curso').forEach(t => {
                     enCursoTasks.push({
                         ...t,
                         projectName: p.name,
@@ -350,8 +353,11 @@
             byResp[resp].push(t);
         });
 
+        console.log('En curso tasks:', enCursoTasks);
+        console.log('By responsable:', byResp);
+
         const html = resps.map(resp => {
-            const tasks = byResp[resp];
+            const tasks = byResp[resp] || [];
             return `
                 <div class="kanban-column">
                     <h3>👤 ${resp} (${tasks.length})</h3>
@@ -481,8 +487,11 @@
         currentProjectId = projectId;
         editingTaskId = null;
         const p = data.projects.find(x => x.id === projectId);
+        if (!p) return alert('Proyecto no encontrado');
+
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.getElementById('tab-proyecto-detail').classList.add('active');
+        document.getElementById('projectDetailTitle').textContent = `📋 ${p.name}`;
 
         const html = STATES.map(state => {
             const tasks = (p.tasks || []).filter(t => t.state === state);
@@ -545,14 +554,17 @@
         if (editingTaskId && editingTaskProjectId) {
             // Editar tarea existente
             const p = data.projects.find(x => x.id === editingTaskProjectId);
+            if (!p) return alert('Proyecto no encontrado');
             const t = p.tasks.find(x => x.id === editingTaskId);
+            if (!t) return alert('Tarea no encontrada');
             t.title = title;
             t.state = document.getElementById('taskState').value;
             t.dueDate = document.getElementById('taskDueDate').value;
             t.responsable = document.getElementById('taskResponsable').value;
-        } else {
+        } else if (currentProjectId) {
             // Crear tarea nueva
             const p = data.projects.find(x => x.id === currentProjectId);
+            if (!p) return alert('Proyecto no encontrado');
             p.tasks.push({
                 id: 't' + Date.now(),
                 title,
@@ -560,13 +572,16 @@
                 dueDate: document.getElementById('taskDueDate').value,
                 responsable: document.getElementById('taskResponsable').value
             });
+        } else {
+            return alert('Selecciona un proyecto primero');
         }
+
         saveData();
         if (currentProjectId) openProjectDetail(currentProjectId);
         if (document.getElementById('tab-todas').classList.contains('active')) renderAllTasks();
         if (document.getElementById('tab-reuniones').classList.contains('active')) {
-            const resp = document.querySelector('#respButtons .filter-btn.active')?.textContent || null;
-            if (resp) showReuniones(resp);
+            const respBtn = document.querySelector('#respButtons .filter-btn.active');
+            if (respBtn) showReuniones(respBtn.textContent);
         }
         closeTaskModal();
     }
