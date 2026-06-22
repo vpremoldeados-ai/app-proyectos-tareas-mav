@@ -220,6 +220,12 @@
     <div class="modal-box">
         <h2 id="taskModalTitle">Nueva Tarea</h2>
         <div class="form-group">
+            <label>Proyecto:</label>
+            <select id="taskProject">
+                <option value="">-- Selecciona un proyecto --</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label>Tarea:</label>
             <input type="text" id="taskTitle">
         </div>
@@ -700,6 +706,17 @@
         document.getElementById('taskDueDate').value = '';
         document.getElementById('taskResponsable').value = '';
         document.getElementById('deleteTaskBtn').style.display = 'none';
+
+        // Rellenar selector de proyectos
+        const projectSelect = document.getElementById('taskProject');
+        projectSelect.disabled = false; // Habilitar para nueva tarea
+        projectSelect.innerHTML = '<option value="">-- Selecciona un proyecto --</option>';
+        data.projects.forEach(p => {
+            projectSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+        });
+        // Si hay un proyecto actual, preseleccionar
+        if (currentProjectId) projectSelect.value = currentProjectId;
+
         document.getElementById('taskModal').classList.add('show');
     }
 
@@ -711,6 +728,16 @@
         if (!t) return;
 
         document.getElementById('taskModalTitle').textContent = 'Editar Tarea';
+
+        // Rellenar selector de proyectos
+        const projectSelect = document.getElementById('taskProject');
+        projectSelect.innerHTML = '<option value="">-- Selecciona un proyecto --</option>';
+        data.projects.forEach(proj => {
+            projectSelect.innerHTML += `<option value="${proj.id}">${proj.name}</option>`;
+        });
+        projectSelect.value = projectId;
+        projectSelect.disabled = true; // No permitir cambiar proyecto al editar
+
         document.getElementById('taskTitle').value = t.title;
         document.getElementById('taskState').value = t.state;
         document.getElementById('taskDueDate').value = t.dueDate || '';
@@ -738,9 +765,12 @@
             t.state = document.getElementById('taskState').value;
             t.dueDate = document.getElementById('taskDueDate').value;
             t.responsable = document.getElementById('taskResponsable').value;
-        } else if (currentProjectId) {
-            // Crear tarea nueva
-            const p = data.projects.find(x => x.id === currentProjectId);
+        } else {
+            // Crear tarea nueva - usar proyecto seleccionado en modal O currentProjectId
+            const projectId = document.getElementById('taskProject').value || currentProjectId;
+            if (!projectId) return alert('Selecciona un proyecto');
+
+            const p = data.projects.find(x => x.id === projectId);
             if (!p) return alert('Proyecto no encontrado');
             p.tasks.push({
                 id: 't' + Date.now(),
@@ -749,8 +779,6 @@
                 dueDate: document.getElementById('taskDueDate').value,
                 responsable: document.getElementById('taskResponsable').value
             });
-        } else {
-            return alert('Selecciona un proyecto primero');
         }
 
         saveData();
