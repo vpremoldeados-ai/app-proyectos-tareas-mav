@@ -32,7 +32,7 @@
             align-items: center; background: var(--surface); padding: 12px 16px;
             border-radius: var(--radius); border: 1px solid var(--border); }
         .filter-btn { padding: 8px 12px; border: 1px solid var(--border); background: var(--surface-2);
-            color: var(--text); cursor: pointer; border-radius: 6px; font-size: 12px; font-weight: 500; }
+            color: var(--text); cursor: pointer; border-radius: 6px; font-size: 12px; font-weight: 500; transition: all 0.15s; }
         .filter-btn.active { background: linear-gradient(135deg,var(--accent),var(--accent-2));
             color: #fff; border-color: var(--accent); }
         .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -103,14 +103,32 @@
     </header>
 
     <div class="nav" id="navTabs"></div>
+
+    <!-- PROYECTOS -->
     <div id="tab-proyectos" class="tab-content active">
         <div class="filters" id="filters"></div>
         <div class="projects-grid" id="projectsGrid"></div>
     </div>
+
+    <!-- TODAS LAS TAREAS -->
+    <div id="tab-todas" class="tab-content">
+        <div class="filters">
+            <label style="font-weight:600;">Responsable:</label>
+            <button class="filter-btn" onclick="setTodasFilter(null)" style="margin-left:8px;">Todos</button>
+            <button class="filter-btn" onclick="setTodasFilter('Marcelo')">Marcelo</button>
+            <button class="filter-btn" onclick="setTodasFilter('Sofia')">Sofía</button>
+            <button class="filter-btn" onclick="setTodasFilter('Gustavo')">Gustavo</button>
+        </div>
+        <div class="kanban" id="todasKanban"></div>
+    </div>
+
+    <!-- REUNIONES -->
     <div id="tab-reuniones" class="tab-content">
         <div class="filters" id="respButtons"></div>
         <div class="kanban" id="reunionesKanban"></div>
     </div>
+
+    <!-- PROYECTO DETAIL -->
     <div id="tab-proyecto-detail" class="tab-content">
         <button onclick="backToProjects()">📋 Proyectos</button>
         <div class="kanban" id="kanbanBoard"></div>
@@ -181,7 +199,7 @@
     let db, dbRef;
     const STATES = ['backlog', 'planificado', 'en-curso', 'revision', 'hecho'];
     const STATE_LABELS = {backlog:'Backlog', planificado:'Planificado', 'en-curso':'En Curso', revision:'Revisión', hecho:'Hecho'};
-    
+
     const initialData = {
         projects: [
             {id:'zxfo73z',name:'Auditoría de procesos',type:'empresa',area:'Producción',responsable:'Marcelo',tasks:[{id:'1z18o1d',title:'Detallar proceso',state:'en-curso',dueDate:''}]},
@@ -195,6 +213,7 @@
     let filterType = null;
     let filterArea = null;
     let filterResp = null;
+    let todasFilterResp = null;
 
     function setSyncStatus(state, text) {
         const syncDot = document.getElementById("syncDot");
@@ -224,12 +243,13 @@
     }
 
     function render() {
-        const tabs = ['Proyectos', 'Reuniones'];
-        document.getElementById('navTabs').innerHTML = tabs.map((t, i) =>
-            `<button class="nav-btn" onclick="switchTab('${i === 0 ? 'proyectos' : 'reuniones'}')">${t}</button>`
-        ).join('');
+        const tabs = ['Proyectos', 'Todas', 'Reuniones'];
+        document.getElementById('navTabs').innerHTML = tabs.map((t, i) => {
+            let tabId = i === 0 ? 'proyectos' : (i === 1 ? 'todas' : 'reuniones');
+            return `<button class="nav-btn" onclick="switchTab('${tabId}')">${t === 'Todas' ? '📋 Todas' : t}</button>`;
+        }).join('');
         document.querySelectorAll('.nav-btn')[0].classList.add('active');
-        
+
         renderProjects();
         renderFilters();
     }
@@ -260,7 +280,7 @@
         let html = `<button class="filter-btn ${!filterType && !filterArea && !filterResp ? 'active' : ''}" onclick="filterType = null; filterArea = null; filterResp = null; render();">Todos</button>
                     <button class="filter-btn ${filterType === 'empresa' ? 'active' : ''}" onclick="filterType = 'empresa'; filterArea = null; filterResp = null; render();">🏢 Empresa</button>
                     <button class="filter-btn ${filterType === 'personal' ? 'active' : ''}" onclick="filterType = 'personal'; filterArea = null; filterResp = null; render();">👤 Personal</button>`;
-        
+
         if (areas.length > 0) {
             areas.forEach(a => {
                 html += `<button class="filter-btn ${filterArea === a ? 'active' : ''}" onclick="filterType = null; filterArea = '${a}'; filterResp = null; render();">${a}</button>`;
@@ -279,13 +299,75 @@
     function switchTab(tab) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         if (tab === 'proyectos') document.getElementById('tab-proyectos').classList.add('active');
-        else if (tab === 'reuniones') renderReuniones();
+        else if (tab === 'todas') {
+            document.getElementById('tab-todas').classList.add('active');
+            renderAllTasks();
+        }
+        else if (tab === 'reuniones') {
+            document.getElementById('tab-reuniones').classList.add('active');
+            renderReuniones();
+        }
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         event.target.classList.add('active');
     }
 
+    function setTodasFilter(resp) {
+        todasFilterResp = resp;
+        renderAllTasks();
+        // Actualizar botones activos
+        const btns = document.querySelectorAll('#tab-todas .filter-btn');
+        btns.forEach(btn => {
+            const txt = btn.textContent.trim();
+            if ((resp === null && txt === 'Todos') || (resp === 'Marcelo' && txt === 'Marcelo') ||
+                (resp === 'Sofia' && txt === 'Sofía') || (resp === 'Gustavo' && txt === 'Gustavo')) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    function renderAllTasks() {
+        const allTasks = [];
+        data.projects.forEach(p => {
+            if (p.tasks) {
+                p.tasks.forEach(t => {
+                    allTasks.push({
+                        ...t,
+                        projectName: p.name,
+                        responsable: p.responsable,
+                        projectId: p.id
+                    });
+                });
+            }
+        });
+
+        let filtered = allTasks;
+        if (todasFilterResp) {
+            filtered = allTasks.filter(t => t.responsable === todasFilterResp);
+        }
+
+        const html = STATES.map(state => {
+            const tasks = filtered.filter(t => t.state === state);
+            return `
+                <div class="kanban-column">
+                    <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
+                    <div>
+                        ${tasks.length > 0 ? tasks.map(t => `
+                            <div class="task-card">
+                                <div class="task-title">${t.title}</div>
+                                <div class="task-meta">${t.projectName} • ${t.responsable || '—'}</div>
+                            </div>
+                        `).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('todasKanban').innerHTML = html;
+    }
+
     function renderReuniones() {
-        document.getElementById('tab-reuniones').classList.add('active');
         const resps = ['Marcelo', 'Sofia', 'Gustavo'];
         document.getElementById('respButtons').innerHTML = resps.map(r =>
             `<button class="filter-btn" onclick="showReuniones('${r}')">${r}</button>`
@@ -397,7 +479,7 @@
         const p = data.projects.find(x => x.id === projectId);
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.getElementById('tab-proyecto-detail').classList.add('active');
-        
+
         const html = STATES.map(state => {
             const tasks = (p.tasks || []).filter(t => t.state === state);
             return `
