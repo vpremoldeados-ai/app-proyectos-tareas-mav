@@ -365,7 +365,7 @@
                         ${tasks.length > 0 ? tasks.map(t => `
                             <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', 'en-curso')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
                                 <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
-                                <div class="task-meta">${t.projectName}</div>
+                                <div class="task-meta">${t.projectName} • 👤 ${t.responsable || '—'}</div>
                             </div>
                         `).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
                     </div>
@@ -384,22 +384,31 @@
     }
 
     function showReuniones(resp) {
-        const projects = data.projects.filter(p => p.responsable === resp);
+        // Filtrar tareas cuyo responsable (a nivel de tarea) sea el seleccionado
+        const allTasks = [];
+        data.projects.forEach(p => {
+            if (p.tasks) {
+                p.tasks.forEach(t => {
+                    if (t.responsable === resp) {
+                        allTasks.push({...t, projectName: p.name, projectId: p.id});
+                    }
+                });
+            }
+        });
+
+        // Agrupar por estado
         const html = STATES.map(state => {
-            let tasks = [];
-            projects.forEach(p => {
-                if (p.tasks) tasks = tasks.concat(p.tasks.filter(t => t.state === state).map(t => ({...t, projectName: p.name, projectId: p.id})));
-            });
+            const tasks = allTasks.filter(t => t.state === state);
             return `
                 <div class="kanban-column">
                     <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
                     <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
-                        ${tasks.map(t => `
+                        ${tasks.length > 0 ? tasks.map(t => `
                             <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
                                 <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
-                                <div class="task-meta">${t.projectName}</div>
+                                <div class="task-meta">${t.projectName} • 👤 ${t.responsable || '—'}</div>
                             </div>
-                        `).join('')}
+                        `).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
                     </div>
                 </div>
             `;
@@ -499,12 +508,12 @@
                 <div class="kanban-column">
                     <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
                     <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
-                        ${tasks.map(t => `
+                        ${tasks.length > 0 ? tasks.map(t => `
                             <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
                                 <div class="task-title" onclick="editTaskFromView('${projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
-                                <div class="task-meta">${t.dueDate || '—'}</div>
+                                <div class="task-meta">👤 ${t.responsable || '—'} • ${t.dueDate || '—'}</div>
                             </div>
-                        `).join('')}
+                        `).join('') : ''}
                     </div>
                     <button class="filter-btn" onclick="openNewTask()" style="width:100%; margin-top:8px;">+ Tarea</button>
                 </div>
@@ -551,6 +560,11 @@
         const title = document.getElementById('taskTitle').value.trim();
         if (!title) return alert('Ingresá título');
 
+        // Detectar qué vista estaba activa ANTES de guardar
+        const todasWasActive = document.getElementById('tab-todas').classList.contains('active');
+        const reunionesWasActive = document.getElementById('tab-reuniones').classList.contains('active');
+        const detalleWasActive = document.getElementById('tab-proyecto-detail').classList.contains('active');
+
         if (editingTaskId && editingTaskProjectId) {
             // Editar tarea existente
             const p = data.projects.find(x => x.id === editingTaskProjectId);
@@ -577,13 +591,19 @@
         }
 
         saveData();
-        if (currentProjectId) openProjectDetail(currentProjectId);
-        if (document.getElementById('tab-todas').classList.contains('active')) renderAllTasks();
-        if (document.getElementById('tab-reuniones').classList.contains('active')) {
+        closeTaskModal();
+
+        // Renderizar la vista que estaba activa
+        if (todasWasActive) {
+            document.getElementById('tab-todas').classList.add('active');
+            renderAllTasks();
+        } else if (reunionesWasActive) {
+            document.getElementById('tab-reuniones').classList.add('active');
             const respBtn = document.querySelector('#respButtons .filter-btn.active');
             if (respBtn) showReuniones(respBtn.textContent);
+        } else if (detalleWasActive && currentProjectId) {
+            openProjectDetail(currentProjectId);
         }
-        closeTaskModal();
     }
 
     function deleteTask() {
