@@ -173,7 +173,7 @@
 
 <div id="taskModal" class="modal">
     <div class="modal-box">
-        <h2>Nueva Tarea</h2>
+        <h2 id="taskModalTitle">Nueva Tarea</h2>
         <div class="form-group">
             <label>Tarea:</label>
             <input type="text" id="taskTitle">
@@ -188,8 +188,22 @@
                 <option value="hecho">Hecho</option>
             </select>
         </div>
+        <div class="form-group">
+            <label>Fecha Límite:</label>
+            <input type="date" id="taskDueDate">
+        </div>
+        <div class="form-group">
+            <label>Responsable:</label>
+            <select id="taskResponsable">
+                <option value="">Sin asignar</option>
+                <option value="Marcelo">Marcelo</option>
+                <option value="Sofia">Sofía</option>
+                <option value="Gustavo">Gustavo</option>
+            </select>
+        </div>
         <div class="modal-btns">
             <button class="btn-save" onclick="saveTask()">Guardar</button>
+            <button class="btn-delete" style="display:none;" id="deleteTaskBtn" onclick="deleteTask()">Borrar</button>
             <button class="btn-cancel" onclick="closeTaskModal()">Cancelar</button>
         </div>
     </div>
@@ -210,10 +224,15 @@
     let data = JSON.parse(localStorage.getItem('vph_pm_v1')) || initialData;
     let currentProjectId = null;
     let editingProjectId = null;
+    let editingTaskId = null;
+    let editingTaskProjectId = null;
     let filterType = null;
     let filterArea = null;
     let filterResp = null;
     let todasFilterResp = null;
+    let draggedTask = null;
+    let draggedTaskProjectId = null;
+    let draggedFromState = null;
 
     function setSyncStatus(state, text) {
         const syncDot = document.getElementById("syncDot");
@@ -335,7 +354,7 @@
                     allTasks.push({
                         ...t,
                         projectName: p.name,
-                        responsable: p.responsable,
+                        projectResp: p.responsable,
                         projectId: p.id
                     });
                 });
@@ -344,7 +363,7 @@
 
         let filtered = allTasks;
         if (todasFilterResp) {
-            filtered = allTasks.filter(t => t.responsable === todasFilterResp);
+            filtered = allTasks.filter(t => t.projectResp === todasFilterResp);
         }
 
         const html = STATES.map(state => {
@@ -352,11 +371,11 @@
             return `
                 <div class="kanban-column">
                     <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
-                    <div>
+                    <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
                         ${tasks.length > 0 ? tasks.map(t => `
-                            <div class="task-card">
-                                <div class="task-title">${t.title}</div>
-                                <div class="task-meta">${t.projectName} • ${t.responsable || '—'}</div>
+                            <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
+                                <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
+                                <div class="task-meta">${t.projectName} • ${t.projectResp || '—'}</div>
                             </div>
                         `).join('') : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
                     </div>
@@ -379,15 +398,15 @@
         const html = STATES.map(state => {
             let tasks = [];
             projects.forEach(p => {
-                if (p.tasks) tasks = tasks.concat(p.tasks.filter(t => t.state === state).map(t => ({...t, projectName: p.name})));
+                if (p.tasks) tasks = tasks.concat(p.tasks.filter(t => t.state === state).map(t => ({...t, projectName: p.name, projectId: p.id})));
             });
             return `
                 <div class="kanban-column">
                     <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
-                    <div>
+                    <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
                         ${tasks.map(t => `
-                            <div class="task-card">
-                                <div class="task-title">${t.title}</div>
+                            <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${t.projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
+                                <div class="task-title" onclick="editTaskFromView('${t.projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
                                 <div class="task-meta">${t.projectName}</div>
                             </div>
                         `).join('')}
@@ -476,6 +495,7 @@
 
     function openProjectDetail(projectId) {
         currentProjectId = projectId;
+        editingTaskId = null;
         const p = data.projects.find(x => x.id === projectId);
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.getElementById('tab-proyecto-detail').classList.add('active');
@@ -485,14 +505,15 @@
             return `
                 <div class="kanban-column">
                     <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
-                    <div style="min-height:50px;">
+                    <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)" ondragleave="handleTaskDragLeave(event)" style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
                         ${tasks.map(t => `
-                            <div class="task-card">
-                                <div class="task-title">${t.title}</div>
+                            <div class="task-card" draggable="true" ondragstart="handleTaskDragStart(event, '${projectId}', '${t.id}', '${state}')" ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
+                                <div class="task-title" onclick="editTaskFromView('${projectId}', '${t.id}')" style="cursor:pointer;text-decoration:underline;">${t.title}</div>
+                                <div class="task-meta">${t.dueDate || '—'}</div>
                             </div>
                         `).join('')}
                     </div>
-                    <button class="filter-btn" onclick="document.getElementById('taskModal').classList.add('show');" style="width:100%; margin-top:8px;">+ Tarea</button>
+                    <button class="filter-btn" onclick="openNewTask()" style="width:100%; margin-top:8px;">+ Tarea</button>
                 </div>
             `;
         }).join('');
@@ -501,22 +522,139 @@
 
     function closeTaskModal() {
         document.getElementById('taskModal').classList.remove('show');
+        editingTaskId = null;
+        editingTaskProjectId = null;
+    }
+
+    function openNewTask() {
+        editingTaskId = null;
+        editingTaskProjectId = null;
+        document.getElementById('taskModalTitle').textContent = 'Nueva Tarea';
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskState').value = 'backlog';
+        document.getElementById('taskDueDate').value = '';
+        document.getElementById('taskResponsable').value = '';
+        document.getElementById('deleteTaskBtn').style.display = 'none';
+        document.getElementById('taskModal').classList.add('show');
+    }
+
+    function editTaskFromView(projectId, taskId) {
+        editingTaskId = taskId;
+        editingTaskProjectId = projectId;
+        const p = data.projects.find(x => x.id === projectId);
+        const t = p.tasks.find(x => x.id === taskId);
+        if (!t) return;
+
+        document.getElementById('taskModalTitle').textContent = 'Editar Tarea';
+        document.getElementById('taskTitle').value = t.title;
+        document.getElementById('taskState').value = t.state;
+        document.getElementById('taskDueDate').value = t.dueDate || '';
+        document.getElementById('taskResponsable').value = t.responsable || '';
+        document.getElementById('deleteTaskBtn').style.display = 'block';
+        document.getElementById('taskModal').classList.add('show');
     }
 
     function saveTask() {
         const title = document.getElementById('taskTitle').value.trim();
         if (!title) return alert('Ingresá título');
-        const p = data.projects.find(x => x.id === currentProjectId);
-        p.tasks.push({
-            id: 't' + Date.now(),
-            title,
-            state: document.getElementById('taskState').value,
-            dueDate: ''
-        });
+
+        if (editingTaskId && editingTaskProjectId) {
+            // Editar tarea existente
+            const p = data.projects.find(x => x.id === editingTaskProjectId);
+            const t = p.tasks.find(x => x.id === editingTaskId);
+            t.title = title;
+            t.state = document.getElementById('taskState').value;
+            t.dueDate = document.getElementById('taskDueDate').value;
+            t.responsable = document.getElementById('taskResponsable').value;
+        } else {
+            // Crear tarea nueva
+            const p = data.projects.find(x => x.id === currentProjectId);
+            p.tasks.push({
+                id: 't' + Date.now(),
+                title,
+                state: document.getElementById('taskState').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                responsable: document.getElementById('taskResponsable').value
+            });
+        }
         saveData();
-        openProjectDetail(currentProjectId);
+        if (currentProjectId) openProjectDetail(currentProjectId);
+        if (document.getElementById('tab-todas').classList.contains('active')) renderAllTasks();
+        if (document.getElementById('tab-reuniones').classList.contains('active')) {
+            const resp = document.querySelector('#respButtons .filter-btn.active')?.textContent || null;
+            if (resp) showReuniones(resp);
+        }
         closeTaskModal();
-        document.getElementById('taskTitle').value = '';
+    }
+
+    function deleteTask() {
+        if (!confirm('¿Borrar tarea?')) return;
+        const p = data.projects.find(x => x.id === editingTaskProjectId);
+        p.tasks = p.tasks.filter(t => t.id !== editingTaskId);
+        saveData();
+        if (currentProjectId) openProjectDetail(currentProjectId);
+        if (document.getElementById('tab-todas').classList.contains('active')) renderAllTasks();
+        closeTaskModal();
+    }
+
+    // DRAG & DROP FUNCTIONS
+    function handleTaskDragStart(e, projectId, taskId, state) {
+        draggedTask = {projectId, taskId, state};
+        draggedTaskProjectId = projectId;
+        draggedFromState = state;
+        e.dataTransfer.effectAllowed = 'move';
+        e.target.style.opacity = '0.5';
+    }
+
+    function handleTaskDragEnd(e) {
+        e.target.style.opacity = '1';
+        document.querySelectorAll('.kanban-dropzone').forEach(z => {
+            z.style.borderColor = 'transparent';
+            z.style.background = 'transparent';
+        });
+    }
+
+    function handleTaskDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        e.currentTarget.style.borderColor = 'var(--accent)';
+        e.currentTarget.style.background = 'rgba(99,102,241,0.1)';
+    }
+
+    function handleTaskDragLeave(e) {
+        e.currentTarget.style.borderColor = 'transparent';
+        e.currentTarget.style.background = 'transparent';
+    }
+
+    function handleTaskDrop(e, newState) {
+        e.preventDefault();
+        e.currentTarget.style.borderColor = 'transparent';
+        e.currentTarget.style.background = 'transparent';
+
+        if (!draggedTask) return;
+
+        const project = data.projects.find(p => p.id === draggedTask.projectId);
+        if (!project) return;
+
+        const task = project.tasks.find(t => t.id === draggedTask.taskId);
+        if (!task) return;
+
+        task.state = newState;
+        saveData();
+
+        // Renderizar según la vista actual
+        if (document.getElementById('tab-proyecto-detail').classList.contains('active')) {
+            openProjectDetail(currentProjectId);
+        }
+        if (document.getElementById('tab-todas').classList.contains('active')) {
+            renderAllTasks();
+        }
+        if (document.getElementById('tab-reuniones').classList.contains('active')) {
+            const resp = document.querySelector('#respButtons .filter-btn.active')?.textContent || 'Marcelo';
+            showReuniones(resp);
+        }
+
+        draggedTask = null;
     }
 
     function backToProjects() {
