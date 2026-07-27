@@ -476,7 +476,10 @@
             <select id="taskResponsable"></select>
         </div>
         <div class="form-group">
-            <label>Ejecutor (quién lo hace físicamente) — opcional:</label>
+            <label style="display:flex;justify-content:space-between;align-items:center;">
+                <span>Ejecutor (quién lo hace físicamente) — opcional:</span>
+                <a href="javascript:void(0)" onclick="openTeamModal()" style="font-weight:500;font-size:11px;color:var(--accent);">✏️ Gestionar lista</a>
+            </label>
             <select id="taskEjecutor" onchange="toggleEjecutorOtro()"></select>
             <input type="text" id="taskEjecutorNew" placeholder="Nombre del operario" style="margin-top:8px;display:none;">
         </div>
@@ -1597,10 +1600,15 @@
     function llenarSelectEjecutor(valor) {
         const sel = document.getElementById('taskEjecutor');
         const newInput = document.getElementById('taskEjecutorNew');
-        const set = new Set(data.team.operarios);
-        // suma operarios que ya se hayan escrito a mano en otras tareas
-        allTasks().forEach(t => { if (t.ejecutor) set.add(t.ejecutor); });
-        const lista = [...set].sort((a,b) => a.localeCompare(b, 'es'));
+
+        // La lista oficial es data.team.operarios (editable desde 👥 Equipo) y respeta
+        // su orden. Solo se agregan al final, y ordenados, nombres "huérfanos" que hayan
+        // quedado en tareas viejas sin pasar por el registro (no debería pasar desde que
+        // saveTask() registra automáticamente cualquier nombre nuevo, pero por las dudas).
+        const oficiales = new Set(data.team.operarios);
+        const huerfanos = new Set();
+        allTasks().forEach(t => { if (t.ejecutor && !oficiales.has(t.ejecutor)) huerfanos.add(t.ejecutor); });
+        const lista = [...data.team.operarios, ...[...huerfanos].sort((a,b) => a.localeCompare(b, 'es'))];
 
         sel.innerHTML = '<option value="">Sin especificar</option>' +
             lista.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('') +
@@ -1821,9 +1829,18 @@
         document.getElementById('taskModal').classList.add('show');
     }
 
+    // Si el ejecutor viene de "Otro..." y no está en el equipo, lo suma al equipo.
+    // Así la lista de 👥 Equipo es SIEMPRE la fuente real — nunca hay operarios
+    // "sueltos" viviendo solo dentro de una tarea, invisibles para el panel.
+    function registrarOperarioSiEsNuevo(nombre) {
+        if (nombre && !data.team.operarios.includes(nombre)) data.team.operarios.push(nombre);
+    }
+
     function saveTask() {
         const title = document.getElementById('taskTitle').value.trim();
         if (!title) return alert('Ingresá título');
+        const ejecutor = getEjecutorValue();
+        registrarOperarioSiEsNuevo(ejecutor);
 
         if (editingTaskId && editingTaskProjectId) {
             const p = data.projects.find(x => x.id === editingTaskProjectId);
@@ -1834,7 +1851,7 @@
             t.state = document.getElementById('taskState').value;
             t.dueDate = document.getElementById('taskDueDate').value;
             t.responsable = document.getElementById('taskResponsable').value;
-            t.ejecutor = getEjecutorValue();
+            t.ejecutor = ejecutor;
         } else {
             const projectId = document.getElementById('taskProject').value;
             if (!projectId) return alert('Selecciona un proyecto');
@@ -1847,7 +1864,7 @@
                 state: document.getElementById('taskState').value || 'backlog',
                 dueDate: document.getElementById('taskDueDate').value || '',
                 responsable: document.getElementById('taskResponsable').value || '',
-                ejecutor: getEjecutorValue()
+                ejecutor
             });
         }
 
