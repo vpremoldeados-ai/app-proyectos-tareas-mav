@@ -248,6 +248,25 @@
         .midia-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
         .midia-estado { font-size: 11px; font-weight: 600; }
 
+        /* ---- Equipo ---- */
+        .team-section-title { font-size: 11px; text-transform: uppercase; color: var(--text-3);
+            font-weight: 700; margin: 16px 0 8px; letter-spacing: 0.4px; }
+        .team-section-title:first-child { margin-top: 0; }
+        .team-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+            border-radius: 6px; background: var(--surface-2); margin-bottom: 6px; }
+        .team-row .drag-handle { cursor: grab; color: var(--text-3); font-size: 13px; }
+        .team-row .team-name { flex: 1; font-size: 13px; font-weight: 600; padding: 4px 6px;
+            border-radius: 4px; cursor: text; }
+        .team-row .team-name:hover { background: var(--surface); }
+        .team-row input.team-name-edit { flex: 1; padding: 4px 6px; border: 1px solid var(--accent);
+            border-radius: 4px; font-size: 13px; font-family: inherit; }
+        .team-row .team-del { background: none; border: none; cursor: pointer; opacity: 0.5;
+            font-size: 13px; padding: 2px 4px; }
+        .team-row .team-del:hover { opacity: 1; }
+        .team-add { display: flex; gap: 6px; margin-top: 4px; }
+        .team-add input { flex: 1; }
+        .team-hint { font-size: 11px; color: var(--text-3); margin-bottom: 14px; line-height: 1.5; }
+
         .fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
             border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2));
             color: white; border: none; cursor: pointer; font-size: 24px; display: flex;
@@ -303,6 +322,7 @@
         </div>
         <div class="header-stats" id="headerStats"></div>
         <div style="display:flex;gap:8px;align-items:center;">
+            <button class="icon-btn" onclick="openTeamModal()" title="Gestionar equipo (responsables y operarios)">👥</button>
             <button class="icon-btn" id="notifBtn" onclick="toggleNotificaciones()" title="Notificaciones de tareas vencidas">🔔</button>
             <a href="index.html" style="padding:10px 16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">📋 Tareas</a>
             <div class="sync-status">
@@ -411,6 +431,19 @@
     </div>
 </div>
 
+<div id="teamModal" class="modal">
+    <div class="modal-box" style="max-width:460px;">
+        <h2>👥 Equipo</h2>
+        <div class="team-hint">Arrastrá ⠿ para reordenar. Clic en un nombre para renombrar — se
+            actualiza en todos los proyectos y tareas. 🗑️ borra a la persona sin borrar sus
+            proyectos ni tareas (quedan sin asignar).</div>
+        <div id="teamModalBody"></div>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeTeamModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
 <div id="taskModal" class="modal">
     <div class="modal-box">
         <h2 id="taskModalTitle">Nueva Tarea</h2>
@@ -460,8 +493,10 @@
     let db, dbRef, tareasRef;
 
     // ---------- Constantes ----------
-    const RESPONSABLES = ['Marcelo', 'Sofia', 'Gustavo'];
-    const OPERARIOS = ['Antonio', 'Dario', 'José', 'Matías'];   // quién ejecuta, no quién responde
+    // Semilla inicial del equipo. La lista real y editable vive en data.team
+    // (ver normalizarDatos), gestionable desde el botón 👥 del header.
+    const RESPONSABLES_SEED = ['Marcelo', 'Sofia', 'Gustavo'];
+    const OPERARIOS_SEED = ['Antonio', 'Dario', 'José', 'Matías'];
     const SIN_ASIGNAR = 'Sin asignar';
     const AREAS_BASE = ['Producción', 'Ventas', 'Marketing'];
     const STATES = ['backlog', 'planificado', 'en-curso', 'revision', 'hecho'];
@@ -495,7 +530,7 @@
     let filterType = null;
     let filterArea = null;
     let filterResp = null;
-    let reunionesResp = RESPONSABLES[0];
+    let reunionesResp = null;   // se resuelve al primer responsable disponible al entrar a Reuniones
     let reunionVista = localStorage.getItem('vph_reunion_vista') || 'proyecto';
     let draggedTask = null;
     let draggedFromState = null;
@@ -761,7 +796,18 @@
         else if (activeTab === 'todas')      renderAllTasks();
         else if (activeTab === 'calendario') renderCalendario();
         else if (activeTab === 'metricas')   renderMetricas();
-        else if (activeTab === 'reuniones')  { renderReunionesButtons(); showReuniones(reunionesResp); }
+        else if (activeTab === 'reuniones')  {
+            const resps = data.team.responsables;
+            if (!resps.length) {
+                document.getElementById('respButtons').innerHTML = '<div class="empty-note">Agregá responsables desde 👥 Equipo</div>';
+                document.getElementById('reunionResumen').innerHTML = '';
+                document.getElementById('reunionPorProyecto').innerHTML = '';
+                document.getElementById('reunionesKanban').innerHTML = '';
+            } else {
+                if (!reunionesResp || !resps.includes(reunionesResp)) reunionesResp = resps[0];
+                renderReunionesButtons(); showReuniones(reunionesResp);
+            }
+        }
         else if (activeTab === 'detalle' && currentProjectId) openProjectDetail(currentProjectId);
     }
 
@@ -875,7 +921,7 @@
     // ---------- Vista "En curso" (por responsable) ----------
     function renderAllTasks() {
         const enCurso = allTasks().filter(t => t.state === 'en-curso');
-        const columnas = [...RESPONSABLES, SIN_ASIGNAR];
+        const columnas = [...data.team.responsables, SIN_ASIGNAR];
 
         const byResp = {};
         columnas.forEach(r => byResp[r] = []);
@@ -1043,7 +1089,7 @@
             </div>`).join('')}</div>`;
 
         // --- Por responsable ---
-        const columnas = [...RESPONSABLES, SIN_ASIGNAR];
+        const columnas = [...data.team.responsables, SIN_ASIGNAR];
         const porResp = {};
         columnas.forEach(r => porResp[r] = {total:0, hecho:0, enCurso:0, vencidas:0, pendientes:0});
         tareas.forEach(t => {
@@ -1209,8 +1255,8 @@
 
     function renderReunionesButtons() {
         document.getElementById('respButtons').innerHTML =
-            RESPONSABLES.map(r =>
-                `<button class="filter-btn ${reunionesResp === r ? 'active' : ''}" onclick="showReuniones('${r}')">👤 ${r === 'Sofia' ? 'Sofía' : r}</button>`
+            data.team.responsables.map(r =>
+                `<button class="filter-btn ${reunionesResp === r ? 'active' : ''}" onclick="showReuniones(${jsArg(r)})">👤 ${esc(r)}</button>`
             ).join('') +
             `<div style="margin-left:auto;" class="vista-toggle">
                 <button class="${reunionVista === 'proyecto' ? 'active' : ''}" onclick="setReunionVista('proyecto')">📊 Por proyecto</button>
@@ -1272,7 +1318,7 @@
 
         if (!grupos.length) {
             porProy.innerHTML = `<div class="metric-section" style="grid-column:1/-1;">
-                <div class="empty-note">Sin tareas asignadas a ${esc(resp === 'Sofia' ? 'Sofía' : resp)}.<br>
+                <div class="empty-note">Sin tareas asignadas a ${esc(resp)}.<br>
                 Asignale tareas desde el Kanban de cada proyecto.</div></div>`;
             return;
         }
@@ -1334,7 +1380,7 @@
         }).length;
         const pct = suyas.length ? Math.round(hechas / suyas.length * 100) : 0;
         const enMiDia = suyas.filter(t => tareaVinculada(t.id)).length;
-        const nombre = resp === 'Sofia' ? 'Sofía' : resp;
+        const nombre = resp;
 
         return `
             <div class="reunion-header">
@@ -1361,18 +1407,197 @@
             </div>`;
     }
 
+    // ---------- Equipo (responsables y operarios) ----------
+    function openTeamModal() {
+        renderTeamModal();
+        document.getElementById('teamModal').classList.add('show');
+    }
+
+    function closeTeamModal() {
+        document.getElementById('teamModal').classList.remove('show');
+    }
+
+    function renderTeamRow(group, name, index) {
+        return `<div class="team-row" draggable="true"
+                     ondragstart="teamDragStart(event, ${jsArg(group)}, ${index})"
+                     ondragover="teamDragOver(event)"
+                     ondrop="teamDrop(event, ${jsArg(group)}, ${index})"
+                     ondragend="teamDragEnd(event)">
+            <span class="drag-handle" title="Arrastrar para reordenar">⠿</span>
+            <span class="team-name" onclick="editTeamName(this, ${jsArg(group)}, ${jsArg(name)})">${esc(name)}</span>
+            <button class="team-del" onclick="deleteTeamMember(${jsArg(group)}, ${jsArg(name)})" title="Borrar">🗑️</button>
+        </div>`;
+    }
+
+    function renderTeamModal() {
+        const box = document.getElementById('teamModalBody');
+        if (!box) return;
+
+        const seccion = (group, titulo, placeholder) => {
+            const lista = data.team[group] || [];
+            const inputId = group === 'responsables' ? 'newResponsableName' : 'newOperarioName';
+            return `
+                <div class="team-section-title">${titulo}</div>
+                ${lista.map((n, i) => renderTeamRow(group, n, i)).join('') || '<div class="empty-note" style="padding:8px;">Nadie cargado todavía</div>'}
+                <div class="team-add">
+                    <input type="text" id="${inputId}" placeholder="${placeholder}"
+                           onkeydown="if(event.key==='Enter'){addTeamMember(${jsArg(group)});}">
+                    <button class="filter-btn" onclick="addTeamMember(${jsArg(group)})">+ Agregar</button>
+                </div>`;
+        };
+
+        box.innerHTML =
+            seccion('responsables', '👤 Responsables — a quién se le pide cuentas', 'Nombre del responsable') +
+            seccion('operarios', '🔧 Operarios — quién ejecuta el trabajo', 'Nombre del operario');
+    }
+
+    function editTeamName(spanEl, group, oldName) {
+        if (spanEl.querySelector('input')) return;   // ya se está editando
+        spanEl.innerHTML = `<input type="text" class="team-name-edit" value="${esc(oldName)}">`;
+        const input = spanEl.querySelector('input');
+        input.focus();
+        input.select();
+
+        let commited = false;
+        const commit = () => {
+            if (commited) return;
+            commited = true;
+            const val = input.value.trim();
+            if (!val || val === oldName) { renderTeamModal(); return; }
+            renameTeamMember(group, oldName, val);
+        };
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { commited = true; renderTeamModal(); }
+        });
+        input.addEventListener('blur', commit);
+    }
+
+    function renameTeamMember(group, oldName, newName) {
+        const lista = data.team[group];
+        if (lista.some(n => n !== oldName && n.toLowerCase() === newName.toLowerCase())) {
+            alert('Ya existe alguien con ese nombre.');
+            renderTeamModal();
+            return;
+        }
+        const idx = lista.indexOf(oldName);
+        if (idx === -1) { renderTeamModal(); return; }
+        lista[idx] = newName;
+
+        (data.projects || []).forEach(p => {
+            if (!p) return;
+            if (group === 'responsables' && p.responsable === oldName) p.responsable = newName;
+            (p.tasks || []).forEach(t => {
+                if (!t) return;
+                if (group === 'responsables' && t.responsable === oldName) t.responsable = newName;
+                if (group === 'operarios' && t.ejecutor === oldName) t.ejecutor = newName;
+            });
+        });
+
+        if (reunionesResp === oldName) reunionesResp = newName;
+        if (filterResp === oldName) filterResp = newName;
+
+        saveData();
+        renderTeamModal();
+        refreshActiveView();
+    }
+
+    function deleteTeamMember(group, name) {
+        let usoProyectos = 0, usoTareas = 0;
+        (data.projects || []).forEach(p => {
+            if (!p) return;
+            if (group === 'responsables' && p.responsable === name) usoProyectos++;
+            (p.tasks || []).forEach(t => {
+                if (!t) return;
+                if (group === 'responsables' && t.responsable === name) usoTareas++;
+                if (group === 'operarios' && t.ejecutor === name) usoTareas++;
+            });
+        });
+
+        const partes = [];
+        if (usoProyectos) partes.push(`${usoProyectos} proyecto${usoProyectos>1?'s':''}`);
+        if (usoTareas) partes.push(`${usoTareas} tarea${usoTareas>1?'s':''}`);
+        const msg = partes.length
+            ? `¿Borrar a "${name}"?\n\nQueda sin asignar en ${partes.join(' y ')}. No se borra ningún proyecto ni tarea.`
+            : `¿Borrar a "${name}"?`;
+        if (!confirm(msg)) return;
+
+        data.team[group] = data.team[group].filter(n => n !== name);
+
+        (data.projects || []).forEach(p => {
+            if (!p) return;
+            if (group === 'responsables' && p.responsable === name) p.responsable = '';
+            (p.tasks || []).forEach(t => {
+                if (!t) return;
+                if (group === 'responsables' && t.responsable === name) t.responsable = '';
+                if (group === 'operarios' && t.ejecutor === name) t.ejecutor = '';
+            });
+        });
+
+        if (reunionesResp === name) reunionesResp = null;
+        if (filterResp === name) filterResp = null;
+
+        saveData();
+        renderTeamModal();
+        refreshActiveView();
+    }
+
+    function addTeamMember(group) {
+        const inputId = group === 'responsables' ? 'newResponsableName' : 'newOperarioName';
+        const input = document.getElementById(inputId);
+        const name = input.value.trim();
+        if (!name) return;
+        if (data.team[group].some(n => n.toLowerCase() === name.toLowerCase())) {
+            alert('Ya existe alguien con ese nombre.');
+            return;
+        }
+        data.team[group].push(name);
+        saveData();
+        renderTeamModal();
+        refreshActiveView();
+    }
+
+    let teamDragState = null;
+
+    function teamDragStart(e, group, index) {
+        teamDragState = {group, index};
+        e.dataTransfer.effectAllowed = 'move';
+        e.target.style.opacity = '0.5';
+    }
+
+    function teamDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function teamDragEnd(e) {
+        e.target.style.opacity = '1';
+    }
+
+    function teamDrop(e, group, targetIndex) {
+        e.preventDefault();
+        if (!teamDragState || teamDragState.group !== group) { teamDragState = null; return; }
+        const lista = data.team[group];
+        const [movido] = lista.splice(teamDragState.index, 1);
+        lista.splice(targetIndex, 0, movido);
+        teamDragState = null;
+        saveData();
+        renderTeamModal();
+        refreshActiveView();
+    }
+
     // ---------- Modal Proyecto ----------
     function llenarSelectResponsables(selectId, valor) {
         const sel = document.getElementById(selectId);
         sel.innerHTML = '<option value="">Sin asignar</option>' +
-            RESPONSABLES.map(r => `<option value="${r}">${r === 'Sofia' ? 'Sofía' : r}</option>`).join('');
+            data.team.responsables.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
         sel.value = valor || '';
     }
 
     function llenarSelectEjecutor(valor) {
         const sel = document.getElementById('taskEjecutor');
         const newInput = document.getElementById('taskEjecutorNew');
-        const set = new Set(OPERARIOS);
+        const set = new Set(data.team.operarios);
         // suma operarios que ya se hayan escrito a mano en otras tareas
         allTasks().forEach(t => { if (t.ejecutor) set.add(t.ejecutor); });
         const lista = [...set].sort((a,b) => a.localeCompare(b, 'es'));
@@ -1883,6 +2108,9 @@
             p.tasks = p.tasks.filter(Boolean);
             if (p.responsable === undefined) p.responsable = '';
         });
+        if (!data.team || typeof data.team !== 'object') data.team = {};
+        if (!Array.isArray(data.team.responsables)) data.team.responsables = [...RESPONSABLES_SEED];
+        if (!Array.isArray(data.team.operarios))    data.team.operarios    = [...OPERARIOS_SEED];
     }
 
     if (dbRef) {
