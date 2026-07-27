@@ -2130,12 +2130,21 @@
         if (!Array.isArray(data.team.operarios))    data.team.operarios    = [...OPERARIOS_SEED];
     }
 
+    // dbRef usa .on('value', ...) — NO .once() — para que la pestaña se mantenga
+    // sincronizada mientras está abierta. Con .once() cada pestaña cargaba los datos
+    // una sola vez al abrir y nunca más: si quedaba una pestaña vieja abierta (celular,
+    // otra ventana) y desde ahí se guardaba cualquier cosa, saveData() pisaba TODO
+    // Firebase con esa copia vieja — se veían tareas "duplicadas" o directamente
+    // desaparecían cambios hechos en otro lugar mientras tanto.
+    let dbPrimeraCarga = false;
     if (dbRef) {
         const timeout = setTimeout(() => {
+            if (dbPrimeraCarga) return;
+            dbPrimeraCarga = true;
             setSyncStatus('connected', 'Conectado (local)');
             normalizarDatos(); render(); escucharMisTareas();
         }, 8000);
-        dbRef.once('value').then(snapshot => {
+        dbRef.on('value', snapshot => {
             clearTimeout(timeout);
             if (snapshot.exists()) {
                 data = snapshot.val();
@@ -2143,9 +2152,18 @@
                 localStorage.setItem('vph_pm_v1', JSON.stringify(data));
             }
             setSyncStatus('connected', 'Conectado');
-            normalizarDatos(); render(); escucharMisTareas();
-        }).catch(err => {
+            if (!dbPrimeraCarga) {
+                dbPrimeraCarga = true;
+                normalizarDatos(); render(); escucharMisTareas();
+            } else {
+                // actualización en vivo (otro dispositivo/pestaña guardó algo): refrescar
+                // la vista activa sin perder en qué pestaña/proyecto está el usuario
+                refreshActiveView();
+            }
+        }, err => {
             clearTimeout(timeout);
+            if (dbPrimeraCarga) return;
+            dbPrimeraCarga = true;
             setSyncStatus('connected', 'Conectado (local)');
             normalizarDatos(); render(); escucharMisTareas();
         });
