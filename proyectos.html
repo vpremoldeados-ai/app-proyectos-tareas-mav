@@ -127,6 +127,7 @@
         .badge-today { background: rgba(245,158,11,0.2); color: var(--warning); }
         .badge-soon { background: rgba(249,115,22,0.2); color: #f97316; }
         .badge-on-time { background: rgba(16,185,129,0.2); color: var(--success); }
+        .badge-ejecutor { background: rgba(59,130,246,0.15); color: #2563eb; }
 
         /* ---- Métricas ---- */
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -441,6 +442,11 @@
             <label>Responsable:</label>
             <select id="taskResponsable"></select>
         </div>
+        <div class="form-group">
+            <label>Ejecutor (quién lo hace físicamente) — opcional:</label>
+            <select id="taskEjecutor" onchange="toggleEjecutorOtro()"></select>
+            <input type="text" id="taskEjecutorNew" placeholder="Nombre del operario" style="margin-top:8px;display:none;">
+        </div>
         <div class="midia-box" id="miDiaBox"></div>
         <div class="modal-btns">
             <button class="btn-save" onclick="saveTask()">Guardar</button>
@@ -455,6 +461,7 @@
 
     // ---------- Constantes ----------
     const RESPONSABLES = ['Marcelo', 'Sofia', 'Gustavo'];
+    const OPERARIOS = ['Antonio', 'Dario', 'José', 'Matías'];   // quién ejecuta, no quién responde
     const SIN_ASIGNAR = 'Sin asignar';
     const AREAS_BASE = ['Producción', 'Ventas', 'Marketing'];
     const STATES = ['backlog', 'planificado', 'en-curso', 'revision', 'hecho'];
@@ -550,6 +557,10 @@
     function badgeHTML(task) {
         const s = getTaskStatus(task.dueDate, task.state);
         return s.badge ? `<span class="task-badge ${s.badge}">${s.icon} ${esc(s.text)}</span>` : '';
+    }
+
+    function ejecutorBadge(task) {
+        return task.ejecutor ? `<span class="task-badge badge-ejecutor" title="Lo ejecuta">🔧 ${esc(task.ejecutor)}</span>` : '';
     }
 
     // Aplana todas las tareas con el contexto de su proyecto
@@ -890,7 +901,7 @@
                                  ondragstart="handleTaskDragStart(event,'${t.projectId}','${t.id}','en-curso')"
                                  ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
                                 <div class="task-title" onclick="editTaskFromView('${t.projectId}','${t.id}')" style="cursor:pointer;">${esc(t.title)}</div>
-                                <div class="task-meta">${esc(t.projectName)} ${badgeHTML(t)}</div>
+                                <div class="task-meta">${esc(t.projectName)} ${badgeHTML(t)} ${ejecutorBadge(t)}</div>
                             </div>`).join('')
                         : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
                     </div>
@@ -957,7 +968,8 @@
 
             const chips = visibles.map(t => {
                 const st = getTaskStatus(t.dueDate, t.state);
-                return `<div class="cal-chip ${st.class}" title="${esc(t.title)} — ${esc(t.projectName)} — ${esc(t.responsable || SIN_ASIGNAR)}"
+                const tip = `${t.title} — ${t.projectName} — ${t.responsable || SIN_ASIGNAR}` + (t.ejecutor ? ` — 🔧 ${t.ejecutor}` : '');
+                return `<div class="cal-chip ${st.class}" title="${esc(tip)}"
                              onclick="editTaskFromView('${t.projectId}','${t.id}')">${esc(t.title)}</div>`;
             }).join('');
 
@@ -1063,6 +1075,34 @@
             </div>`;
         }).join('');
 
+        // --- Carga en taller (por ejecutor) ---
+        const porEjecutor = {};
+        tareas.forEach(t => {
+            if (!t.ejecutor) return;
+            if (!porEjecutor[t.ejecutor]) porEjecutor[t.ejecutor] = {total:0, hecho:0, enCurso:0, vencidas:0};
+            const b = porEjecutor[t.ejecutor];
+            b.total++;
+            if (t.state === 'hecho') b.hecho++;
+            else {
+                if (t.state === 'en-curso') b.enCurso++;
+                if (t.dueDate && t.dueDate < hoyYMD()) b.vencidas++;
+            }
+        });
+        const ejecutorRows = Object.keys(porEjecutor).sort((a,b) => porEjecutor[b].total - porEjecutor[a].total).map(e => {
+            const b = porEjecutor[e];
+            const otras = b.total - b.hecho - b.enCurso - b.vencidas;
+            return `<div class="bar-row">
+                <div class="bar-name" title="${esc(e)}">🔧 ${esc(e)}</div>
+                ${barra([
+                    {n:b.hecho,   color:'var(--success)', label:'Hechas'},
+                    {n:b.enCurso, color:'#f97316',        label:'En curso'},
+                    {n:b.vencidas,color:'var(--danger)',  label:'Vencidas'},
+                    {n:Math.max(otras,0), color:'#cbd5e1', label:'Otras pendientes'},
+                ], b.total)}
+                <div class="bar-num">${b.hecho}/${b.total}</div>
+            </div>`;
+        }).join('');
+
         // --- Por área ---
         const porArea = {};
         projs.forEach(p => {
@@ -1126,6 +1166,17 @@
                     </div>
                     ${sinResp ? `<div style="margin-top:10px;font-size:11px;color:var(--warning);font-weight:600;">⚠️ ${sinResp} tarea${sinResp>1?'s':''} pendiente${sinResp>1?'s':''} sin responsable</div>` : ''}
                 </div>
+                ${Object.keys(porEjecutor).length ? `
+                <div class="metric-section">
+                    <h3>🔧 Carga en taller (por operario)</h3>
+                    ${ejecutorRows}
+                    <div class="legend">
+                        <span><i style="background:var(--success);"></i>Hechas</span>
+                        <span><i style="background:#f97316;"></i>En curso</span>
+                        <span><i style="background:var(--danger);"></i>Vencidas</span>
+                        <span><i style="background:#cbd5e1;"></i>Otras pendientes</span>
+                    </div>
+                </div>` : ''}
                 <div class="metric-section">
                     <h3>📁 Avance por área</h3>
                     ${areaRows || '<div class="empty-note">Sin áreas cargadas</div>'}
@@ -1200,7 +1251,7 @@
                                      ondragstart="handleTaskDragStart(event,'${t.projectId}','${t.id}','${state}')"
                                      ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
                                     <div class="task-title" onclick="editTaskFromView('${t.projectId}','${t.id}')" style="cursor:pointer;">${esc(t.title)}</div>
-                                    <div class="task-meta">${esc(t.projectName)} ${badgeHTML(t)}</div>
+                                    <div class="task-meta">${esc(t.projectName)} ${badgeHTML(t)} ${ejecutorBadge(t)}</div>
                                 </div>`).join('')
                             : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
                         </div>
@@ -1248,6 +1299,7 @@
                     return `<div class="t-linea ${st.class}" onclick="editTaskFromView('${p.id}','${t.id}')">
                         <span class="t-estado" style="background:${STATE_COLORS[t.state] || 'var(--text-3)'};">${STATE_LABELS[t.state] || t.state}</span>
                         <span class="t-nombre">${esc(t.title)}</span>
+                        ${ejecutorBadge(t)}
                         ${sol}
                         ${badgeHTML(t)}
                     </div>`;
@@ -1315,6 +1367,46 @@
         sel.innerHTML = '<option value="">Sin asignar</option>' +
             RESPONSABLES.map(r => `<option value="${r}">${r === 'Sofia' ? 'Sofía' : r}</option>`).join('');
         sel.value = valor || '';
+    }
+
+    function llenarSelectEjecutor(valor) {
+        const sel = document.getElementById('taskEjecutor');
+        const newInput = document.getElementById('taskEjecutorNew');
+        const set = new Set(OPERARIOS);
+        // suma operarios que ya se hayan escrito a mano en otras tareas
+        allTasks().forEach(t => { if (t.ejecutor) set.add(t.ejecutor); });
+        const lista = [...set].sort((a,b) => a.localeCompare(b, 'es'));
+
+        sel.innerHTML = '<option value="">Sin especificar</option>' +
+            lista.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('') +
+            '<option value="__otro__">Otro...</option>';
+
+        if (valor && !lista.includes(valor)) {
+            sel.value = '__otro__';
+            newInput.value = valor;
+            newInput.style.display = 'block';
+        } else {
+            sel.value = valor || '';
+            newInput.value = '';
+            newInput.style.display = 'none';
+        }
+    }
+
+    function toggleEjecutorOtro() {
+        const sel = document.getElementById('taskEjecutor');
+        const newInput = document.getElementById('taskEjecutorNew');
+        if (sel.value === '__otro__') {
+            newInput.style.display = 'block';
+            newInput.focus();
+        } else {
+            newInput.style.display = 'none';
+            newInput.value = '';
+        }
+    }
+
+    function getEjecutorValue() {
+        const sel = document.getElementById('taskEjecutor').value;
+        return sel === '__otro__' ? document.getElementById('taskEjecutorNew').value.trim() : sel;
     }
 
     function llenarSelectAreas(valor) {
@@ -1436,7 +1528,7 @@
                                  ondragstart="handleTaskDragStart(event,'${projectId}','${t.id}','${t.state}')"
                                  ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
                                 <div class="task-title" onclick="editTaskFromView('${projectId}','${t.id}')" style="cursor:pointer;">${esc(t.title)}</div>
-                                <div class="task-meta">👤 ${esc(t.responsable || '—')} ${badgeHTML(t)}</div>
+                                <div class="task-meta">👤 ${esc(t.responsable || '—')} ${ejecutorBadge(t)} ${badgeHTML(t)}</div>
                             </div>`).join('')}
                     </div>
                     <button class="filter-btn" onclick="openNewTask('${state}')" style="width:100%;margin-top:8px;">+ Tarea</button>
@@ -1477,6 +1569,7 @@
         // Por defecto hereda el responsable del proyecto
         const p = (data.projects || []).find(x => x.id === currentProjectId);
         llenarSelectResponsables('taskResponsable', p ? p.responsable : '');
+        llenarSelectEjecutor('');
 
         renderMiDiaBox();
         document.getElementById('taskModal').classList.add('show');
@@ -1497,6 +1590,7 @@
         document.getElementById('taskState').value = t.state || 'backlog';
         document.getElementById('taskDueDate').value = t.dueDate || '';
         llenarSelectResponsables('taskResponsable', t.responsable || '');
+        llenarSelectEjecutor(t.ejecutor || '');
         document.getElementById('deleteTaskBtn').style.display = 'block';
         renderMiDiaBox();
         document.getElementById('taskModal').classList.add('show');
@@ -1515,6 +1609,7 @@
             t.state = document.getElementById('taskState').value;
             t.dueDate = document.getElementById('taskDueDate').value;
             t.responsable = document.getElementById('taskResponsable').value;
+            t.ejecutor = getEjecutorValue();
         } else {
             const projectId = document.getElementById('taskProject').value;
             if (!projectId) return alert('Selecciona un proyecto');
@@ -1526,7 +1621,8 @@
                 title,
                 state: document.getElementById('taskState').value || 'backlog',
                 dueDate: document.getElementById('taskDueDate').value || '',
-                responsable: document.getElementById('taskResponsable').value || ''
+                responsable: document.getElementById('taskResponsable').value || '',
+                ejecutor: getEjecutorValue()
             });
         }
 
