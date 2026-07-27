@@ -184,6 +184,69 @@
         .cal-more:hover { color: var(--accent); }
         .cal-sinfecha { margin-top: 16px; }
 
+        /* ---- Reunión: vista por proyecto ---- */
+        .reunion-header { background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+        .reunion-top { display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .reunion-nombre { font-size: 18px; font-weight: 800; }
+        .reunion-cuando { font-size: 11px; color: var(--text-3); font-weight: 500; }
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+        .chip { display: flex; flex-direction: column; align-items: center; min-width: 72px;
+            padding: 8px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); }
+        .chip b { font-size: 18px; font-weight: 800; line-height: 1; }
+        .chip span { font-size: 9px; text-transform: uppercase; color: var(--text-3);
+            margin-top: 4px; font-weight: 600; letter-spacing: 0.3px; }
+        .chip.danger { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.3); }
+        .chip.danger b { color: var(--danger); }
+        .chip.warn b { color: var(--warning); }
+        .chip.curso b { color: #f97316; }
+        .chip.ok b { color: var(--success); }
+        .avance-global { margin-top: 14px; }
+        .avance-track { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; display: flex; }
+        .avance-label { display: flex; justify-content: space-between; font-size: 11px;
+            color: var(--text-3); margin-bottom: 6px; font-weight: 600; }
+
+        .proy-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 14px; }
+        .proy-card { background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 16px; }
+        .proy-card.con-atraso { border-color: rgba(239,68,68,0.4); }
+        .proy-card-head { display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 10px; margin-bottom: 4px; }
+        .proy-card-nombre { font-size: 14px; font-weight: 700; cursor: pointer; }
+        .proy-card-nombre:hover { color: var(--accent); }
+        .proy-card-sub { font-size: 10px; color: var(--text-3); margin-bottom: 10px; }
+        .proy-avance { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .proy-avance .avance-track { flex: 1; height: 8px; }
+        .proy-avance b { font-size: 11px; color: var(--text-2); white-space: nowrap; font-weight: 700; }
+        .t-linea { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px;
+            cursor: pointer; transition: background 0.15s; border-left: 3px solid transparent; }
+        .t-linea:hover { background: var(--surface-2); }
+        .t-linea.overdue { border-left-color: var(--danger); background: rgba(239,68,68,0.04); }
+        .t-linea.today { border-left-color: var(--warning); background: rgba(245,158,11,0.05); }
+        .t-linea.done { opacity: 0.55; }
+        .t-linea.done .t-nombre { text-decoration: line-through; }
+        .t-nombre { flex: 1; font-size: 12px; font-weight: 500; }
+        .t-estado { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+            color: #fff; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.3px; }
+        .sun-badge { font-size: 10px; white-space: nowrap; }
+        .vista-toggle { display: flex; gap: 4px; background: var(--surface-2); padding: 4px;
+            border-radius: 8px; border: 1px solid var(--border); }
+        .vista-toggle button { border: none; background: transparent; padding: 6px 12px;
+            border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--text-3); }
+        .vista-toggle button.active { background: var(--surface); color: var(--accent);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .midia-box { border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+            background: var(--surface-2); margin-bottom: 12px; }
+        .midia-box h4 { font-size: 11px; text-transform: uppercase; color: var(--text-3);
+            margin-bottom: 8px; letter-spacing: 0.3px; }
+        .midia-btns { display: flex; gap: 6px; }
+        .midia-btns button { flex: 1; padding: 8px 6px; border: 1px solid var(--border);
+            background: var(--surface); border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .midia-btns button:hover:not(:disabled) { border-color: var(--accent); background: rgba(5,150,105,0.06); }
+        .midia-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .midia-estado { font-size: 11px; font-weight: 600; }
+
         .fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
             border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2));
             color: white; border: none; cursor: pointer; font-size: 24px; display: flex;
@@ -223,6 +286,9 @@
             .cal-dow { font-size: 9px; }
             header { padding: 14px 16px; }
             header h1 { font-size: 16px; }
+            .proy-lista { grid-template-columns: 1fr; }
+            .chip { min-width: 60px; padding: 6px 8px; }
+            .chip b { font-size: 15px; }
         }
     </style>
 </head>
@@ -291,6 +357,8 @@
     <!-- REUNIONES -->
     <div id="tab-reuniones" class="tab-content">
         <div class="filters" id="respButtons"></div>
+        <div id="reunionResumen"></div>
+        <div class="proy-lista" id="reunionPorProyecto"></div>
         <div class="kanban" id="reunionesKanban"></div>
     </div>
 
@@ -373,6 +441,7 @@
             <label>Responsable:</label>
             <select id="taskResponsable"></select>
         </div>
+        <div class="midia-box" id="miDiaBox"></div>
         <div class="modal-btns">
             <button class="btn-save" onclick="saveTask()">Guardar</button>
             <button class="btn-delete" style="display:none;" id="deleteTaskBtn" onclick="deleteTask()">Borrar</button>
@@ -382,7 +451,7 @@
 </div>
 
 <script>
-    let db, dbRef;
+    let db, dbRef, tareasRef;
 
     // ---------- Constantes ----------
     const RESPONSABLES = ['Marcelo', 'Sofia', 'Gustavo'];
@@ -420,6 +489,7 @@
     let filterArea = null;
     let filterResp = null;
     let reunionesResp = RESPONSABLES[0];
+    let reunionVista = localStorage.getItem('vph_reunion_vista') || 'proyecto';
     let draggedTask = null;
     let draggedFromState = null;
     const _hoy = new Date();
@@ -524,6 +594,7 @@
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
         dbRef = db.ref('proyectos');
+        tareasRef = db.ref('vpremoldeados/tareas');   // lista personal de index.html
     } catch(e) {
         console.warn('Firebase init:', e.message);
     }
@@ -1083,14 +1154,23 @@
     }
 
     // ---------- Vista Reuniones ----------
+    const HORARIOS = {Gustavo: 'Lunes y Jueves · 11:00 hs', Sofia: 'Lunes y Jueves · 16:00 hs', Marcelo: ''};
+
     function renderReunionesButtons() {
         document.getElementById('respButtons').innerHTML =
             RESPONSABLES.map(r =>
-                `<button class="filter-btn ${reunionesResp === r ? 'active' : ''}" onclick="showReuniones('${r}')">👤 ${r}</button>`
+                `<button class="filter-btn ${reunionesResp === r ? 'active' : ''}" onclick="showReuniones('${r}')">👤 ${r === 'Sofia' ? 'Sofía' : r}</button>`
             ).join('') +
-            `<span style="margin-left:auto;font-size:11px;color:var(--text-3);">
-                Gustavo: Lun y Jue 11:00 · Sofía: Lun y Jue 16:00
-            </span>`;
+            `<div style="margin-left:auto;" class="vista-toggle">
+                <button class="${reunionVista === 'proyecto' ? 'active' : ''}" onclick="setReunionVista('proyecto')">📊 Por proyecto</button>
+                <button class="${reunionVista === 'tablero' ? 'active' : ''}" onclick="setReunionVista('tablero')">📋 Tablero</button>
+            </div>`;
+    }
+
+    function setReunionVista(v) {
+        reunionVista = v;
+        localStorage.setItem('vph_reunion_vista', v);
+        showReuniones(reunionesResp);
     }
 
     function showReuniones(resp) {
@@ -1098,26 +1178,135 @@
         renderReunionesButtons();
 
         const suyas = allTasks().filter(t => t.responsable === resp);
+        const kanban = document.getElementById('reunionesKanban');
+        const porProy = document.getElementById('reunionPorProyecto');
+        const resumen = document.getElementById('reunionResumen');
 
-        document.getElementById('reunionesKanban').innerHTML = STATES.map(state => {
-            const tasks = suyas.filter(t => t.state === state).sort((a,b) => (a.order||0) - (b.order||0));
+        resumen.innerHTML = renderReunionResumen(resp, suyas);
+
+        if (reunionVista === 'tablero') {
+            porProy.style.display = 'none';
+            kanban.style.display = '';
+            kanban.innerHTML = STATES.map(state => {
+                const tasks = suyas.filter(t => t.state === state).sort((a,b) => (a.order||0) - (b.order||0));
+                return `
+                    <div class="kanban-column">
+                        <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
+                        <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)"
+                             ondragleave="handleTaskDragLeave(event)"
+                             style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
+                            ${tasks.length ? tasks.map(t => `
+                                <div class="task-card ${getTaskStatus(t.dueDate,t.state).class}" draggable="true"
+                                     ondragstart="handleTaskDragStart(event,'${t.projectId}','${t.id}','${state}')"
+                                     ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
+                                    <div class="task-title" onclick="editTaskFromView('${t.projectId}','${t.id}')" style="cursor:pointer;">${esc(t.title)}</div>
+                                    <div class="task-meta">${esc(t.projectName)} ${badgeHTML(t)}</div>
+                                </div>`).join('')
+                            : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
+                        </div>
+                    </div>`;
+            }).join('');
+            return;
+        }
+
+        kanban.style.display = 'none';
+        porProy.style.display = '';
+
+        // Agrupar SUS tareas por proyecto, manteniendo el orden de data.projects
+        const grupos = [];
+        (data.projects || []).forEach(p => {
+            const tareas = (p.tasks || []).filter(t => t && t.responsable === resp);
+            if (tareas.length) grupos.push({p, tareas});
+        });
+
+        if (!grupos.length) {
+            porProy.innerHTML = `<div class="metric-section" style="grid-column:1/-1;">
+                <div class="empty-note">Sin tareas asignadas a ${esc(resp === 'Sofia' ? 'Sofía' : resp)}.<br>
+                Asignale tareas desde el Kanban de cada proyecto.</div></div>`;
+            return;
+        }
+
+        // Primero los proyectos con atraso, después por menor avance
+        grupos.forEach(g => {
+            g.hechas = g.tareas.filter(t => t.state === 'hecho').length;
+            g.venc = g.tareas.filter(t => t.state !== 'hecho' && t.dueDate && t.dueDate < hoyYMD()).length;
+            g.pct = Math.round(g.hechas / g.tareas.length * 100);
+        });
+        grupos.sort((a,b) => (b.venc - a.venc) || (a.pct - b.pct));
+
+        porProy.innerHTML = grupos.map(g => {
+            const {p, tareas, hechas, venc, pct} = g;
+            const enCurso = tareas.filter(t => t.state === 'en-curso').length;
+
+            const lineas = tareas
+                .slice()
+                .sort((a,b) => STATES.indexOf(a.state) - STATES.indexOf(b.state) || (a.order||0)-(b.order||0))
+                .map(t => {
+                    const st = getTaskStatus(t.dueDate, t.state);
+                    const vin = tareaVinculada(t.id);
+                    const sol = vin ? `<span class="sun-badge" title="${vin.completed ? 'Completada en tu app de Tareas' : 'En tu lista de Tareas'}">${vin.completed ? '☀️✅' : '☀️'}</span>` : '';
+                    return `<div class="t-linea ${st.class}" onclick="editTaskFromView('${p.id}','${t.id}')">
+                        <span class="t-estado" style="background:${STATE_COLORS[t.state] || 'var(--text-3)'};">${STATE_LABELS[t.state] || t.state}</span>
+                        <span class="t-nombre">${esc(t.title)}</span>
+                        ${sol}
+                        ${badgeHTML(t)}
+                    </div>`;
+                }).join('');
+
             return `
-                <div class="kanban-column">
-                    <h3>${STATE_LABELS[state]} (${tasks.length})</h3>
-                    <div ondrop="handleTaskDrop(event, '${state}')" ondragover="handleTaskDragOver(event)"
-                         ondragleave="handleTaskDragLeave(event)"
-                         style="min-height:50px;border:2px dashed transparent;border-radius:6px;padding:8px;transition:all 0.2s;" class="kanban-dropzone">
-                        ${tasks.length ? tasks.map(t => `
-                            <div class="task-card ${getTaskStatus(t.dueDate,t.state).class}" draggable="true"
-                                 ondragstart="handleTaskDragStart(event,'${t.projectId}','${t.id}','${state}')"
-                                 ondragend="handleTaskDragEnd(event)" style="cursor:grab;">
-                                <div class="task-title" onclick="editTaskFromView('${t.projectId}','${t.id}')" style="cursor:pointer;">${esc(t.title)}</div>
-                                <div class="task-meta">${esc(t.projectName)} ${badgeHTML(t)}</div>
-                            </div>`).join('')
-                        : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:16px;">Sin tareas</div>'}
+                <div class="proy-card ${venc ? 'con-atraso' : ''}">
+                    <div class="proy-card-head">
+                        <div class="proy-card-nombre" onclick="openProjectDetail('${p.id}')">${esc(p.name)}</div>
+                        ${venc ? `<span class="task-badge badge-overdue">🚨 ${venc}</span>` : ''}
                     </div>
+                    <div class="proy-card-sub">📁 ${esc(p.area || '—')} · ${enCurso} en curso</div>
+                    <div class="proy-avance">
+                        <div class="avance-track">
+                            <div class="bar-seg" style="width:${pct}%;background:var(--success);"></div>
+                        </div>
+                        <b>${hechas} de ${tareas.length}</b>
+                    </div>
+                    ${lineas}
                 </div>`;
         }).join('');
+    }
+
+    function renderReunionResumen(resp, suyas) {
+        const hechas = suyas.filter(t => t.state === 'hecho').length;
+        const enCurso = suyas.filter(t => t.state === 'en-curso').length;
+        const venc = suyas.filter(t => t.state !== 'hecho' && t.dueDate && t.dueDate < hoyYMD()).length;
+        const semana = suyas.filter(t => {
+            if (t.state === 'hecho' || !t.dueDate) return false;
+            const d = diasHasta(t.dueDate);
+            return d !== null && d >= 0 && d <= 7;
+        }).length;
+        const pct = suyas.length ? Math.round(hechas / suyas.length * 100) : 0;
+        const enMiDia = suyas.filter(t => tareaVinculada(t.id)).length;
+        const nombre = resp === 'Sofia' ? 'Sofía' : resp;
+
+        return `
+            <div class="reunion-header">
+                <div class="reunion-top">
+                    <div>
+                        <div class="reunion-nombre">👤 ${esc(nombre)}</div>
+                        ${HORARIOS[resp] ? `<div class="reunion-cuando">🗓️ ${HORARIOS[resp]}</div>` : ''}
+                    </div>
+                    <div class="chips">
+                        <div class="chip"><b>${suyas.length}</b><span>Asignadas</span></div>
+                        <div class="chip curso"><b>${enCurso}</b><span>En curso</span></div>
+                        <div class="chip ok"><b>${hechas}</b><span>Hechas</span></div>
+                        <div class="chip ${venc ? 'danger' : ''}"><b>${venc}</b><span>Vencidas</span></div>
+                        <div class="chip ${semana ? 'warn' : ''}"><b>${semana}</b><span>Esta semana</span></div>
+                        ${enMiDia ? `<div class="chip"><b>☀️ ${enMiDia}</b><span>En Mi Día</span></div>` : ''}
+                    </div>
+                </div>
+                <div class="avance-global">
+                    <div class="avance-label"><span>Avance general</span><span>${pct}%</span></div>
+                    <div class="avance-track">
+                        <div class="bar-seg" style="width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--accent-2));"></div>
+                    </div>
+                </div>
+            </div>`;
     }
 
     // ---------- Modal Proyecto ----------
@@ -1289,6 +1478,7 @@
         const p = (data.projects || []).find(x => x.id === currentProjectId);
         llenarSelectResponsables('taskResponsable', p ? p.responsable : '');
 
+        renderMiDiaBox();
         document.getElementById('taskModal').classList.add('show');
     }
 
@@ -1308,6 +1498,7 @@
         document.getElementById('taskDueDate').value = t.dueDate || '';
         llenarSelectResponsables('taskResponsable', t.responsable || '');
         document.getElementById('deleteTaskBtn').style.display = 'block';
+        renderMiDiaBox();
         document.getElementById('taskModal').classList.add('show');
     }
 
@@ -1430,13 +1621,161 @@
         refreshActiveView();
     }
 
-    // ---------- Integración con index.html ----------
-    function addTaskToMyDay(taskId, taskTitle, projectName) {
-        let miDiaList = JSON.parse(localStorage.getItem("vph_mi_dia_v1")) || [];
-        miDiaList.push({id: taskId, title: taskTitle, project: projectName, q: 1,
-                        addedFrom: "proyectos", date: new Date().toISOString()});
-        localStorage.setItem("vph_mi_dia_v1", JSON.stringify(miDiaList));
-        alert("✅ Agregada a Mi Día");
+    // ---------- Vínculo con la app de Tareas (index.html) ----------
+    // index.html guarda su lista en Firebase 'vpremoldeados/tareas' (array) y en
+    // localStorage 'tasks'. "Mi Día" son las tareas con daySize seteado (regla 1-3-5).
+    const MIDIA_LIMITES = {grande: 1, mediana: 3, 'pequeña': 5};
+    const MIDIA_NOMBRES = {grande: '🎯 Grande', mediana: '📋 Mediana', 'pequeña': '✏️ Pequeña'};
+
+    let misTareas = [];        // copia local de vpremoldeados/tareas
+    let misTareasListo = false;
+
+    function normalizarTareas(v) {
+        if (!v) return [];
+        return (Array.isArray(v) ? v : Object.values(v)).filter(Boolean);
+    }
+
+    let _escuchando = false;
+    function escucharMisTareas() {
+        if (!tareasRef) { misTareasListo = true; return; }
+        if (_escuchando) return;      // el timeout de arranque puede llamarla dos veces
+        _escuchando = true;
+        tareasRef.on('value', snap => {
+            misTareas = normalizarTareas(snap.val());
+            misTareasListo = true;
+            if (activeTab === 'reuniones') showReuniones(reunionesResp);
+            if (document.getElementById('taskModal').classList.contains('show')) renderMiDiaBox();
+        }, err => { console.warn('Tareas:', err.message); misTareasListo = true; });
+    }
+
+    // Devuelve la tarea de "Tareas" vinculada a una tarea de proyecto, si existe
+    function tareaVinculada(projectTaskId) {
+        return misTareas.find(t => t && t.proyectoTaskId === projectTaskId) || null;
+    }
+
+    function contarMiDia() {
+        const c = {grande:0, mediana:0, 'pequeña':0};
+        misTareas.forEach(t => { if (t && t.daySize && !t.completed) c[t.daySize] = (c[t.daySize]||0) + 1; });
+        return c;
+    }
+
+    function enviarAMiDia(projectId, taskId, size) {
+        if (!tareasRef) return alert('Sin conexión con la app de Tareas.');
+        const p = (data.projects || []).find(x => x.id === projectId);
+        if (!p) return;
+        const t = (p.tasks || []).find(x => x.id === taskId);
+        if (!t) return;
+
+        if (tareaVinculada(taskId)) return alert('Esta tarea ya está en tu lista de Tareas.');
+
+        const c = contarMiDia();
+        if ((c[size] || 0) >= MIDIA_LIMITES[size]) {
+            return alert(`Límite alcanzado: máximo ${MIDIA_LIMITES[size]} tarea${MIDIA_LIMITES[size]>1?'s':''} ${size} por día.\n\nSacá alguna desde la app de Tareas o elegí otro tamaño.`);
+        }
+
+        const hoy = hoyYMD();
+        const nueva = {
+            id: Date.now(),
+            title: t.title,
+            urgency: (t.dueDate && t.dueDate <= hoy) ? 'urgent' : 'normal',
+            importance: 'importante',
+            date: t.dueDate || null,
+            time: null,
+            alertBefore: 0,
+            alerted: false,
+            completed: false,
+            createdAt: Date.now(),
+            completedAt: null,
+            daySize: size,
+            // trazabilidad del vínculo
+            origen: 'proyectos',
+            proyecto: p.name,
+            proyectoId: p.id,
+            proyectoTaskId: t.id
+        };
+
+        // Escritura con transacción: no pisa lo que index.html haya guardado en el medio
+        tareasRef.transaction(actual => {
+            const arr = normalizarTareas(actual);
+            if (arr.some(x => x.proyectoTaskId === t.id)) return arr;   // ya estaba
+            arr.push(nueva);
+            return arr;
+        }).then(res => {
+            if (!res.committed) return alert('No se pudo guardar. Probá de nuevo.');
+            misTareas = normalizarTareas(res.snapshot.val());
+            localStorage.setItem('tasks', JSON.stringify(misTareas));
+            t.miDia = size;
+            saveData();
+            renderMiDiaBox();
+            refreshActiveView();
+        }).catch(err => alert('Error al enviar a Mi Día: ' + err.message));
+    }
+
+    function quitarDeMiDia(projectId, taskId) {
+        const vin = tareaVinculada(taskId);
+        if (!vin) return;
+        if (!confirm(`¿Sacar "${vin.title}" de tu lista de Tareas?\n\nLa tarea del proyecto no se toca.`)) return;
+
+        tareasRef.transaction(actual => {
+            const arr = normalizarTareas(actual);
+            return arr.filter(x => x.proyectoTaskId !== taskId);
+        }).then(res => {
+            misTareas = normalizarTareas(res.snapshot.val());
+            localStorage.setItem('tasks', JSON.stringify(misTareas));
+            const p = (data.projects || []).find(x => x.id === projectId);
+            const t = p && (p.tasks || []).find(x => x.id === taskId);
+            if (t) { delete t.miDia; saveData(); }
+            renderMiDiaBox();
+            refreshActiveView();
+        }).catch(err => alert('Error: ' + err.message));
+    }
+
+    // Caja "Mi Día" dentro del modal de tarea
+    function renderMiDiaBox() {
+        const box = document.getElementById('miDiaBox');
+        if (!box) return;
+
+        if (!editingTaskId || !editingTaskProjectId) {
+            box.style.display = 'none';
+            return;
+        }
+        box.style.display = 'block';
+
+        if (!misTareasListo) {
+            box.innerHTML = '<h4>☀️ Mi Día</h4><div class="midia-estado" style="color:var(--text-3);">Conectando con la app de Tareas...</div>';
+            return;
+        }
+
+        const vin = tareaVinculada(editingTaskId);
+        if (vin) {
+            const estado = vin.completed
+                ? '<span style="color:var(--success);">✅ Ya la completaste en Tareas</span>'
+                : (vin.daySize
+                    ? `<span style="color:var(--accent);">☀️ En Mi Día como ${MIDIA_NOMBRES[vin.daySize] || vin.daySize}</span>`
+                    : '<span style="color:var(--accent);">📋 En tu lista de Tareas</span>');
+            box.innerHTML = `
+                <h4>☀️ Mi Día</h4>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div class="midia-estado">${estado}</div>
+                    <button class="icon-btn" style="font-size:11px;font-weight:600;"
+                        onclick="quitarDeMiDia('${editingTaskProjectId}','${editingTaskId}')">Quitar</button>
+                </div>`;
+            return;
+        }
+
+        const c = contarMiDia();
+        box.innerHTML = `
+            <h4>☀️ Enviar a Mi Día (app de Tareas)</h4>
+            <div class="midia-btns">
+                ${Object.keys(MIDIA_LIMITES).map(size => {
+                    const usadas = c[size] || 0, tope = MIDIA_LIMITES[size];
+                    const lleno = usadas >= tope;
+                    return `<button ${lleno ? 'disabled' : ''} title="${usadas} de ${tope} usadas"
+                                onclick="enviarAMiDia('${editingTaskProjectId}','${editingTaskId}','${size}')">
+                                ${MIDIA_NOMBRES[size]}<br><span style="font-size:9px;color:var(--text-3);">${usadas}/${tope}</span>
+                            </button>`;
+                }).join('')}
+            </div>`;
     }
 
     // ---------- Arranque ----------
@@ -1453,7 +1792,7 @@
     if (dbRef) {
         const timeout = setTimeout(() => {
             setSyncStatus('connected', 'Conectado (local)');
-            normalizarDatos(); render();
+            normalizarDatos(); render(); escucharMisTareas();
         }, 8000);
         dbRef.once('value').then(snapshot => {
             clearTimeout(timeout);
@@ -1463,14 +1802,16 @@
                 localStorage.setItem('vph_pm_v1', JSON.stringify(data));
             }
             setSyncStatus('connected', 'Conectado');
-            normalizarDatos(); render();
+            normalizarDatos(); render(); escucharMisTareas();
         }).catch(err => {
             clearTimeout(timeout);
             setSyncStatus('connected', 'Conectado (local)');
-            normalizarDatos(); render();
+            normalizarDatos(); render(); escucharMisTareas();
         });
     } else {
         setSyncStatus('connected', 'Conectado (local)');
+        misTareas = normalizarTareas(JSON.parse(localStorage.getItem('tasks')));
+        misTareasListo = true;
         normalizarDatos(); render();
     }
 
