@@ -1312,17 +1312,21 @@
         kanban.style.display = 'none';
         porProy.style.display = '';
 
-        // Agrupar SUS tareas por proyecto, manteniendo el orden de data.projects
+        // Agrupar SUS tareas por proyecto, manteniendo el orden de data.projects.
+        // Solo entran proyectos con AL MENOS una tarea en curso: en una reunión de
+        // seguimiento no interesa lo que está en backlog ni lo ya cerrado, solo lo
+        // que se está trabajando ahora mismo.
         const grupos = [];
         (data.projects || []).forEach(p => {
             const tareas = (p.tasks || []).filter(t => t && t.responsable === resp);
-            if (tareas.length) grupos.push({p, tareas});
+            const enCursoTareas = tareas.filter(t => t.state === 'en-curso');
+            if (enCursoTareas.length) grupos.push({p, tareas, enCursoTareas});
         });
 
         if (!grupos.length) {
             porProy.innerHTML = `<div class="metric-section" style="grid-column:1/-1;">
-                <div class="empty-note">Sin tareas asignadas a ${esc(resp)}.<br>
-                Asignale tareas desde el Kanban de cada proyecto.</div></div>`;
+                <div class="empty-note">${esc(resp)} no tiene tareas en curso ahora mismo.<br>
+                Mirá la pestaña ⚡ En curso o el Kanban de cada proyecto para asignar o avanzar tareas.</div></div>`;
             return;
         }
 
@@ -1335,12 +1339,12 @@
         grupos.sort((a,b) => (b.venc - a.venc) || (a.pct - b.pct));
 
         porProy.innerHTML = grupos.map(g => {
-            const {p, tareas, hechas, venc, pct} = g;
-            const enCurso = tareas.filter(t => t.state === 'en-curso').length;
+            const {p, tareas, enCursoTareas, hechas, venc, pct} = g;
+            const enCurso = enCursoTareas.length;
 
-            const lineas = tareas
+            const lineas = enCursoTareas
                 .slice()
-                .sort((a,b) => STATES.indexOf(a.state) - STATES.indexOf(b.state) || (a.order||0)-(b.order||0))
+                .sort((a,b) => (a.order||0)-(b.order||0))
                 .map(t => {
                     const st = getTaskStatus(t.dueDate, t.state);
                     const vin = tareaVinculada(t.id);
