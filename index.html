@@ -452,6 +452,51 @@
         .btn-del { padding:5px 8px; border:1.5px solid rgba(239,68,68,0.28); background:transparent; color:var(--danger); border-radius:5px; cursor:pointer; font-size:12px; transition:all 0.17s; }
         .btn-del:hover { background:var(--danger); color:#fff; border-color:var(--danger); }
 
+        /* ── Objetivos y metas ── */
+        .objetivo-item {
+            display:flex; align-items:center; gap:9px; padding:11px 13px;
+            background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+            margin-bottom:8px;
+        }
+        .objetivo-item .drag-handle { cursor:grab; color:var(--text-3); font-size:13px; }
+        .objetivo-item .objetivo-text { flex:1; font-size:13.5px; font-weight:500; color:var(--text); padding:3px 6px; border-radius:5px; cursor:text; }
+        .objetivo-item .objetivo-text:hover { background:var(--surface-2); }
+        .objetivo-item input.objetivo-edit {
+            flex:1; padding:6px 8px; border:1.5px solid var(--accent); border-radius:5px;
+            font-size:13.5px; font-family:'Inter',sans-serif; background:var(--surface-2); color:var(--text);
+        }
+        .objetivo-item .objetivo-del { background:none; border:none; cursor:pointer; opacity:0.45; font-size:13px; color:var(--text-3); padding:2px 4px; transition:all 0.15s; }
+        .objetivo-item .objetivo-del:hover { opacity:1; color:var(--danger); }
+        .objetivo-add { display:flex; gap:8px; margin-top:6px; }
+        .objetivo-add input {
+            flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm);
+            font-size:13px; background:var(--surface); color:var(--text); font-family:'Inter',sans-serif;
+        }
+        .objetivo-add input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,0.14); }
+        .objetivo-add input::placeholder { color:var(--text-3); }
+        .objetivo-add button {
+            padding:10px 18px; border:none; border-radius:var(--radius-sm);
+            background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; font-weight:600;
+            cursor:pointer; font-size:13px; font-family:'Inter',sans-serif;
+            transition:transform 0.15s, box-shadow 0.15s; white-space:nowrap;
+            box-shadow:0 4px 12px rgba(99,102,241,0.28);
+        }
+        .objetivo-add button:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(99,102,241,0.38); }
+
+        .objetivos-box {
+            background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05));
+            border:1px solid rgba(99,102,241,0.28); border-radius:var(--radius);
+            padding:15px 17px; margin-bottom:14px;
+        }
+        .objetivos-box-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .objetivos-box-head h4 { font-size:13.5px; font-weight:700; color:var(--text); }
+        .objetivos-box-head a { font-size:11.5px; color:var(--accent); font-weight:600; text-decoration:none; }
+        .objetivos-box-head a:hover { text-decoration:underline; }
+        .objetivos-box-list { list-style:none; }
+        .objetivos-box-list li { font-size:13px; padding:4px 0 4px 20px; position:relative; color:var(--text-2); }
+        .objetivos-box-list li::before { content:'✦'; position:absolute; left:0; color:var(--accent); font-size:11px; }
+        .objetivos-box-empty { font-size:12px; color:var(--text-3); }
+
         /* ── Modal ── */
         .modal {
             display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -670,6 +715,21 @@
         <div id="shoppingList"></div>
     </div>
 
+    <!-- OBJETIVOS -->
+    <div id="tab-objetivos" class="tab-content">
+        <div class="section-header"><h3>🎯 Mis Objetivos y Metas</h3></div>
+        <p style="font-size:12px;color:var(--text-3);margin-bottom:14px;">
+            Arrastrá ⠿ para reordenar. Clic en un objetivo para editarlo. Esta lista aparece
+            también arriba de ☀️ Mi Día, para leerla cada mañana.
+        </p>
+        <div id="objetivosList"></div>
+        <div class="objetivo-add">
+            <input type="text" id="newObjetivo" placeholder="Nuevo objetivo o meta..."
+                   onkeydown="if(event.key==='Enter'){addObjetivo();}">
+            <button onclick="addObjetivo()">+ Agregar</button>
+        </div>
+    </div>
+
 </div>
 
 <!-- Banner de notificación -->
@@ -840,8 +900,9 @@
         "Otros":     [{name:"Huevos",state:"pending"},{name:"Pimentero",state:"pending"}]
     };
 
-    let tasks    = (JSON.parse(localStorage.getItem('tasks'))    || initialTasks).map(migrate);
-    let shopping = JSON.parse(localStorage.getItem('shopping'))  || initialShopping;
+    let tasks     = (JSON.parse(localStorage.getItem('tasks'))     || initialTasks).map(migrate);
+    let shopping  = JSON.parse(localStorage.getItem('shopping'))   || initialShopping;
+    let objetivos = JSON.parse(localStorage.getItem('objetivos'))  || [];
     let editingId = null, pickerSize = null, fbLoading = false;
 
     // ── Firebase listeners ────────────────────────────────────────────────
@@ -861,6 +922,15 @@
             renderShopping(); updateStats();
         }
     });
+    db.ref('vpremoldeados/objetivos').on('value', snap => {
+        const data = snap.val();
+        if (!fbLoading) {
+            objetivos = data ? (Array.isArray(data) ? data : Object.values(data)).filter(Boolean) : [];
+            localStorage.setItem('objetivos', JSON.stringify(objetivos));
+            renderObjetivos();
+            if (document.getElementById('tab-dia')?.classList.contains('active')) renderDayPlan();
+        }
+    });
 
     function saveTasks() {
         fbLoading = true; setSyncStatus('syncing','Guardando...');
@@ -874,6 +944,14 @@
         fbLoading = true; setSyncStatus('syncing','Guardando...');
         localStorage.setItem('shopping', JSON.stringify(shopping));
         db.ref('vpremoldeados/compras').set(shopping)
+            .then(()   => setSyncStatus('connected','Sincronizado'))
+            .catch(()  => setSyncStatus('error','Error al guardar'))
+            .finally(() => { fbLoading = false; });
+    }
+    function saveObjetivos() {
+        fbLoading = true; setSyncStatus('syncing','Guardando...');
+        localStorage.setItem('objetivos', JSON.stringify(objetivos));
+        db.ref('vpremoldeados/objetivos').set(objetivos)
             .then(()   => setSyncStatus('connected','Sincronizado'))
             .catch(()  => setSyncStatus('error','Error al guardar'))
             .finally(() => { fbLoading = false; });
@@ -1160,6 +1238,7 @@
         }).join('');
 
         document.getElementById('dayPlanView').innerHTML = `
+            ${objetivosBoxHTML()}
             <div class="day-plan-header">
                 <div class="day-progress-info">
                     <h3>☀️ Mi Día — Método 1-3-5</h3>
@@ -1279,6 +1358,90 @@
         ).join('');
     }
 
+    // ── Objetivos y metas personales ────────────────────────────────────────
+    function escHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+            ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function addObjetivo() {
+        const input = document.getElementById('newObjetivo');
+        const text = input.value.trim();
+        if (!text) return;
+        objetivos.push({id: Date.now(), text});
+        input.value = '';
+        saveObjetivos(); renderObjetivos(); renderDayPlan();
+    }
+
+    function deleteObjetivo(id) {
+        if (!confirm('¿Borrar este objetivo?')) return;
+        objetivos = objetivos.filter(o => o.id !== id);
+        saveObjetivos(); renderObjetivos(); renderDayPlan();
+    }
+
+    function editObjetivo(spanEl, id) {
+        if (spanEl.querySelector('input')) return;   // ya se está editando
+        const o = objetivos.find(x => x.id === id);
+        if (!o) return;
+        spanEl.innerHTML = `<input type="text" class="objetivo-edit" value="${escHtml(o.text)}">`;
+        const input = spanEl.querySelector('input');
+        input.focus(); input.select();
+
+        let commited = false;
+        const commit = () => {
+            if (commited) return;
+            commited = true;
+            const val = input.value.trim();
+            if (val && val !== o.text) { o.text = val; saveObjetivos(); }
+            renderObjetivos(); renderDayPlan();
+        };
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter')  { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { commited = true; renderObjetivos(); }
+        });
+        input.addEventListener('blur', commit);
+    }
+
+    let draggedObjetivoIdx = null;
+    function objDragStart(e, idx) { draggedObjetivoIdx = idx; e.dataTransfer.effectAllowed = 'move'; e.target.style.opacity = '0.5'; }
+    function objDragOver(e)  { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+    function objDragEnd(e)   { e.target.style.opacity = '1'; }
+    function objDrop(e, idx) {
+        e.preventDefault();
+        if (draggedObjetivoIdx === null) return;
+        const [movido] = objetivos.splice(draggedObjetivoIdx, 1);
+        objetivos.splice(idx, 0, movido);
+        draggedObjetivoIdx = null;
+        saveObjetivos(); renderObjetivos(); renderDayPlan();
+    }
+
+    function renderObjetivos() {
+        const box = document.getElementById('objetivosList');
+        if (!box) return;
+        box.innerHTML = objetivos.length ? objetivos.map((o,i) => `
+            <div class="objetivo-item" draggable="true"
+                 ondragstart="objDragStart(event,${i})" ondragover="objDragOver(event)"
+                 ondrop="objDrop(event,${i})" ondragend="objDragEnd(event)">
+                <span class="drag-handle" title="Arrastrar para reordenar">⠿</span>
+                <span class="objetivo-text" onclick="editObjetivo(this, ${o.id})">${escHtml(o.text)}</span>
+                <button class="objetivo-del" onclick="deleteObjetivo(${o.id})" title="Borrar">✕</button>
+            </div>`).join('')
+            : '<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">Todavía no cargaste objetivos ni metas.</div>';
+    }
+
+    function objetivosBoxHTML() {
+        const lista = objetivos.length
+            ? objetivos.map(o => `<li>${escHtml(o.text)}</li>`).join('')
+            : '<div class="objetivos-box-empty">Cargá tus objetivos y metas desde la pestaña 🎯 Objetivos.</div>';
+        return `<div class="objetivos-box">
+            <div class="objetivos-box-head">
+                <h4>🎯 Mis Objetivos y Metas</h4>
+                <a href="javascript:void(0)" onclick="goTab('tab-objetivos')">Ver / Editar</a>
+            </div>
+            <ul class="objetivos-box-list">${lista}</ul>
+        </div>`;
+    }
+
     // ── Stats ─────────────────────────────────────────────────────────────
     function updateStats() {
         const pend = tasks.filter(t=>!t.completed);
@@ -1325,7 +1488,8 @@
             {id:'tab-completadas',label:'✅ Completadas'},
             {id:'tab-dia',        label:'☀️ Mi Día'},
             {id:'tab-semana',     label:'📊 Semana'},
-            {id:'tab-compras',    label:'🛒 Compras'}
+            {id:'tab-compras',    label:'🛒 Compras'},
+            {id:'tab-objetivos',  label:'🎯 Objetivos'}
         ];
         document.getElementById('tabsContainer').innerHTML = tabs
             .map((t,i) => `<button class="tab-btn ${i===0?'active':''}" data-tab="${t.id}" onclick="goTab('${t.id}')">${t.label}</button>`)
@@ -1333,7 +1497,7 @@
     }
 
     function render() {
-        renderTasks(); updateStats(); renderShopping();
+        renderTasks(); updateStats(); renderShopping(); renderObjetivos();
         const act = document.querySelector('.tab-content.active');
         if (act?.id === 'tab-dia')    renderDayPlan();
         if (act?.id === 'tab-semana') renderWeeklyReview();
