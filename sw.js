@@ -1,5 +1,5 @@
-const CACHE = 'mis-gestiones-v4';
-const ASSETS = ['./index.html', './proyectos.html', './manifest.json'];
+const CACHE = 'mis-gestiones-v5';
+const ASSETS = ['./app.html', './index.html', './proyectos.html', './manifest.json'];
 
 self.addEventListener('install', e => {
     e.waitUntil(
