@@ -118,12 +118,14 @@
         .stat-card .stat-icon { font-size:12px; margin-bottom:2px; }
 
         /* ── Tabs ── */
+        /* Bajan de renglón en vez de cortarse: con 16 pestañas el scroll
+           horizontal las escondía sin ninguna señal de que estaban ahí. */
         .tabs {
-            display:flex; gap:3px; margin-bottom:14px;
+            display:flex; flex-wrap:wrap; gap:3px; row-gap:4px; margin-bottom:14px;
             background:var(--surface); padding:5px; border-radius:var(--radius);
-            overflow-x:auto; border:1px solid var(--border); scrollbar-width:none;
+            border:1px solid var(--border);
         }
-        .tabs::-webkit-scrollbar { display:none; }
+        .tab-sep { width:100%; height:1px; background:var(--border); margin:3px 0; }
         .tab-btn {
             flex-shrink:0; padding:7px 13px; border:none; background:transparent;
             cursor:pointer; font-size:12px; font-weight:500; color:var(--text-3);
@@ -832,7 +834,12 @@
         }
         @media (max-width:420px) {
             .stat-card .number { font-size:17px; }
-            .tab-btn { font-size:11px; padding:6px 10px; }
+            /* Comprimido para que las 16 pestañas no se coman media pantalla */
+            .tabs { gap:2px; row-gap:2px; padding:4px; }
+            .tab-btn { font-size:10.5px; padding:5px 7px; }
+            /* El separador de grupos fuerza corte de renglón y deja filas de un
+               solo botón: en pantalla chica cuesta más de lo que aporta. */
+            .tab-sep { display:none; }
             .shopping-item { flex-direction:column; align-items:stretch; gap:6px; }
             .shopping-label { white-space:normal; }
             .shopping-buttons { justify-content:flex-start; }
@@ -2089,7 +2096,7 @@
         ];
         let primera = true;
         document.getElementById('tabsContainer').innerHTML = tabs.map(t => {
-            if (t.sep) return '<span style="width:1px;background:var(--border);flex-shrink:0;margin:4px 5px;"></span>';
+            if (t.sep) return '<span class="tab-sep"></span>';
             const act = primera ? ' active' : ''; primera = false;
             return `<button class="tab-btn${act}" data-tab="${t.id}" onclick="goTab('${t.id}')">${t.label}</button>`;
         }).join('');
