@@ -1118,6 +1118,10 @@
             </select>
             <select id="editArea"></select>
         </div>
+        <select id="editState">
+            <option value="en-curso">⚡ En curso — lo estoy haciendo</option>
+            <option value="backlog">📋 Para más adelante</option>
+        </select>
         <div class="modal-row">
             <select id="editUrgency">
                 <option value="normal">No urgente</option>
@@ -1188,8 +1192,8 @@
             <div class="hint" id="ntProyectoHint"></div>
         </div>
 
-        <div class="form-group" id="ntEstadoWrap" style="display:none;">
-            <label>Estado en el tablero:</label>
+        <div class="form-group" id="ntEstadoWrap">
+            <label>Estado:</label>
             <select id="ntEstado">
                 <option value="backlog">Backlog</option>
                 <option value="planificado">Planificado</option>
@@ -1595,6 +1599,7 @@
         document.getElementById('editTime').value       = t.time || '';
         document.getElementById('editAlert').value      = t.alertBefore || 0;
         document.getElementById('editAmbito').value     = t.ambito || '';
+        document.getElementById('editState').value      = t.state || 'en-curso';
         editLlenarAreas(t.area || '');
         document.getElementById('editModal').classList.add('show');
     }
@@ -1621,6 +1626,7 @@
         t.alertBefore= newAlert;
         t.ambito     = document.getElementById('editAmbito').value || null;
         t.area       = document.getElementById('editArea').value || null;
+        t.state      = document.getElementById('editState').value || 'en-curso';
         saveTasks(); render(); closeEdit();
     }
 
@@ -3202,10 +3208,21 @@
                     + candidatos.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
         ntProyectoCambio();
     }
-    function ntProyectoCambio() {
+    // resetEstado=true fuerza el valor por defecto (al abrir el modal); si no,
+    // respeta lo que el usuario ya haya elegido mientras completa el formulario.
+    function ntProyectoCambio(resetEstado) {
         const pid = document.getElementById('ntProyecto').value;
         const esProy = !!pid;
-        document.getElementById('ntEstadoWrap').style.display   = esProy ? 'block' : 'none';
+        // El estado existe siempre: en un proyecto son las 5 columnas del tablero;
+        // en una tarea suelta alcanza con "en curso" o "para más adelante".
+        const sel = document.getElementById('ntEstado');
+        const previo = sel.value;
+        sel.innerHTML = esProy
+            ? STATES.map(s=>`<option value="${s}">${STATE_LABELS[s]}</option>`).join('')
+            : '<option value="en-curso">⚡ En curso — lo estoy haciendo</option><option value="backlog">📋 Para más adelante</option>';
+        // Una tarea suelta nueva arranca EN CURSO: si la estás cargando, la vas a hacer.
+        sel.value = (!resetEstado && [...sel.options].some(o=>o.value===previo))
+            ? previo : (esProy ? 'backlog' : 'en-curso');
         document.getElementById('ntEjecutorWrap').style.display = esProy ? 'block' : 'none';
         document.getElementById('ntProyectoHint').textContent = esProy
             ? 'Va al tablero del proyecto y aparece en la reunión del responsable.'
@@ -3238,7 +3255,6 @@
         document.getElementById('ntFecha').value = '';
         document.getElementById('ntHora').value  = '';
         document.getElementById('ntAlerta').value = '0';
-        document.getElementById('ntEstado').value = 'backlog';
         llenarSelectResponsables('ntResponsable', preset.responsable || '');
         // reutiliza la lista de operarios del equipo
         const of = new Set(pmData.team.operarios);
@@ -3246,7 +3262,7 @@
         document.getElementById('ntEjecutor').innerHTML = '<option value="">Sin especificar</option>'
             + [...of].map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
         if (preset.proyectoId) document.getElementById('ntProyecto').value = preset.proyectoId;
-        ntProyectoCambio();
+        ntProyectoCambio(true);
         ntActualizarCuadrante();
         document.getElementById('nuevaTareaModal').classList.add('show');
         setTimeout(()=>document.getElementById('ntTitulo').focus(), 60);
@@ -3288,7 +3304,8 @@
                 alertBefore: parseInt(document.getElementById('ntAlerta').value) || 0,
                 alerted: false, completed: false,
                 createdAt: Date.now(), completedAt: null, daySize: null,
-                ambito, area, assignee: resp || null
+                ambito, area, assignee: resp || null,
+                state: document.getElementById('ntEstado').value || 'en-curso'
             });
             saveTasks();
         }
@@ -3312,6 +3329,8 @@
                 ambito: t.ambito || null, area: t.area || null,
                 urgency: t.urgency, importance: t.importance,
                 fecha: t.date || '', enMiDia: !!t.daySize, proyecto:null, projectId:null,
+                // las sueltas viejas no tienen estado: se consideran en curso
+                estado: t.state || 'en-curso',
                 vencida: !!(t.date && t.date < hoy), esHoy: t.date === hoy
             });
         });
@@ -3352,9 +3371,13 @@
         renderRecorrida();
     }
 
+    let recFiltro = localStorage.getItem('vph_rec_filtro') || 'curso';
+    function setRecFiltro(v) { recFiltro = v; localStorage.setItem('vph_rec_filtro', v); renderRecorrida(); }
+
     function renderRecorrida() {
-        const items = itemsRecorrida();
-        const hoy = hoyYMD();
+        const todos = itemsRecorrida();
+        const items = recFiltro === 'curso' ? todos.filter(i => i.estado === 'en-curso') : todos;
+        const ocultas = todos.length - items.length;
         const enMiDia = tasks.filter(t => t && t.daySize && !t.completed).length;
         const venc = items.filter(i => i.vencida).length;
         const hoyN = items.filter(i => i.esHoy).length;
@@ -3362,12 +3385,20 @@
         let html = `<div class="rec-head">
             <h3>🌅 Recorrida de la mañana</h3>
             <p>Revisá área por área qué hay pendiente y mandá a <strong>Mi Día</strong> lo que vas a hacer hoy.</p>
-            <div class="rec-area-badges" style="margin-top:10px;">
-                <span class="rec-count">${items.length} pendientes</span>
-                ${venc ? `<span class="rec-count venc">🚨 ${venc} vencidas</span>` : ''}
-                ${hoyN ? `<span class="rec-count hoy">⏰ ${hoyN} vencen hoy</span>` : ''}
-                <span class="rec-count">☀️ ${enMiDia} en Mi Día</span>
-            </div></div>`;
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:11px;">
+                <div class="vista-toggle">
+                    <button class="${recFiltro==='curso'?'active':''}" onclick="setRecFiltro('curso')">⚡ En curso</button>
+                    <button class="${recFiltro==='todo'?'active':''}" onclick="setRecFiltro('todo')">📋 Todo</button>
+                </div>
+                <div class="rec-area-badges">
+                    <span class="rec-count">${items.length} pendientes</span>
+                    ${venc ? `<span class="rec-count venc">🚨 ${venc} vencidas</span>` : ''}
+                    ${hoyN ? `<span class="rec-count hoy">⏰ ${hoyN} vencen hoy</span>` : ''}
+                    <span class="rec-count">☀️ ${enMiDia} en Mi Día</span>
+                </div>
+            </div>
+            ${ocultas ? `<p style="margin-top:8px;font-size:11px;color:var(--text-3);">${ocultas} en backlog sin mostrar — tocá <strong>Todo</strong> para verlas y traer alguna a curso.</p>` : ''}
+            </div>`;
 
         const ambitos = [
             {key:'empresa',  label:'🏢 Empresa'},
@@ -3440,7 +3471,9 @@
             html += '</div>';
         });
 
-        if (!items.length) html += '<div class="rec-vacio">🎉 No hay nada pendiente.</div>';
+        if (!items.length) html += recFiltro === 'curso' && todos.length
+            ? `<div class="rec-vacio">Nada en curso ahora mismo. Hay ${todos.length} en backlog — tocá <strong>Todo</strong> para elegir con qué seguir.</div>`
+            : '<div class="rec-vacio">🎉 No hay nada pendiente.</div>';
         document.getElementById('recorridaView').innerHTML = html;
     }
 
