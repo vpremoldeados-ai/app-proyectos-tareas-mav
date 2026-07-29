@@ -1595,11 +1595,17 @@
         document.getElementById('editTime').value       = t.time || '';
         document.getElementById('editAlert').value      = t.alertBefore || 0;
         document.getElementById('editAmbito').value     = t.ambito || '';
-        const selArea = document.getElementById('editArea');
-        selArea.innerHTML = '<option value="">— Sin área —</option>'
-            + todasLasAreas().map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
-        selArea.value = t.area || '';
+        editLlenarAreas(t.area || '');
         document.getElementById('editModal').classList.add('show');
+    }
+    // El listado de áreas del modal de edición también sigue al ámbito elegido
+    function editLlenarAreas(valor) {
+        const amb = document.getElementById('editAmbito').value;
+        const lista = todasLasAreas(amb || null);
+        const s = document.getElementById('editArea');
+        s.innerHTML = '<option value="">— Sin área —</option>'
+            + lista.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+        s.value = (valor && lista.includes(valor)) ? valor : '';
     }
     function closeEdit() { document.getElementById('editModal').classList.remove('show'); editingId = null; }
     function saveEdit() {
@@ -2099,6 +2105,7 @@
     document.getElementById('nuevaTareaModal').addEventListener('click', e => { if(e.target===document.getElementById('nuevaTareaModal')) cerrarNuevaTarea(); });
     document.getElementById('ntUrgencia').addEventListener('change', ntActualizarCuadrante);
     document.getElementById('ntImportancia').addEventListener('change', ntActualizarCuadrante);
+    document.getElementById('editAmbito').addEventListener('change', () => editLlenarAreas(''));
     document.getElementById('projectModal').addEventListener('click', e => { if(e.target===document.getElementById('projectModal')) closeProjectModal(); });
     document.getElementById('taskModal').addEventListener('click',    e => { if(e.target===document.getElementById('taskModal'))    pmCloseTaskModal(); });
     document.getElementById('teamModal').addEventListener('click',    e => { if(e.target===document.getElementById('teamModal'))    closeTeamModal(); });
@@ -3142,20 +3149,32 @@
     // bajo su área, que es lo que permite revisar área por área a la mañana.
 
     const AMBITO_LABEL = {empresa:'🏢 Empresa', personal:'👤 Personal'};
+    // Sugerencias de arranque para lo personal. Las de empresa son AREAS_BASE.
+    // En los dos casos se suman las áreas que ya existan en proyectos y tareas.
+    const AREAS_PERSONALES_BASE = ['Salud', 'Casa', 'Familia', 'Finanzas personales', 'Formación', 'Compras personales'];
 
-    // Todas las áreas conocidas: las de proyectos, las de tareas sueltas y las base
-    function todasLasAreas() {
-        const s = new Set(AREAS_BASE);
-        (pmData.projects || []).forEach(p => { if (p && p.area) s.add(p.area); });
-        tasks.forEach(t => { if (t && t.area) s.add(t.area); });
+    // Las áreas se filtran por ámbito: no tiene sentido ofrecer "Producción"
+    // para una tarea personal ni "Salud" para una de la empresa.
+    function todasLasAreas(ambito) {
+        const s = new Set(ambito === 'personal' ? AREAS_PERSONALES_BASE : AREAS_BASE);
+        (pmData.projects || []).forEach(p => {
+            if (!p || !p.area) return;
+            if (!ambito || (p.type || 'empresa') === ambito) s.add(p.area);
+        });
+        tasks.forEach(t => {
+            if (!t || !t.area) return;
+            if (!ambito || t.ambito === ambito) s.add(t.area);
+        });
         return [...s].sort((a,b) => a.localeCompare(b,'es'));
     }
 
     function ntLlenarAreas(valor) {
+        const ambito = document.getElementById('ntAmbito').value;
+        const lista = todasLasAreas(ambito);
         const s = document.getElementById('ntArea');
-        s.innerHTML = todasLasAreas().map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('')
+        s.innerHTML = lista.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('')
                     + '<option value="__nueva__">➕ Nueva área...</option>';
-        if (valor && todasLasAreas().includes(valor)) s.value = valor;
+        if (valor && lista.includes(valor)) s.value = valor;
         else if (s.options.length) s.selectedIndex = 0;
         ntAreaCambio();
     }
@@ -3169,7 +3188,8 @@
         const s = document.getElementById('ntArea').value;
         return s === '__nueva__' ? document.getElementById('ntAreaNueva').value.trim() : s;
     }
-    function ntAmbitoCambio() { ntLlenarProyectos(); ntActualizarHoraVisible(); }
+    // Al cambiar de ámbito hay que recargar las áreas (y en cascada los proyectos)
+    function ntAmbitoCambio() { ntLlenarAreas(''); ntActualizarHoraVisible(); }
 
     // El selector de proyecto solo ofrece los del ámbito y área elegidos:
     // así no se mezcla un proyecto de Producción dentro de un área de Marketing.
