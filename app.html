@@ -789,6 +789,19 @@
         .fab-nueva:hover { transform:translateY(-2px); }
         .hint { font-size:11px; color:var(--text-3); margin-top:-4px; margin-bottom:9px; }
 
+        /* Filtros internos de la pestaña Tareas (reemplazan 6 pestañas) */
+        .chips-filtro { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+        .chip-f { padding:8px 14px; border:1px solid var(--border); background:var(--surface);
+            border-radius:50px; cursor:pointer; font-size:12px; font-weight:600; color:var(--text-2);
+            font-family:'Inter',sans-serif; transition:all 0.16s; }
+        .chip-f:hover { border-color:var(--accent); color:var(--accent); }
+        .chip-f.active { background:linear-gradient(135deg,var(--accent),var(--accent-2));
+            color:#fff; border-color:transparent; box-shadow:0 3px 10px rgba(99,102,241,0.3); }
+        .chip-f .n { opacity:0.7; font-weight:500; }
+        .chip-f.q1.active { background:linear-gradient(135deg,var(--q1),#dc2626); }
+        .panel-tareas { display:none; }
+        .panel-tareas.active { display:block; }
+
         /* ── Modal ── */
         .modal {
             display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -854,7 +867,11 @@
             <h1>Mis Gestiones</h1>
             <p>Tareas &amp; Productividad</p>
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button class="icon-btn" onclick="openObjetivosModal()" title="Mis objetivos y metas">🎯</button>
+            <button class="icon-btn" onclick="openComprasModal()" title="Compras supermercado">🛒</button>
+            <button class="icon-btn" onclick="openTeamModal()" title="Equipo: responsables y operarios">👥</button>
+            <button class="icon-btn" id="notifBtn" onclick="toggleNotificaciones()" title="Notificaciones de tareas vencidas">🔔</button>
             <div class="sync-status">
                 <div class="sync-dot" id="syncDot"></div>
                 <span class="sync-label" id="syncText">Conectando...</span>
@@ -871,116 +888,13 @@
 
     <div class="tabs" id="tabsContainer"></div>
 
-    <!-- URGENTES -->
-    <div id="tab-urgente" class="tab-content active">
-        <div class="section-header"><h3>Urgentes</h3></div>
-        <div class="add-form">
-            <input type="text" id="titleUrgente" placeholder="Nueva tarea urgente...">
-            <div class="row">
-                <select id="importUrgente">
-                    <option value="importante">⭐ Importante</option>
-                    <option value="no-importante">— No importante</option>
-                </select>
-                <input type="date" id="dateUrgente">
-            </div>
-            <div class="row">
-                <input type="time" id="timeUrgente" title="Hora (opcional)">
-                <select id="alertUrgente" title="Aviso previo">
-                    <option value="0">🔕 Sin aviso</option>
-                    <option value="15">🔔 15 min antes</option>
-                    <option value="30">🔔 30 min antes</option>
-                    <option value="60">🔔 1 hora antes</option>
-                    <option value="120">🔔 2 horas antes</option>
-                </select>
-            </div>
-            <button onclick="addTask('urgent','titleUrgente','dateUrgente','importUrgente','timeUrgente','alertUrgente')">+ Agregar Tarea Urgente</button>
-        </div>
-        <div id="listUrgente" class="tasks-grid"></div>
-    </div>
-
-    <!-- SIN URGENCIA -->
-    <div id="tab-normal" class="tab-content">
-        <div class="section-header"><h3>Sin Urgencia</h3></div>
-        <div class="add-form">
-            <input type="text" id="titleNormal" placeholder="Nueva tarea sin urgencia...">
-            <select id="importNormal">
-                <option value="importante">⭐ Importante</option>
-                <option value="no-importante">— No importante</option>
-            </select>
-            <button onclick="addTask('normal','titleNormal',null,'importNormal')">+ Agregar Tarea</button>
-        </div>
-        <div id="listNormal" class="tasks-grid"></div>
-    </div>
-
-    <!-- CON FECHA -->
-    <div id="tab-fecha" class="tab-content">
-        <div class="section-header"><h3>Con Fecha</h3></div>
-        <div class="add-form">
-            <input type="text" id="titleFecha" placeholder="Nueva tarea con fecha...">
-            <div class="row">
-                <select id="importFecha">
-                    <option value="importante">⭐ Importante</option>
-                    <option value="no-importante">— No importante</option>
-                </select>
-                <input type="date" id="dateFecha">
-            </div>
-            <div class="row">
-                <input type="time" id="timeFecha" title="Hora (opcional)">
-                <select id="alertFecha" title="Aviso previo">
-                    <option value="0">🔕 Sin aviso</option>
-                    <option value="15">🔔 15 min antes</option>
-                    <option value="30">🔔 30 min antes</option>
-                    <option value="60">🔔 1 hora antes</option>
-                    <option value="120">🔔 2 horas antes</option>
-                </select>
-            </div>
-            <button onclick="addTask('normal','titleFecha','dateFecha','importFecha','timeFecha','alertFecha')">+ Agregar Tarea con Fecha</button>
-        </div>
-        <div id="listFecha" class="tasks-grid"></div>
-    </div>
-
-    <!-- PARA PROGRAMAR -->
-    <div id="tab-programar" class="tab-content">
-        <div class="section-header"><h3>⏰ Para Programar</h3></div>
-        <div class="add-form">
-            <input type="text" id="titleProgramar" placeholder="Tarea que querés agendar...">
-            <div class="row">
-                <input type="date" id="dateProgramar">
-                <input type="time" id="timeProgramar" title="Hora (opcional)">
-            </div>
-            <select id="alertProgramar" title="Aviso previo">
-                <option value="0">🔕 Sin aviso</option>
-                <option value="15">🔔 15 min antes</option>
-                <option value="30">🔔 30 min antes</option>
-                <option value="60">🔔 1 hora antes</option>
-                <option value="120">🔔 2 horas antes</option>
-            </select>
-            <button onclick="addBucketTask('programar')">+ Agregar para Programar</button>
-        </div>
-        <div id="listProgramar" class="tasks-grid"></div>
-    </div>
-
-    <!-- PARA DELEGAR -->
-    <div id="tab-delegar" class="tab-content">
-        <div class="section-header"><h3>👥 Para Delegar</h3></div>
-        <div class="add-form">
-            <input type="text" id="titleDelegar" placeholder="Tarea para delegar...">
-            <div class="row">
-                <select id="assigneeDelegar" title="Responsable">
-                    <option value="Sofía">👤 Sofía</option>
-                    <option value="Gustavo">👤 Gustavo</option>
-                </select>
-                <input type="date" id="dateDelegar" title="Fecha límite (opcional)">
-            </div>
-            <button onclick="addBucketTask('delegar')">+ Delegar Tarea</button>
-        </div>
-        <div id="listDelegar" class="tasks-grid"></div>
-    </div>
-
-    <!-- COMPLETADAS -->
-    <div id="tab-completadas" class="tab-content">
-        <div class="section-header"><h3>Completadas</h3></div>
-        <div id="listCompletadas" class="tasks-grid"></div>
+    <!-- TAREAS (unifica Urgentes / Sin urgencia / Con fecha / Completadas) -->
+    <div id="tab-tareas" class="tab-content active">
+        <div class="chips-filtro" id="chipsTareas"></div>
+        <div id="panelUrgente"     class="panel-tareas"><div id="listUrgente" class="tasks-grid"></div></div>
+        <div id="panelNormal"      class="panel-tareas"><div id="listNormal" class="tasks-grid"></div></div>
+        <div id="panelFecha"       class="panel-tareas"><div id="listFecha" class="tasks-grid"></div></div>
+        <div id="panelCompletadas" class="panel-tareas"><div id="listCompletadas" class="tasks-grid"></div></div>
     </div>
 
     <!-- MI DÍA -->
@@ -988,46 +902,7 @@
         <div id="dayPlanView"></div>
     </div>
 
-    <!-- SEMANA -->
-    <div id="tab-semana" class="tab-content">
-        <div id="weeklyReview"></div>
-    </div>
-
-    <!-- COMPRAS -->
-    <div id="tab-compras" class="tab-content">
-        <div class="section-header"><h3>Compras Supermercado</h3></div>
-        <div class="shopping-add">
-            <input type="text" id="newItem" placeholder="Nuevo artículo...">
-            <select id="newCat">
-                <option value="Higiene Personal">🧼 Higiene</option>
-                <option value="Limpieza">🧹 Limpieza</option>
-                <option value="Alacena">🥫 Alacena</option>
-                <option value="Lácteos">🧀 Lácteos</option>
-                <option value="Galletas">🍪 Galletas</option>
-                <option value="Carnes">🥩 Carnes</option>
-                <option value="Verduras">🥕 Verduras</option>
-                <option value="Otros">📦 Otros</option>
-            </select>
-            <button onclick="addShoppingItem()">+ Agregar</button>
-        </div>
-        <div id="shoppingList"></div>
-    </div>
-
-    <!-- OBJETIVOS -->
-    <div id="tab-objetivos" class="tab-content">
-        <div class="section-header"><h3>🎯 Mis Objetivos y Metas</h3></div>
-        <p style="font-size:12px;color:var(--text-3);margin-bottom:14px;">
-            Arrastrá ⠿ para reordenar. Clic en un objetivo para editarlo. Esta lista aparece
-            también arriba de ☀️ Mi Día, para leerla cada mañana.
-        </p>
-        <div id="objetivosList"></div>
-        <div class="objetivo-add">
-            <input type="text" id="newObjetivo" placeholder="Nuevo objetivo o meta..."
-                   onkeydown="if(event.key==='Enter'){addObjetivo();}">
-            <button onclick="addObjetivo()">+ Agregar</button>
-        </div>
-    </div>
-
+    <!-- RECORRIDA MATUTINA -->
     <!-- RECORRIDA MATUTINA -->
     <div id="tab-recorrida" class="tab-content">
         <div id="recorridaView"></div>
@@ -1040,19 +915,9 @@
         <div class="pm-stats" id="pmHeaderStats"></div>
         <div class="pm-toolbar">
             <button class="filter-btn" onclick="fabClick()" style="background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:var(--accent);font-weight:600;">➕ Nuevo Proyecto</button>
-            <button class="icon-btn" onclick="openTeamModal()" title="Gestionar equipo">👥 Equipo</button>
-            <button class="icon-btn" id="notifBtn" onclick="toggleNotificaciones()" title="Notificaciones de tareas vencidas">🔔</button>
         </div>
         <div class="filters" id="filters"></div>
         <div class="projects-grid" id="projectsGrid"></div>
-    </div>
-
-    <!-- PROYECTOS: en curso por responsable -->
-    <div id="tab-todas" class="tab-content">
-        <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">
-            💡 Arrastrá una tarjeta a otra columna para reasignar el responsable.
-        </div>
-        <div class="kanban cols-4" id="todasKanban"></div>
     </div>
 
     <!-- PROYECTOS: calendario -->
@@ -1075,17 +940,24 @@
         <div style="margin-top:14px;" id="calSinFecha"></div>
     </div>
 
-    <!-- PROYECTOS: métricas -->
+    <!-- MÉTRICAS: proyectos + revisión semanal personal -->
     <div id="tab-metricas" class="tab-content">
         <div id="metricasContent"></div>
+        <div id="weeklyReview" style="margin-top:18px;"></div>
     </div>
 
-    <!-- PROYECTOS: reuniones -->
+    <!-- REUNIONES (incluye la vista "en curso por responsable") -->
     <div id="tab-reuniones" class="tab-content">
         <div class="filters" id="respButtons"></div>
         <div id="reunionResumen"></div>
         <div class="proy-lista" id="reunionPorProyecto"></div>
         <div class="kanban" id="reunionesKanban"></div>
+        <div id="reunionTodas" style="display:none;">
+            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">
+                💡 Arrastrá una tarjeta a otra columna para reasignar el responsable.
+            </div>
+            <div class="kanban cols-4" id="todasKanban"></div>
+        </div>
     </div>
 
     <!-- PROYECTOS: detalle (no está en la barra de pestañas) -->
@@ -1165,6 +1037,51 @@
         <div class="picker-list" id="pickerList"></div>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closePickerModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Objetivos y metas -->
+<div id="objetivosModal" class="modal">
+    <div class="modal-box pm-modal-box">
+        <h3>🎯 Mis Objetivos y Metas</h3>
+        <p style="font-size:12px;color:var(--text-3);margin-bottom:14px;">
+            Arrastrá ⠿ para reordenar. Clic en un objetivo para editarlo. Esta lista aparece
+            arriba de ☀️ Mi Día, para leerla cada mañana.
+        </p>
+        <div id="objetivosList"></div>
+        <div class="objetivo-add">
+            <input type="text" id="newObjetivo" placeholder="Nuevo objetivo o meta..."
+                   onkeydown="if(event.key==='Enter'){addObjetivo();}">
+            <button onclick="addObjetivo()">+ Agregar</button>
+        </div>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeObjetivosModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Compras supermercado -->
+<div id="comprasModal" class="modal">
+    <div class="modal-box pm-modal-box">
+        <h3>🛒 Compras Supermercado</h3>
+        <div class="shopping-add">
+            <input type="text" id="newItem" placeholder="Nuevo artículo...">
+            <select id="newCat">
+                <option value="Higiene Personal">🧼 Higiene</option>
+                <option value="Limpieza">🧹 Limpieza</option>
+                <option value="Alacena">🥫 Alacena</option>
+                <option value="Lácteos">🧀 Lácteos</option>
+                <option value="Galletas">🍪 Galletas</option>
+                <option value="Carnes">🥩 Carnes</option>
+                <option value="Verduras">🥕 Verduras</option>
+                <option value="Otros">📦 Otros</option>
+            </select>
+            <button onclick="addShoppingItem()">+ Agregar</button>
+        </div>
+        <div id="shoppingList"></div>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeComprasModal()">Cerrar</button>
         </div>
     </div>
 </div>
@@ -1716,14 +1633,10 @@
         const urgent = tasks.filter(t => !t.completed && nb(t) && (t.urgency==='urgent' || t.date===today));
         const normal = tasks.filter(t => !t.completed && nb(t) && t.urgency==='normal' && !t.date);
         const dated  = tasks.filter(t => !t.completed && nb(t) && t.urgency==='normal' && t.date && t.date!==today).sort((a,b)=>new Date(a.date)-new Date(b.date));
-        const programar = tasks.filter(t => !t.completed && t.bucket==='programar');
-        const delegar   = tasks.filter(t => !t.completed && t.bucket==='delegar');
         const done   = tasks.filter(t => t.completed);
         document.getElementById('listUrgente').innerHTML     = urgent.length ? urgent.map(t=>renderTask(t,true)).join('') : es('🎉','Sin urgentes');
         document.getElementById('listNormal').innerHTML      = normal.length ? normal.map(t=>renderTask(t,true)).join('') : es('📭','Sin tareas pendientes');
         document.getElementById('listFecha').innerHTML       = dated.length  ? dated.map(t=>renderTask(t,false)).join('') : es('📅','Sin tareas con fecha');
-        document.getElementById('listProgramar').innerHTML   = programar.length ? programar.map(t=>renderTask(t,true)).join('') : es('⏰','Nada para programar');
-        document.getElementById('listDelegar').innerHTML     = delegar.length ? delegar.map(t=>renderTask(t,true)).join('') : es('👥','Nada para delegar');
         document.getElementById('listCompletadas').innerHTML = done.length   ? done.map(t=>renderTask(t,false)).join('')  : es('✅','Ninguna completada aún');
     }
 
@@ -1945,6 +1858,55 @@
         ).join('');
     }
 
+    // ── Filtros internos de la pestaña Tareas ───────────────────────────────
+    // Antes esto eran 6 pestañas distintas. Los contenedores (listUrgente,
+    // listNormal, listFecha, listCompletadas) siguen siendo los mismos, así que
+    // renderTasks() no cambia: acá solo se decide cuál panel se ve.
+    let filtroTareas = localStorage.getItem('vph_filtro_tareas') || 'urgente';
+
+    function setFiltroTareas(f) {
+        filtroTareas = f;
+        localStorage.setItem('vph_filtro_tareas', f);
+        pintarFiltroTareas();
+    }
+
+    // Atajo desde las tarjetas de estadísticas: va a Tareas con el filtro puesto
+    function irATareas(f) { setFiltroTareas(f); goTab('tab-tareas'); }
+
+    function pintarFiltroTareas() {
+        const hoy = new Date().toISOString().split('T')[0];
+        const pend = tasks.filter(t => t && !t.completed);
+        const conteo = {
+            urgente:     pend.filter(t => t.urgency==='urgent' || t.date===hoy).length,
+            normal:      pend.filter(t => t.urgency==='normal' && !t.date).length,
+            fecha:       pend.filter(t => t.urgency==='normal' && t.date && t.date!==hoy).length,
+            completadas: tasks.filter(t => t && t.completed).length
+        };
+        const defs = [
+            {k:'urgente',     lbl:'🔴 Urgentes',     cls:'q1'},
+            {k:'normal',      lbl:'📌 Sin urgencia', cls:''},
+            {k:'fecha',       lbl:'📅 Con fecha',    cls:''},
+            {k:'completadas', lbl:'✅ Completadas',  cls:''}
+        ];
+        const cont = document.getElementById('chipsTareas');
+        if (cont) cont.innerHTML = defs.map(d =>
+            `<button class="chip-f ${d.cls} ${filtroTareas===d.k?'active':''}" onclick="setFiltroTareas('${d.k}')">
+                ${d.lbl} <span class="n">${conteo[d.k]}</span>
+             </button>`).join('');
+
+        const paneles = {urgente:'panelUrgente', normal:'panelNormal', fecha:'panelFecha', completadas:'panelCompletadas'};
+        Object.entries(paneles).forEach(([k,id]) => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('active', k === filtroTareas);
+        });
+    }
+
+    // ── Modales de Objetivos y Compras (salieron de la barra de pestañas) ────
+    function openObjetivosModal()  { renderObjetivos(); document.getElementById('objetivosModal').classList.add('show'); }
+    function closeObjetivosModal() { document.getElementById('objetivosModal').classList.remove('show'); renderDayPlan(); }
+    function openComprasModal()    { renderShopping(); document.getElementById('comprasModal').classList.add('show'); }
+    function closeComprasModal()   { document.getElementById('comprasModal').classList.remove('show'); }
+
     // ── Objetivos y metas personales ────────────────────────────────────────
     function escHtml(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -2023,7 +1985,7 @@
         return `<div class="objetivos-box">
             <div class="objetivos-box-head">
                 <h4>🎯 Mis Objetivos y Metas</h4>
-                <a href="javascript:void(0)" onclick="goTab('tab-objetivos')">Ver / Editar</a>
+                <a href="javascript:void(0)" onclick="openObjetivosModal()">Ver / Editar</a>
             </div>
             <ul class="objetivos-box-list">${lista}</ul>
         </div>`;
@@ -2043,16 +2005,16 @@
         const xcomp = all.filter(i=>i.state==='pending').length;
 
         document.getElementById('quadrantStats').innerHTML = `
-            <div class="stat-card sq1" onclick="goTab('tab-urgente')" title="Urgente + Importante"><div class="stat-icon">🔴</div><div class="number">${q1}</div><div class="label">Hacer ya</div></div>
-            <div class="stat-card sq2" onclick="goTab('tab-normal')"  title="No urgente + Importante"><div class="stat-icon">🟡</div><div class="number">${q2}</div><div class="label">Agendar</div></div>
-            <div class="stat-card sq3" onclick="goTab('tab-urgente')" title="Urgente + No importante"><div class="stat-icon">🟠</div><div class="number">${q3}</div><div class="label">Delegar</div></div>
-            <div class="stat-card sq4" onclick="goTab('tab-normal')"  title="No urgente + No importante"><div class="stat-icon">⚪</div><div class="number">${q4}</div><div class="label">Eliminar</div></div>`;
+            <div class="stat-card sq1" onclick="irATareas('urgente')" title="Urgente + Importante"><div class="stat-icon">🔴</div><div class="number">${q1}</div><div class="label">Hacer ya</div></div>
+            <div class="stat-card sq2" onclick="irATareas('normal')"  title="No urgente + Importante"><div class="stat-icon">🟡</div><div class="number">${q2}</div><div class="label">Agendar</div></div>
+            <div class="stat-card sq3" onclick="irATareas('urgente')" title="Urgente + No importante"><div class="stat-icon">🟠</div><div class="number">${q3}</div><div class="label">Delegar</div></div>
+            <div class="stat-card sq4" onclick="irATareas('normal')"  title="No urgente + No importante"><div class="stat-icon">⚪</div><div class="number">${q4}</div><div class="label">Eliminar</div></div>`;
 
         document.getElementById('miscStats').innerHTML = `
-            <div class="stat-card s-fecha"   onclick="goTab('tab-fecha')"><div class="number">${dated}</div><div class="label">Con Fecha</div></div>
-            <div class="stat-card s-total"   onclick="goTab('tab-compras')"><div class="number">${tot}</div><div class="label">Total Items</div></div>
-            <div class="stat-card s-tengo"   onclick="goTab('tab-compras')"><div class="number">${tengo}</div><div class="label">Tengo</div></div>
-            <div class="stat-card s-pending" onclick="goTab('tab-compras')"><div class="number">${xcomp}</div><div class="label">Por Comprar</div></div>`;
+            <div class="stat-card s-fecha"   onclick="irATareas('fecha')"><div class="number">${dated}</div><div class="label">Con Fecha</div></div>
+            <div class="stat-card s-total"   onclick="openComprasModal()"><div class="number">${tot}</div><div class="label">Total Items</div></div>
+            <div class="stat-card s-tengo"   onclick="openComprasModal()"><div class="number">${tengo}</div><div class="label">Tengo</div></div>
+            <div class="stat-card s-pending" onclick="openComprasModal()"><div class="number">${xcomp}</div><div class="label">Por Comprar</div></div>`;
     }
 
     // ── Tabs ──────────────────────────────────────────────────────────────
@@ -2063,36 +2025,28 @@
         document.getElementById(id)?.classList.add('active');
         // personales
         if (id==='tab-recorrida') renderRecorrida();
-        if (id==='tab-dia')    renderDayPlan();
-        if (id==='tab-semana') renderWeeklyReview();
+        if (id==='tab-dia')       renderDayPlan();
+        if (id==='tab-tareas')    pintarFiltroTareas();
         // proyectos
         if (id==='tab-proyectos')  { pmHeaderStatsRender(); renderProjects(); renderFilters(); }
-        if (id==='tab-todas')      renderAllPmTasks();
         if (id==='tab-calendario') renderCalendario();
-        if (id==='tab-metricas')   renderMetricas();
+        if (id==='tab-metricas')   { renderMetricas(); renderWeeklyReview(); }
         if (id==='tab-reuniones')  renderReunionesTab();
     }
 
+    // 7 pestañas. Lo que antes eran 6 pestañas de tareas es ahora una sola con
+    // filtros; Objetivos y Compras pasaron a modales del encabezado; "En curso"
+    // vive dentro de Reuniones; y la Revisión Semanal, dentro de Métricas.
     function initTabs() {
         const tabs = [
             {id:'tab-recorrida',  label:'🌅 Recorrida'},
             {id:'tab-dia',        label:'☀️ Mi Día'},
-            {id:'tab-urgente',    label:'🔴 Urgentes'},
-            {id:'tab-normal',     label:'📌 Sin Urgencia'},
-            {id:'tab-fecha',      label:'📅 Con Fecha'},
-            {id:'tab-programar',  label:'⏰ Para Programar'},
-            {id:'tab-delegar',    label:'👥 Para Delegar'},
-            {id:'tab-completadas',label:'✅ Completadas'},
+            {id:'tab-tareas',     label:'📋 Tareas'},
             {sep:true},
             {id:'tab-proyectos',  label:'🗂️ Proyectos'},
-            {id:'tab-todas',      label:'⚡ En Curso'},
-            {id:'tab-calendario', label:'📆 Calendario'},
-            {id:'tab-metricas',   label:'📈 Métricas'},
             {id:'tab-reuniones',  label:'🤝 Reuniones'},
-            {sep:true},
-            {id:'tab-objetivos',  label:'🎯 Objetivos'},
-            {id:'tab-semana',     label:'📊 Semana'},
-            {id:'tab-compras',    label:'🛒 Compras'}
+            {id:'tab-calendario', label:'📆 Calendario'},
+            {id:'tab-metricas',   label:'📈 Métricas'}
         ];
         let primera = true;
         document.getElementById('tabsContainer').innerHTML = tabs.map(t => {
@@ -2103,13 +2057,14 @@
         // la primera pestaña es la Recorrida: activar su contenido
         document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
         document.getElementById('tab-recorrida')?.classList.add('active');
+        pintarFiltroTareas();
     }
 
     function render() {
-        renderTasks(); updateStats(); renderShopping(); renderObjetivos();
+        renderTasks(); updateStats(); renderShopping(); renderObjetivos(); pintarFiltroTareas();
         const act = document.querySelector('.tab-content.active');
         if (act?.id === 'tab-dia')       renderDayPlan();
-        if (act?.id === 'tab-semana')    renderWeeklyReview();
+        if (act?.id === 'tab-metricas')  renderWeeklyReview();
         if (act?.id === 'tab-recorrida') renderRecorrida();
     }
 
@@ -2119,6 +2074,8 @@
     document.getElementById('ntUrgencia').addEventListener('change', ntActualizarCuadrante);
     document.getElementById('ntImportancia').addEventListener('change', ntActualizarCuadrante);
     document.getElementById('editAmbito').addEventListener('change', () => editLlenarAreas(''));
+    document.getElementById('objetivosModal').addEventListener('click', e => { if(e.target===document.getElementById('objetivosModal')) closeObjetivosModal(); });
+    document.getElementById('comprasModal').addEventListener('click',   e => { if(e.target===document.getElementById('comprasModal'))   closeComprasModal(); });
     document.getElementById('projectModal').addEventListener('click', e => { if(e.target===document.getElementById('projectModal')) closeProjectModal(); });
     document.getElementById('taskModal').addEventListener('click',    e => { if(e.target===document.getElementById('taskModal'))    pmCloseTaskModal(); });
     document.getElementById('teamModal').addEventListener('click',    e => { if(e.target===document.getElementById('teamModal'))    closeTeamModal(); });
@@ -2316,9 +2273,8 @@
         pmHeaderStatsRender(); checkVencidas();
         const act = document.querySelector('.tab-content.active')?.id;
         if      (act === 'tab-proyectos')  { renderProjects(); renderFilters(); }
-        else if (act === 'tab-todas')      renderAllPmTasks();
         else if (act === 'tab-calendario') renderCalendario();
-        else if (act === 'tab-metricas')   renderMetricas();
+        else if (act === 'tab-metricas')   { renderMetricas(); renderWeeklyReview(); }
         else if (act === 'tab-reuniones')  renderReunionesTab();
         else if (act === 'tab-proyecto-detail' && currentProjectId) openProjectDetail(currentProjectId);
     }
@@ -2647,11 +2603,14 @@
         showReuniones(reunionesResp);
     }
     function renderReunionesButtons() {
+        // En la vista "equipo" los botones de persona no aplican: se ven todos juntos
+        const esEquipo = reunionVista === 'equipo';
         document.getElementById('respButtons').innerHTML =
-            pmData.team.responsables.map(r => `<button class="filter-btn ${reunionesResp===r?'active':''}" onclick="showReuniones(${jsArg(r)})">👤 ${esc(r)}</button>`).join('')
+            (esEquipo ? '' : pmData.team.responsables.map(r => `<button class="filter-btn ${reunionesResp===r?'active':''}" onclick="showReuniones(${jsArg(r)})">👤 ${esc(r)}</button>`).join(''))
             + `<div style="margin-left:auto;" class="vista-toggle">
                 <button class="${reunionVista==='proyecto'?'active':''}" onclick="setReunionVista('proyecto')">📊 Por proyecto</button>
-                <button class="${reunionVista==='tablero'?'active':''}" onclick="setReunionVista('tablero')">📋 Tablero</button></div>`;
+                <button class="${reunionVista==='tablero'?'active':''}" onclick="setReunionVista('tablero')">📋 Tablero</button>
+                <button class="${esEquipo?'active':''}" onclick="setReunionVista('equipo')">⚡ Todo el equipo</button></div>`;
     }
     function setReunionVista(v) { reunionVista = v; localStorage.setItem('vph_reunion_vista', v); showReuniones(reunionesResp); }
 
@@ -2661,7 +2620,19 @@
         const suyas = allPmTasks().filter(t => t.responsable === resp);
         const kanban = document.getElementById('reunionesKanban');
         const porProy = document.getElementById('reunionPorProyecto');
-        document.getElementById('reunionResumen').innerHTML = renderReunionResumen(resp, suyas);
+        const todas = document.getElementById('reunionTodas');
+        const resumen = document.getElementById('reunionResumen');
+
+        // Vista "todo el equipo": lo que antes era la pestaña ⚡ En Curso
+        if (reunionVista === 'equipo') {
+            porProy.style.display = 'none'; kanban.style.display = 'none';
+            resumen.innerHTML = '';
+            todas.style.display = '';
+            renderAllPmTasks();
+            return;
+        }
+        todas.style.display = 'none';
+        resumen.innerHTML = renderReunionResumen(resp, suyas);
 
         if (reunionVista === 'tablero') {
             porProy.style.display = 'none'; kanban.style.display = '';
