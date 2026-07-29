@@ -739,6 +739,54 @@
             .chip b { font-size:15px; }
         }
 
+        /* ══════════ RECORRIDA MATUTINA ══════════ */
+        .rec-head { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+            padding:15px 18px; margin-bottom:14px; }
+        .rec-head h3 { font-size:15px; font-weight:700; color:var(--text); }
+        .rec-head p { font-size:11.5px; color:var(--text-3); margin-top:3px; }
+        .rec-ambito { margin-bottom:18px; }
+        .rec-ambito-tit { font-size:13px; font-weight:800; color:var(--text); margin-bottom:9px;
+            padding-bottom:6px; border-bottom:2px solid var(--border); display:flex;
+            align-items:center; justify-content:space-between; gap:10px; }
+        .rec-ambito-tit .n { font-size:11px; font-weight:600; color:var(--text-3); }
+        .rec-area { background:var(--surface); border:1px solid var(--border);
+            border-radius:var(--radius); margin-bottom:9px; overflow:hidden; }
+        .rec-area-head { display:flex; align-items:center; justify-content:space-between; gap:10px;
+            padding:10px 14px; background:var(--surface-2); border-bottom:1px solid var(--border); cursor:pointer; }
+        .rec-area-head h4 { font-size:12.5px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:7px; }
+        .rec-area-badges { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+        .rec-count { padding:2px 8px; border-radius:50px; font-size:10px; font-weight:700;
+            background:rgba(99,102,241,0.14); color:var(--accent); }
+        .rec-count.venc { background:rgba(239,68,68,0.16); color:var(--danger); }
+        .rec-count.hoy  { background:rgba(245,158,11,0.18); color:#b45309; }
+        .rec-items { padding:8px 12px; display:flex; flex-direction:column; gap:5px; }
+        .rec-item { display:flex; align-items:center; gap:9px; padding:8px 10px;
+            background:var(--surface-2); border-radius:var(--radius-sm); border:1px solid var(--border);
+            border-left:3px solid var(--border); }
+        .rec-item.venc { border-left-color:var(--danger); }
+        .rec-item.hoy  { border-left-color:var(--warning); }
+        .rec-item.q1   { border-left-color:var(--q1); }
+        .rec-item-main { flex:1; min-width:0; }
+        .rec-item-tit { font-size:13px; font-weight:500; color:var(--text); cursor:pointer; }
+        .rec-item-tit:hover { color:var(--accent); }
+        .rec-item-sub { font-size:10px; color:var(--text-3); margin-top:2px;
+            display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+        .rec-add { border:1px solid var(--border); background:var(--surface); border-radius:6px;
+            padding:5px 9px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;
+            color:var(--text-2); font-family:'Inter',sans-serif; transition:all 0.15s; }
+        .rec-add:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+        .rec-add:disabled { opacity:0.45; cursor:default; }
+        .rec-vacio { font-size:12px; color:var(--text-3); padding:10px 14px; }
+
+        /* Botón flotante: nueva tarea desde cualquier pestaña */
+        .fab-nueva { position:fixed; bottom:22px; right:22px; z-index:900;
+            padding:14px 20px; border:none; border-radius:50px; cursor:pointer;
+            background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff;
+            font-weight:700; font-size:13px; font-family:'Inter',sans-serif;
+            box-shadow:0 6px 20px rgba(99,102,241,0.45); transition:transform 0.15s; }
+        .fab-nueva:hover { transform:translateY(-2px); }
+        .hint { font-size:11px; color:var(--text-3); margin-top:-4px; margin-bottom:9px; }
+
         /* ── Modal ── */
         .modal {
             display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -973,6 +1021,11 @@
         </div>
     </div>
 
+    <!-- RECORRIDA MATUTINA -->
+    <div id="tab-recorrida" class="tab-content">
+        <div id="recorridaView"></div>
+    </div>
+
     <!-- ══════════ PROYECTOS ══════════ -->
 
     <!-- PROYECTOS: tablero -->
@@ -1040,6 +1093,8 @@
 
 </div>
 
+<button class="fab-nueva" onclick="abrirNuevaTarea()">➕ Nueva tarea</button>
+
 <!-- Banner de notificación -->
 <div id="notifBanner">
     <div class="notif-icon">🔔</div>
@@ -1055,6 +1110,14 @@
     <div class="modal-box">
         <h3>Editar Tarea</h3>
         <input type="text" id="editTitle" placeholder="Título">
+        <div class="modal-row">
+            <select id="editAmbito">
+                <option value="">— Sin ámbito —</option>
+                <option value="empresa">🏢 Empresa</option>
+                <option value="personal">👤 Personal</option>
+            </select>
+            <select id="editArea"></select>
+        </div>
         <div class="modal-row">
             <select id="editUrgency">
                 <option value="normal">No urgente</option>
@@ -1091,6 +1154,98 @@
         <div class="picker-list" id="pickerList"></div>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closePickerModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nueva tarea (unificado) -->
+<div id="nuevaTareaModal" class="modal">
+    <div class="modal-box pm-modal-box">
+        <h3 id="nuevaTareaTitulo">➕ Nueva Tarea</h3>
+
+        <div class="form-group">
+            <label>¿Qué hay que hacer?</label>
+            <input type="text" id="ntTitulo" placeholder="Describí la tarea...">
+        </div>
+
+        <div class="form-group">
+            <label>Ámbito:</label>
+            <select id="ntAmbito" onchange="ntAmbitoCambio()">
+                <option value="empresa">🏢 Empresa</option>
+                <option value="personal">👤 Personal</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Área:</label>
+            <select id="ntArea" onchange="ntAreaCambio()"></select>
+            <input type="text" id="ntAreaNueva" placeholder="Nombre de la nueva área" style="display:none;">
+        </div>
+
+        <div class="form-group">
+            <label>Proyecto:</label>
+            <select id="ntProyecto" onchange="ntProyectoCambio()"></select>
+            <div class="hint" id="ntProyectoHint"></div>
+        </div>
+
+        <div class="form-group" id="ntEstadoWrap" style="display:none;">
+            <label>Estado en el tablero:</label>
+            <select id="ntEstado">
+                <option value="backlog">Backlog</option>
+                <option value="planificado">Planificado</option>
+                <option value="en-curso">En Curso</option>
+                <option value="revision">Revisión</option>
+                <option value="hecho">Hecho</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Prioridad (Eisenhower):</label>
+            <div class="modal-row">
+                <select id="ntUrgencia">
+                    <option value="normal">🕒 No urgente</option>
+                    <option value="urgent">🔴 Urgente</option>
+                </select>
+                <select id="ntImportancia">
+                    <option value="importante">⭐ Importante</option>
+                    <option value="no-importante">— No importante</option>
+                </select>
+            </div>
+            <div class="hint" id="ntCuadranteHint"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Fecha límite (opcional):</label>
+            <input type="date" id="ntFecha">
+        </div>
+
+        <div class="form-group" id="ntHoraWrap">
+            <label>Hora y aviso (opcional):</label>
+            <div class="modal-row">
+                <input type="time" id="ntHora">
+                <select id="ntAlerta">
+                    <option value="0">🔕 Sin aviso</option>
+                    <option value="15">🔔 15 min antes</option>
+                    <option value="30">🔔 30 min antes</option>
+                    <option value="60">🔔 1 hora antes</option>
+                    <option value="120">🔔 2 horas antes</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Responsable:</label>
+            <select id="ntResponsable"></select>
+        </div>
+
+        <div class="form-group" id="ntEjecutorWrap" style="display:none;">
+            <label>Ejecutor (quién lo hace) — opcional:</label>
+            <select id="ntEjecutor"></select>
+        </div>
+
+        <div class="modal-btns">
+            <button class="btn-save" onclick="guardarNuevaTarea()">Guardar</button>
+            <button class="btn-cancel" onclick="cerrarNuevaTarea()">Cancelar</button>
         </div>
     </div>
 </div>
@@ -1439,6 +1594,11 @@
         document.getElementById('editDate').value       = t.date || '';
         document.getElementById('editTime').value       = t.time || '';
         document.getElementById('editAlert').value      = t.alertBefore || 0;
+        document.getElementById('editAmbito').value     = t.ambito || '';
+        const selArea = document.getElementById('editArea');
+        selArea.innerHTML = '<option value="">— Sin área —</option>'
+            + todasLasAreas().map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+        selArea.value = t.area || '';
         document.getElementById('editModal').classList.add('show');
     }
     function closeEdit() { document.getElementById('editModal').classList.remove('show'); editingId = null; }
@@ -1453,6 +1613,8 @@
         t.date       = document.getElementById('editDate').value || null;
         t.time       = newTime;
         t.alertBefore= newAlert;
+        t.ambito     = document.getElementById('editAmbito').value || null;
+        t.area       = document.getElementById('editArea').value || null;
         saveTasks(); render(); closeEdit();
     }
 
@@ -1881,6 +2043,7 @@
         document.querySelector(`[data-tab="${id}"]`)?.classList.add('active');
         document.getElementById(id)?.classList.add('active');
         // personales
+        if (id==='tab-recorrida') renderRecorrida();
         if (id==='tab-dia')    renderDayPlan();
         if (id==='tab-semana') renderWeeklyReview();
         // proyectos
@@ -1893,6 +2056,7 @@
 
     function initTabs() {
         const tabs = [
+            {id:'tab-recorrida',  label:'🌅 Recorrida'},
             {id:'tab-dia',        label:'☀️ Mi Día'},
             {id:'tab-urgente',    label:'🔴 Urgentes'},
             {id:'tab-normal',     label:'📌 Sin Urgencia'},
@@ -1917,20 +2081,24 @@
             const act = primera ? ' active' : ''; primera = false;
             return `<button class="tab-btn${act}" data-tab="${t.id}" onclick="goTab('${t.id}')">${t.label}</button>`;
         }).join('');
-        // la primera pestaña es Mi Día: activar su contenido
+        // la primera pestaña es la Recorrida: activar su contenido
         document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-        document.getElementById('tab-dia')?.classList.add('active');
+        document.getElementById('tab-recorrida')?.classList.add('active');
     }
 
     function render() {
         renderTasks(); updateStats(); renderShopping(); renderObjetivos();
         const act = document.querySelector('.tab-content.active');
-        if (act?.id === 'tab-dia')    renderDayPlan();
-        if (act?.id === 'tab-semana') renderWeeklyReview();
+        if (act?.id === 'tab-dia')       renderDayPlan();
+        if (act?.id === 'tab-semana')    renderWeeklyReview();
+        if (act?.id === 'tab-recorrida') renderRecorrida();
     }
 
     document.getElementById('editModal').addEventListener('click',   e => { if(e.target===document.getElementById('editModal'))   closeEdit(); });
     document.getElementById('pickerModal').addEventListener('click', e => { if(e.target===document.getElementById('pickerModal')) closePickerModal(); });
+    document.getElementById('nuevaTareaModal').addEventListener('click', e => { if(e.target===document.getElementById('nuevaTareaModal')) cerrarNuevaTarea(); });
+    document.getElementById('ntUrgencia').addEventListener('change', ntActualizarCuadrante);
+    document.getElementById('ntImportancia').addEventListener('change', ntActualizarCuadrante);
     document.getElementById('projectModal').addEventListener('click', e => { if(e.target===document.getElementById('projectModal')) closeProjectModal(); });
     document.getElementById('taskModal').addEventListener('click',    e => { if(e.target===document.getElementById('taskModal'))    pmCloseTaskModal(); });
     document.getElementById('teamModal').addEventListener('click',    e => { if(e.target===document.getElementById('teamModal'))    closeTeamModal(); });
@@ -2963,6 +3131,297 @@
         lista.splice(target, 0, m);
         teamDragIdx = null;
         savePmData(); renderTeamModal(); pmRefresh();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //          NUEVA TAREA UNIFICADA  +  RECORRIDA MATUTINA
+    // ══════════════════════════════════════════════════════════════════════
+    // Toda tarea tiene ámbito (empresa/personal) y área. Si además se le elige
+    // un proyecto, vive en el tablero de ese proyecto; si no, queda como tarea
+    // suelta en la lista personal. En los dos casos la Recorrida la muestra
+    // bajo su área, que es lo que permite revisar área por área a la mañana.
+
+    const AMBITO_LABEL = {empresa:'🏢 Empresa', personal:'👤 Personal'};
+
+    // Todas las áreas conocidas: las de proyectos, las de tareas sueltas y las base
+    function todasLasAreas() {
+        const s = new Set(AREAS_BASE);
+        (pmData.projects || []).forEach(p => { if (p && p.area) s.add(p.area); });
+        tasks.forEach(t => { if (t && t.area) s.add(t.area); });
+        return [...s].sort((a,b) => a.localeCompare(b,'es'));
+    }
+
+    function ntLlenarAreas(valor) {
+        const s = document.getElementById('ntArea');
+        s.innerHTML = todasLasAreas().map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('')
+                    + '<option value="__nueva__">➕ Nueva área...</option>';
+        if (valor && todasLasAreas().includes(valor)) s.value = valor;
+        else if (s.options.length) s.selectedIndex = 0;
+        ntAreaCambio();
+    }
+    function ntAreaCambio() {
+        const s = document.getElementById('ntArea'), inp = document.getElementById('ntAreaNueva');
+        if (s.value === '__nueva__') { inp.style.display='block'; inp.focus(); }
+        else { inp.style.display='none'; inp.value=''; }
+        ntLlenarProyectos();
+    }
+    function ntAreaValor() {
+        const s = document.getElementById('ntArea').value;
+        return s === '__nueva__' ? document.getElementById('ntAreaNueva').value.trim() : s;
+    }
+    function ntAmbitoCambio() { ntLlenarProyectos(); ntActualizarHoraVisible(); }
+
+    // El selector de proyecto solo ofrece los del ámbito y área elegidos:
+    // así no se mezcla un proyecto de Producción dentro de un área de Marketing.
+    function ntLlenarProyectos() {
+        const amb = document.getElementById('ntAmbito').value;
+        const area = ntAreaValor();
+        const s = document.getElementById('ntProyecto');
+        const candidatos = (pmData.projects||[]).filter(p => p && p.type === amb && (!area || p.area === area));
+        s.innerHTML = '<option value="">— Sin proyecto (tarea suelta) —</option>'
+                    + candidatos.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+        ntProyectoCambio();
+    }
+    function ntProyectoCambio() {
+        const pid = document.getElementById('ntProyecto').value;
+        const esProy = !!pid;
+        document.getElementById('ntEstadoWrap').style.display   = esProy ? 'block' : 'none';
+        document.getElementById('ntEjecutorWrap').style.display = esProy ? 'block' : 'none';
+        document.getElementById('ntProyectoHint').textContent = esProy
+            ? 'Va al tablero del proyecto y aparece en la reunión del responsable.'
+            : 'Queda como tarea suelta en tu lista, ordenada por su área.';
+        ntActualizarHoraVisible();
+        if (esProy) {
+            const p = (pmData.projects||[]).find(x=>x.id===pid);
+            if (p && p.responsable) document.getElementById('ntResponsable').value = p.responsable;
+        }
+    }
+    function ntActualizarHoraVisible() {
+        // La hora con aviso solo tiene sentido en tareas propias de la lista personal
+        const esProy = !!document.getElementById('ntProyecto').value;
+        document.getElementById('ntHoraWrap').style.display = esProy ? 'none' : 'block';
+    }
+    function ntActualizarCuadrante() {
+        const u = document.getElementById('ntUrgencia').value;
+        const i = document.getElementById('ntImportancia').value;
+        const q = QUADRANTS[u + '-' + i];
+        document.getElementById('ntCuadranteHint').textContent = q ? `${q.icon} ${q.label}` : '';
+    }
+
+    function abrirNuevaTarea(preset) {
+        preset = preset || {};
+        document.getElementById('ntTitulo').value = '';
+        document.getElementById('ntAmbito').value = preset.ambito || 'empresa';
+        ntLlenarAreas(preset.area || '');
+        document.getElementById('ntUrgencia').value    = 'normal';
+        document.getElementById('ntImportancia').value = 'importante';
+        document.getElementById('ntFecha').value = '';
+        document.getElementById('ntHora').value  = '';
+        document.getElementById('ntAlerta').value = '0';
+        document.getElementById('ntEstado').value = 'backlog';
+        llenarSelectResponsables('ntResponsable', preset.responsable || '');
+        // reutiliza la lista de operarios del equipo
+        const of = new Set(pmData.team.operarios);
+        allPmTasks().forEach(t => { if (t.ejecutor) of.add(t.ejecutor); });
+        document.getElementById('ntEjecutor').innerHTML = '<option value="">Sin especificar</option>'
+            + [...of].map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+        if (preset.proyectoId) document.getElementById('ntProyecto').value = preset.proyectoId;
+        ntProyectoCambio();
+        ntActualizarCuadrante();
+        document.getElementById('nuevaTareaModal').classList.add('show');
+        setTimeout(()=>document.getElementById('ntTitulo').focus(), 60);
+    }
+    function cerrarNuevaTarea() { document.getElementById('nuevaTareaModal').classList.remove('show'); }
+
+    function guardarNuevaTarea() {
+        const titulo = document.getElementById('ntTitulo').value.trim();
+        if (!titulo) return alert('Escribí qué hay que hacer');
+        const ambito = document.getElementById('ntAmbito').value;
+        const area   = ntAreaValor();
+        if (!area) return alert('Elegí o escribí un área');
+        const pid    = document.getElementById('ntProyecto').value;
+        const urg    = document.getElementById('ntUrgencia').value;
+        const imp    = document.getElementById('ntImportancia').value;
+        const fecha  = document.getElementById('ntFecha').value || '';
+        const resp   = document.getElementById('ntResponsable').value;
+
+        if (pid) {
+            // → tarea dentro de un proyecto
+            const p = (pmData.projects||[]).find(x=>x.id===pid);
+            if (!p) return alert('Proyecto no encontrado');
+            if (!p.tasks) p.tasks = [];
+            const ejec = document.getElementById('ntEjecutor').value;
+            registrarOperarioSiEsNuevo(ejec);
+            p.tasks.push({
+                id: 't' + Date.now(), title: titulo,
+                state: document.getElementById('ntEstado').value || 'backlog',
+                dueDate: fecha, responsable: resp || '', ejecutor: ejec || '',
+                urgency: urg, importance: imp
+            });
+            savePmData();
+        } else {
+            // → tarea suelta en la lista personal, clasificada por ámbito y área
+            tasks.push({
+                id: Date.now(), title: titulo, urgency: urg, importance: imp,
+                date: fecha || null,
+                time: document.getElementById('ntHora').value || null,
+                alertBefore: parseInt(document.getElementById('ntAlerta').value) || 0,
+                alerted: false, completed: false,
+                createdAt: Date.now(), completedAt: null, daySize: null,
+                ambito, area, assignee: resp || null
+            });
+            saveTasks();
+        }
+        cerrarNuevaTarea();
+        render(); pmRefresh();
+        if (document.getElementById('tab-recorrida').classList.contains('active')) renderRecorrida();
+    }
+
+    // ── Recorrida matutina ────────────────────────────────────────────────
+    // Junta TODO lo pendiente (tareas sueltas + tareas de proyecto) y lo agrupa
+    // por ámbito y área, para revisar de a un área por vez y armar el día.
+    function itemsRecorrida() {
+        const hoy = hoyYMD();
+        const out = [];
+        // sueltas de la lista personal
+        tasks.forEach(t => {
+            if (!t || t.completed) return;
+            if (t.proyectoTaskId) return;   // ya se ve como tarea del proyecto
+            out.push({
+                tipo:'suelta', id:t.id, title:t.title,
+                ambito: t.ambito || null, area: t.area || null,
+                urgency: t.urgency, importance: t.importance,
+                fecha: t.date || '', enMiDia: !!t.daySize, proyecto:null, projectId:null,
+                vencida: !!(t.date && t.date < hoy), esHoy: t.date === hoy
+            });
+        });
+        // tareas de proyecto pendientes
+        (pmData.projects||[]).forEach(p => {
+            if (!p) return;
+            (p.tasks||[]).forEach(t => {
+                if (!t || t.state === 'hecho') return;
+                out.push({
+                    tipo:'proyecto', id:t.id, title:t.title,
+                    ambito: p.type || 'empresa', area: p.area || null,
+                    urgency: t.urgency || 'normal', importance: t.importance || 'importante',
+                    fecha: t.dueDate || '', enMiDia: !!tareaVinculada(t.id),
+                    proyecto: p.name, projectId: p.id, estado: t.state,
+                    responsable: t.responsable || '', ejecutor: t.ejecutor || '',
+                    vencida: !!(t.dueDate && t.dueDate < hoy), esHoy: t.dueDate === hoy
+                });
+            });
+        });
+        return out;
+    }
+
+    function recAddMiDia(tipo, id, projectId) {
+        if (tipo === 'proyecto') {
+            // el tamaño lo decide el modal; acá usamos "pequeña" por defecto y avisamos si no entra
+            const c = contarMiDia();
+            const size = ['pequeña','mediana','grande'].find(s => (c[s]||0) < MIDIA_LIMITES[s]);
+            if (!size) return alert('Mi Día ya está completo (1 grande, 3 medianas y 5 pequeñas).');
+            enviarAMiDia(projectId, id, size);
+        } else {
+            const t = tasks.find(x => x.id === id); if (!t) return;
+            const c = contarMiDia();
+            const size = ['pequeña','mediana','grande'].find(s => (c[s]||0) < MIDIA_LIMITES[s]);
+            if (!size) return alert('Mi Día ya está completo (1 grande, 3 medianas y 5 pequeñas).');
+            t.daySize = size;
+            saveTasks(); render();
+        }
+        renderRecorrida();
+    }
+
+    function renderRecorrida() {
+        const items = itemsRecorrida();
+        const hoy = hoyYMD();
+        const enMiDia = tasks.filter(t => t && t.daySize && !t.completed).length;
+        const venc = items.filter(i => i.vencida).length;
+        const hoyN = items.filter(i => i.esHoy).length;
+
+        let html = `<div class="rec-head">
+            <h3>🌅 Recorrida de la mañana</h3>
+            <p>Revisá área por área qué hay pendiente y mandá a <strong>Mi Día</strong> lo que vas a hacer hoy.</p>
+            <div class="rec-area-badges" style="margin-top:10px;">
+                <span class="rec-count">${items.length} pendientes</span>
+                ${venc ? `<span class="rec-count venc">🚨 ${venc} vencidas</span>` : ''}
+                ${hoyN ? `<span class="rec-count hoy">⏰ ${hoyN} vencen hoy</span>` : ''}
+                <span class="rec-count">☀️ ${enMiDia} en Mi Día</span>
+            </div></div>`;
+
+        const ambitos = [
+            {key:'empresa',  label:'🏢 Empresa'},
+            {key:'personal', label:'👤 Personal'},
+            {key:null,       label:'⚠️ Sin clasificar'}
+        ];
+
+        ambitos.forEach(amb => {
+            const delAmbito = items.filter(i => amb.key ? i.ambito === amb.key : !i.ambito);
+            if (!delAmbito.length) return;
+
+            // agrupar por área
+            const porArea = {};
+            delAmbito.forEach(i => { const a = i.area || 'Sin área'; (porArea[a] = porArea[a] || []).push(i); });
+            const areasOrd = Object.keys(porArea).sort((a,b) => {
+                const va = porArea[a].filter(x=>x.vencida).length, vb = porArea[b].filter(x=>x.vencida).length;
+                return (vb - va) || a.localeCompare(b,'es');
+            });
+
+            html += `<div class="rec-ambito">
+                <div class="rec-ambito-tit"><span>${amb.label}</span><span class="n">${delAmbito.length} pendientes</span></div>`;
+
+            areasOrd.forEach(area => {
+                const lista = porArea[area].slice().sort((a,b) => {
+                    if (a.vencida !== b.vencida) return a.vencida ? -1 : 1;
+                    if (a.esHoy !== b.esHoy) return a.esHoy ? -1 : 1;
+                    const pu = x => (x.urgency==='urgent'?0:1) + (x.importance==='importante'?0:2);
+                    return pu(a) - pu(b);
+                });
+                const v = lista.filter(x=>x.vencida).length, h = lista.filter(x=>x.esHoy).length;
+                html += `<div class="rec-area">
+                    <div class="rec-area-head">
+                        <h4>📁 ${esc(area)}</h4>
+                        <div class="rec-area-badges">
+                            ${v ? `<span class="rec-count venc">🚨 ${v}</span>` : ''}
+                            ${h ? `<span class="rec-count hoy">⏰ ${h}</span>` : ''}
+                            <span class="rec-count">${lista.length}</span>
+                        </div>
+                    </div>
+                    <div class="rec-items">
+                        ${lista.map(i => {
+                            const q = QUADRANTS[i.urgency + '-' + i.importance];
+                            const cls = i.vencida ? 'venc' : (i.esHoy ? 'hoy' : (i.urgency==='urgent' ? 'q1' : ''));
+                            const sub = [];
+                            if (i.proyecto) sub.push(`🗂️ ${esc(i.proyecto)}`);
+                            else sub.push('📋 suelta');
+                            if (i.estado) sub.push(STATE_LABELS[i.estado] || i.estado);
+                            if (q) sub.push(`${q.icon} ${q.label}`);
+                            if (i.responsable) sub.push(`👤 ${esc(i.responsable)}`);
+                            if (i.ejecutor)    sub.push(`🔧 ${esc(i.ejecutor)}`);
+                            if (i.fecha) {
+                                const d = diasHasta(i.fecha);
+                                sub.push(i.vencida ? `🚨 vencida ${Math.abs(d)}d` : (d===0 ? '⏰ hoy' : `📅 ${d}d`));
+                            }
+                            const onclick = i.tipo === 'proyecto'
+                                ? `editPmTask('${i.projectId}','${i.id}')`
+                                : `openEdit(${i.id})`;
+                            return `<div class="rec-item ${cls}">
+                                <div class="rec-item-main">
+                                    <div class="rec-item-tit" onclick="${onclick}">${esc(i.title)}</div>
+                                    <div class="rec-item-sub">${sub.join(' · ')}</div>
+                                </div>
+                                ${i.enMiDia
+                                    ? '<button class="rec-add" disabled>☀️ En Mi Día</button>'
+                                    : `<button class="rec-add" onclick="recAddMiDia('${i.tipo}',${i.tipo==='proyecto'?`'${i.id}'`:i.id},'${i.projectId||''}')">☀️ +Mi Día</button>`}
+                            </div>`;
+                        }).join('')}
+                    </div></div>`;
+            });
+            html += '</div>';
+        });
+
+        if (!items.length) html += '<div class="rec-vacio">🎉 No hay nada pendiente.</div>';
+        document.getElementById('recorridaView').innerHTML = html;
     }
 
     // ── Listener de proyectos en vivo ─────────────────────────────────────
