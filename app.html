@@ -2913,8 +2913,8 @@
                 const extras = [];
                 if (t.ejecutor) extras.push(`lo hace ${t.ejecutor}`);
                 if (t.dueDate) {
-                    const d = diasHasta(t.dueDate);
-                    extras.push(d < 0 ? `VENCIDA hace ${Math.abs(d)} días` : (d === 0 ? 'vence hoy' : `vence en ${d} días`));
+                    const d = diasHasta(t.dueDate), n = Math.abs(d), dia = n === 1 ? 'día' : 'días';
+                    extras.push(d < 0 ? `VENCIDA hace ${n} ${dia}` : (d === 0 ? 'vence hoy' : `vence en ${n} ${dia}`));
                 }
                 L.push(`• ${t.title}${extras.length ? ` _(${extras.join(' · ')})_` : ''}`);
             });
@@ -2923,9 +2923,12 @@
 
         L.push(`Total: ${enCurso.length} tarea${enCurso.length===1?'':'s'} en curso.`);
 
-        // Bloque de delegación: solo si hay operarios cargados a quien delegar
+        // Bloque de delegación: solo para quien realmente delega en operarios.
+        // Se deduce de si alguna vez asignó un ejecutor — a Sofía, que hace su
+        // trabajo administrativo ella misma, no le aparece.
         const operarios = pmData.team.operarios || [];
-        if (operarios.length) {
+        const delegaEnOperarios = allPmTasks().some(t => t.responsable === resp && t.ejecutor);
+        if (operarios.length && delegaEnOperarios) {
             const sinEjecutor = enCurso.filter(t => !t.ejecutor);
             if (sinEjecutor.length) {
                 L.push('');
