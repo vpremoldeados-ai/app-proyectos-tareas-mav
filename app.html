@@ -490,14 +490,47 @@
             border:1px solid rgba(99,102,241,0.28); border-radius:var(--radius);
             padding:15px 17px; margin-bottom:14px;
         }
-        .objetivos-box-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+        .objetivos-box-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
         .objetivos-box-head h4 { font-size:13.5px; font-weight:700; color:var(--text); }
         .objetivos-box-head a { font-size:11.5px; color:var(--accent); font-weight:600; text-decoration:none; }
         .objetivos-box-head a:hover { text-decoration:underline; }
-        .objetivos-box-list { list-style:none; }
-        .objetivos-box-list li { font-size:13px; padding:4px 0 4px 20px; position:relative; color:var(--text-2); }
-        .objetivos-box-list li::before { content:'✦'; position:absolute; left:0; color:var(--accent); font-size:11px; }
         .objetivos-box-empty { font-size:12px; color:var(--text-3); }
+
+        /* Foco del día: rota solo, uno por jornada */
+        .obj-destacado {
+            display:flex; align-items:center; gap:12px; cursor:pointer;
+            background:linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-radius:var(--radius-sm); padding:12px 15px; margin-bottom:11px;
+            box-shadow:0 4px 14px rgba(99,102,241,0.28); transition:transform 0.16s;
+        }
+        .obj-destacado:hover { transform:translateY(-1px); }
+        .obj-destacado-ico { font-size:26px; line-height:1; flex-shrink:0; }
+        .obj-destacado-lbl { font-size:9.5px; font-weight:700; letter-spacing:0.8px;
+            text-transform:uppercase; color:rgba(255,255,255,0.75); }
+        .obj-destacado-txt { font-size:15px; font-weight:700; color:#fff; line-height:1.25; margin-top:2px; }
+
+        /* El resto, en fichas compactas que fluyen en grilla */
+        .obj-grid { display:grid; gap:7px; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr)); }
+        .obj-pill {
+            display:flex; align-items:center; gap:8px; min-width:0;
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:50px; padding:7px 13px; transition:all 0.16s;
+        }
+        .obj-pill:hover { border-color:var(--accent); transform:translateY(-1px);
+            box-shadow:0 3px 10px rgba(99,102,241,0.14); }
+        .obj-pill-ico { font-size:15px; line-height:1; flex-shrink:0; }
+        .obj-pill-txt { font-size:12px; font-weight:600; color:var(--text-2);
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .objetivo-ico { font-size:15px; flex-shrink:0; }
+
+        @media (max-width:520px) {
+            .obj-grid { grid-template-columns:1fr 1fr; gap:6px; }
+            .obj-pill { padding:6px 10px; gap:6px; }
+            .obj-pill-txt { font-size:11px; }
+            .obj-destacado { padding:10px 13px; gap:10px; }
+            .obj-destacado-ico { font-size:22px; }
+            .obj-destacado-txt { font-size:13.5px; }
+        }
 
         /* ══════════ PROYECTOS ══════════ */
         /* Las clases de tarjeta van con prefijo pm- porque .task-card/.task-title/
@@ -2036,6 +2069,31 @@
         saveObjetivos(); renderObjetivos(); renderDayPlan();
     }
 
+    // Icono según el tema del objetivo. Por palabra clave y no por posición,
+    // así cualquier objetivo nuevo que cargue también recibe el suyo.
+    const ICONOS_OBJETIVO = [
+        [/sonre|sonrí|saluda|elogi|amable/i,                    '😊'],
+        [/medit|agradec|gracias|respir|calma|paz/i,             '🧘'],
+        [/yo puedo|depende de m|actitud|mentalidad|creer/i,     '💪'],
+        [/disfrut|goza|felic|alegr/i,                           '✨'],
+        [/estir|elonga|flexib|movilidad|postura/i,              '🤸'],
+        [/gimnasio|kilo|peso|entren|músculo|musculo|correr/i,   '🏋️'],
+        [/pregunt|conocer gente|hablar|conversa|network/i,      '💬'],
+        [/viaj|vacacion|conocer el mundo|avión|avion/i,         '✈️'],
+        [/vend|automatiz|negocio|client|factur|escalar/i,       '📈'],
+        [/u\$d|usd|dólar|dolar|\$|mes|ingreso|ahorr|plata/i,    '💰'],
+        [/famili|pareja|amig|social|hijo|hija|esposa/i,         '❤️'],
+        [/vest|ropa|imagen|presencia|elegan/i,                  '👔'],
+        [/ingl|aprend|estudi|leer|libro|curso|idioma/i,         '📚'],
+        [/salud|dormir|sueño|comer|dieta|aliment|agua/i,        '🩺'],
+        [/orden|organiz|planific|tiempo|foco|disciplin/i,       '🗂️'],
+    ];
+    function iconoObjetivo(texto) {
+        const t = String(texto || '');
+        for (const [re, ico] of ICONOS_OBJETIVO) if (re.test(t)) return ico;
+        return '⭐';
+    }
+
     function renderObjetivos() {
         const box = document.getElementById('objetivosList');
         if (!box) return;
@@ -2044,6 +2102,7 @@
                  ondragstart="objDragStart(event,${i})" ondragover="objDragOver(event)"
                  ondrop="objDrop(event,${i})" ondragend="objDragEnd(event)">
                 <span class="drag-handle" title="Arrastrar para reordenar">⠿</span>
+                <span class="objetivo-ico">${iconoObjetivo(o.text)}</span>
                 <span class="objetivo-text" onclick="editObjetivo(this, ${o.id})">${escHtml(o.text)}</span>
                 <button class="objetivo-del" onclick="deleteObjetivo(${o.id})" title="Borrar">✕</button>
             </div>`).join('')
@@ -2051,15 +2110,41 @@
     }
 
     function objetivosBoxHTML() {
-        const lista = objetivos.length
-            ? objetivos.map(o => `<li>${escHtml(o.text)}</li>`).join('')
-            : '<div class="objetivos-box-empty">Cargá tus objetivos y metas desde la pestaña 🎯 Objetivos.</div>';
+        if (!objetivos.length) {
+            return `<div class="objetivos-box">
+                <div class="objetivos-box-head">
+                    <h4>🎯 Mis Objetivos y Metas</h4>
+                    <a href="javascript:void(0)" onclick="openObjetivosModal()">Cargar</a>
+                </div>
+                <div class="objetivos-box-empty">Todavía no cargaste objetivos. Tocá <strong>Cargar</strong>.</div>
+            </div>`;
+        }
+
+        // Destacado del día: rota solo, uno por jornada, siempre el mismo durante
+        // todo el día. Sin azar, para que no cambie cada vez que se refresca.
+        const hoy = new Date();
+        const diaDelAnio = Math.floor((hoy - new Date(hoy.getFullYear(),0,0)) / 86400000);
+        const destacado = objetivos[diaDelAnio % objetivos.length];
+        const resto = objetivos.filter(o => o.id !== destacado.id);
+
         return `<div class="objetivos-box">
             <div class="objetivos-box-head">
                 <h4>🎯 Mis Objetivos y Metas</h4>
                 <a href="javascript:void(0)" onclick="openObjetivosModal()">Ver / Editar</a>
             </div>
-            <ul class="objetivos-box-list">${lista}</ul>
+            <div class="obj-destacado" onclick="openObjetivosModal()" title="Foco de hoy">
+                <span class="obj-destacado-ico">${iconoObjetivo(destacado.text)}</span>
+                <div>
+                    <div class="obj-destacado-lbl">Foco de hoy</div>
+                    <div class="obj-destacado-txt">${escHtml(destacado.text)}</div>
+                </div>
+            </div>
+            <div class="obj-grid">
+                ${resto.map(o => `<div class="obj-pill" title="${escHtml(o.text)}">
+                    <span class="obj-pill-ico">${iconoObjetivo(o.text)}</span>
+                    <span class="obj-pill-txt">${escHtml(o.text)}</span>
+                </div>`).join('')}
+            </div>
         </div>`;
     }
 
