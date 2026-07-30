@@ -3348,7 +3348,13 @@
         });
         t.miDia = true;
         saveTasks(); savePmData();
-        renderMiDiaBox(); render(); pmRefresh();
+        // pmRefresh() puede reconstruir el detalle del proyecto, y openProjectDetail()
+        // limpia editingTaskId. Si el modal sigue abierto, el Guardar posterior creaba
+        // una tarea NUEVA en vez de actualizar la que se estaba editando (duplicado).
+        const _eid = editingTaskId, _epid = editingTaskProjectId;
+        render(); pmRefresh();
+        editingTaskId = _eid; editingTaskProjectId = _epid;
+        renderMiDiaBox();
     }
     function quitarDeMiDia(projectId, taskId) {
         const vin = tareaVinculada(taskId); if (!vin) return;
@@ -3358,7 +3364,11 @@
         const t = p && (p.tasks||[]).find(x=>x.id===taskId);
         if (t) { delete t.miDia; savePmData(); }
         saveTasks();
-        renderMiDiaBox(); render(); pmRefresh();
+        // mismo cuidado que en enviarAMiDia: no perder qué tarea se está editando
+        const _eid = editingTaskId, _epid = editingTaskProjectId;
+        render(); pmRefresh();
+        editingTaskId = _eid; editingTaskProjectId = _epid;
+        renderMiDiaBox();
     }
     function renderMiDiaBox() {
         const box = document.getElementById('miDiaBox'); if (!box) return;
