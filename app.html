@@ -509,24 +509,25 @@
             text-transform:uppercase; color:rgba(255,255,255,0.75); }
         .obj-destacado-txt { font-size:15px; font-weight:700; color:#fff; line-height:1.25; margin-top:2px; }
 
-        /* El resto, en fichas compactas que fluyen en grilla */
-        .obj-grid { display:grid; gap:7px; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr)); }
+        /* El resto, en fichas que fluyen y toman el ancho que necesitan.
+           En grilla de columnas fijas los objetivos largos se cortaban con
+           puntos suspensivos, justo lo contrario de invitar a leerlos. */
+        .obj-grid { display:flex; flex-wrap:wrap; gap:7px; }
         .obj-pill {
-            display:flex; align-items:center; gap:8px; min-width:0;
+            display:inline-flex; align-items:center; gap:8px; max-width:100%;
             background:var(--surface); border:1px solid var(--border);
-            border-radius:50px; padding:7px 13px; transition:all 0.16s;
+            border-radius:50px; padding:7px 14px; transition:all 0.16s;
         }
         .obj-pill:hover { border-color:var(--accent); transform:translateY(-1px);
             box-shadow:0 3px 10px rgba(99,102,241,0.14); }
         .obj-pill-ico { font-size:15px; line-height:1; flex-shrink:0; }
-        .obj-pill-txt { font-size:12px; font-weight:600; color:var(--text-2);
-            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .obj-pill-txt { font-size:12px; font-weight:600; color:var(--text-2); line-height:1.35; }
         .objetivo-ico { font-size:15px; flex-shrink:0; }
 
         @media (max-width:520px) {
-            .obj-grid { grid-template-columns:1fr 1fr; gap:6px; }
-            .obj-pill { padding:6px 10px; gap:6px; }
-            .obj-pill-txt { font-size:11px; }
+            .obj-grid { gap:6px; }
+            .obj-pill { padding:6px 11px; gap:6px; }
+            .obj-pill-txt { font-size:11.5px; }
             .obj-destacado { padding:10px 13px; gap:10px; }
             .obj-destacado-ico { font-size:22px; }
             .obj-destacado-txt { font-size:13.5px; }
