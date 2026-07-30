@@ -2534,11 +2534,70 @@
     function checkVencidas() { renderAlertBanner(); avisarVencidas(false); }
 
     // ── Vista Proyectos ───────────────────────────────────────────────────
+    // Tareas EN CURSO de una persona, agrupadas por proyecto. Es lo que se ve
+    // al tocar su botón en Proyectos: interesa en qué está trabajando, no qué
+    // proyectos figura dirigiendo.
+    function renderTareasDeResponsable(resp) {
+        const grid = document.getElementById('projectsGrid');
+        const suyas = allPmTasks().filter(t =>
+            t.state === 'en-curso' &&
+            (resp === SIN_ASIGNAR ? !t.responsable : t.responsable === resp));
+
+        if (!suyas.length) {
+            grid.innerHTML = `<div class="metric-section" style="grid-column:1/-1;">
+                <div class="empty-note">${esc(resp)} no tiene tareas en curso.<br>
+                Tocá <strong>✓ Todos</strong> para volver a los proyectos.</div></div>`;
+            return;
+        }
+
+        const venc = suyas.filter(t => t.dueDate && t.dueDate < hoyYMD()).length;
+        const porProy = {};
+        suyas.forEach(t => { (porProy[t.projectName] = porProy[t.projectName] || []).push(t); });
+
+        grid.innerHTML = `
+            <div class="reunion-header" style="grid-column:1/-1;">
+                <div class="reunion-top">
+                    <div>
+                        <div class="reunion-nombre">${resp === SIN_ASIGNAR ? '⚪' : '👤'} ${esc(resp)}</div>
+                        <div class="reunion-cuando">Tareas en curso, agrupadas por proyecto</div>
+                    </div>
+                    <div class="chips">
+                        <div class="chip curso"><b>${suyas.length}</b><span>En curso</span></div>
+                        <div class="chip ${venc?'danger':''}"><b>${venc}</b><span>Vencidas</span></div>
+                        <div class="chip"><b>${Object.keys(porProy).length}</b><span>Proyectos</span></div>
+                    </div>
+                </div>
+            </div>
+            ${Object.keys(porProy).sort((a,b) => {
+                const va = porProy[a].filter(t=>t.dueDate&&t.dueDate<hoyYMD()).length;
+                const vb = porProy[b].filter(t=>t.dueDate&&t.dueDate<hoyYMD()).length;
+                return (vb-va) || a.localeCompare(b,'es');
+            }).map(nombre => {
+                const ts = porProy[nombre];
+                const pid = ts[0].projectId;
+                const v = ts.filter(t=>t.dueDate&&t.dueDate<hoyYMD()).length;
+                return `<div class="proy-card ${v?'con-atraso':''}">
+                    <div class="proy-card-head">
+                        <div class="proy-card-nombre" onclick="openProjectDetail('${pid}')">${esc(nombre)}</div>
+                        ${v?`<span class="task-badge badge-overdue">🚨 ${v}</span>`:''}
+                    </div>
+                    <div class="proy-card-sub">${ts.length} en curso</div>
+                    ${ts.map(t => `<div class="t-linea ${getTaskStatus(t.dueDate,t.state).class}"
+                            onclick="openProjectDetail('${t.projectId}','${t.id}')">
+                        <span class="t-nombre">${esc(t.title)}</span>
+                        ${ejecutorBadge(t)} ${badgeHTML(t)}
+                    </div>`).join('')}
+                </div>`;
+            }).join('')}`;
+    }
+
     function renderProjects() {
+        // Con un responsable elegido, la vista cambia a sus tareas en curso
+        if (filterResp) return renderTareasDeResponsable(filterResp);
+
         let f = pmData.projects || [];
         if (filterType) f = f.filter(p => p.type === filterType);
         if (filterArea) f = f.filter(p => p.area === filterArea);
-        if (filterResp) f = f.filter(p => filterResp === SIN_ASIGNAR ? !p.responsable : p.responsable === filterResp);
 
         document.getElementById('projectsGrid').innerHTML = f.map(p => {
             const tasksP = p.tasks || [];
@@ -2572,8 +2631,6 @@
     function renderFilters() {
         const projs = pmData.projects || [];
         const areas  = [...new Set(projs.map(p => p.area).filter(Boolean))];
-        const usados = [...new Set(projs.map(p => p.responsable).filter(Boolean))];
-        const sinA   = projs.filter(p => !p.responsable).length;
         let html = `<button class="filter-btn ${!filterType && !filterArea && !filterResp ? 'active' : ''}" onclick="setFiltro(null,null,null)">✓ Todos <span style="opacity:.6">(${projs.length})</span></button>
             <button class="filter-btn ${filterType === 'empresa' ? 'active' : ''}" onclick="setFiltro('empresa',null,null)">🏢 Empresa <span style="opacity:.6">(${projs.filter(p=>p.type==='empresa').length})</span></button>
             <button class="filter-btn ${filterType === 'personal' ? 'active' : ''}" onclick="setFiltro('personal',null,null)">👤 Personal <span style="opacity:.6">(${projs.filter(p=>p.type==='personal').length})</span></button>`;
@@ -2581,10 +2638,20 @@
             html += '<span style="margin:0 4px;color:var(--text-3);font-size:11px;text-transform:uppercase;font-weight:600;">Áreas:</span>';
             areas.forEach(a => { html += `<button class="filter-btn ${filterArea===a?'active':''}" onclick="setFiltro(null,${jsArg(a)},null)">📁 ${esc(a)} <span style="opacity:.6">(${projs.filter(p=>p.area===a).length})</span></button>`; });
         }
-        if (usados.length || sinA) {
-            html += '<span style="margin:0 4px;color:var(--text-3);font-size:11px;text-transform:uppercase;font-weight:600;">Responsables:</span>';
-            usados.forEach(r => { html += `<button class="filter-btn ${filterResp===r?'active':''}" onclick="setFiltro(null,null,${jsArg(r)})">👤 ${esc(r)} <span style="opacity:.6">(${projs.filter(p=>p.responsable===r).length})</span></button>`; });
-            if (sinA) html += `<button class="filter-btn ${filterResp===SIN_ASIGNAR?'active':''}" onclick="setFiltro(null,null,'${SIN_ASIGNAR}')">⚪ ${SIN_ASIGNAR} <span style="opacity:.6">(${sinA})</span></button>`;
+        // Los botones de responsable muestran sus tareas EN CURSO, así que el
+        // número entre paréntesis cuenta tareas, no proyectos. La lista sale del
+        // equipo, no de los responsables de proyecto: alguien puede tener tareas
+        // asignadas sin dirigir ningún proyecto.
+        const enCurso = allPmTasks().filter(t => t.state === 'en-curso');
+        const equipo = pmData.team.responsables;
+        const sinAsignarN = enCurso.filter(t => !t.responsable).length;
+        if (equipo.length || sinAsignarN) {
+            html += '<span style="margin:0 4px;color:var(--text-3);font-size:11px;text-transform:uppercase;font-weight:600;">En curso de:</span>';
+            equipo.forEach(r => {
+                const n = enCurso.filter(t => t.responsable === r).length;
+                html += `<button class="filter-btn ${filterResp===r?'active':''}" onclick="setFiltro(null,null,${jsArg(r)})">👤 ${esc(r)} <span style="opacity:.6">(${n})</span></button>`;
+            });
+            if (sinAsignarN) html += `<button class="filter-btn ${filterResp===SIN_ASIGNAR?'active':''}" onclick="setFiltro(null,null,'${SIN_ASIGNAR}')">⚪ ${SIN_ASIGNAR} <span style="opacity:.6">(${sinAsignarN})</span></button>`;
         }
         document.getElementById('filters').innerHTML = html;
     }
