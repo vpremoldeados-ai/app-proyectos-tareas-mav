@@ -789,6 +789,20 @@
         .fab-nueva:hover { transform:translateY(-2px); }
         .hint { font-size:11px; color:var(--text-3); margin-top:-4px; margin-bottom:9px; }
 
+        /* Mi Día: lista ordenable */
+        .day-plan-item { align-items:center; gap:9px; }
+        .day-plan-item.dragging { opacity:0.4; }
+        .day-plan-item.drop-antes   { box-shadow:inset 0 3px 0 var(--accent); }
+        .day-plan-item.drop-despues { box-shadow:inset 0 -3px 0 var(--accent); }
+        .day-drag { cursor:grab; color:var(--text-3); font-size:14px; flex-shrink:0; }
+        .day-drag:active { cursor:grabbing; }
+        .day-num { flex-shrink:0; min-width:20px; height:20px; border-radius:50%;
+            background:var(--surface-2); color:var(--text-3); font-size:10px; font-weight:700;
+            display:flex; align-items:center; justify-content:center; }
+        .day-item-main { flex:1; min-width:0; }
+        .day-item-meta { font-size:10px; color:var(--text-3); margin-top:2px; }
+        .day-plan-item.done-day .day-num { background:var(--success); color:#fff; }
+
         /* Filtros internos de la pestaña Tareas (reemplazan 6 pestañas) */
         .chips-filtro { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
         .chip-f { padding:8px 14px; border:1px solid var(--border); background:var(--surface);
@@ -1348,6 +1362,11 @@
         if (!t.createdAt)                 t.createdAt   = Date.now();
         if (t.completedAt  === undefined) t.completedAt = null;
         if (t.daySize       === undefined) t.daySize    = null;
+        // Mi Día pasó del método 1-3-5 (1 grande, 3 medianas, 5 pequeñas) a una
+        // lista sin límite y ordenable a mano. daySize queda solo para no perder
+        // lo que ya estaba marcado; el orden real lo lleva dayOrder.
+        if (t.enDia    === undefined) t.enDia    = !!t.daySize;
+        if (t.dayOrder === undefined) t.dayOrder = null;
         return t;
     }
 
@@ -1387,7 +1406,7 @@
     let tasks     = (JSON.parse(localStorage.getItem('tasks'))     || initialTasks).map(migrate);
     let shopping  = JSON.parse(localStorage.getItem('shopping'))   || initialShopping;
     let objetivos = JSON.parse(localStorage.getItem('objetivos'))  || [];
-    let editingId = null, pickerSize = null, fbLoading = false;
+    let editingId = null, fbLoading = false;
 
     // ── Firebase listeners ────────────────────────────────────────────────
     db.ref('vpremoldeados/tareas').on('value', snap => {
@@ -1600,8 +1619,8 @@
             ? `draggable="true" ondragstart="onDragStart(event,${t.id})" ondragend="onDragEnd(event)" ondragover="onDragOver(event,${t.id})" ondrop="onDrop(event,${t.id})"`
             : '';
         const hnd  = draggable ? `<span class="drag-handle" title="Arrastrar">⠿</span>` : '';
-        const dpb  = t.daySize && !t.completed
-            ? `<span class="day-plan-badge">☀️ ${t.daySize==='grande'?'Grande':t.daySize==='mediana'?'Mediana':'Pequeña'}</span>` : '';
+        const dpb  = t.enDia && !t.completed
+            ? `<span class="day-plan-badge">☀️ Mi Día</span>` : '';
         const cornerLabel = !t.completed && !t.date
             ? `<span class="quadrant-corner-label">${q.icon} ${q.label}</span>` : '';
         const assigneeStr = t.assignee ? `<div class="task-assignee">👤 Responsable: ${t.assignee}</div>` : '';
@@ -1640,11 +1659,17 @@
         document.getElementById('listCompletadas').innerHTML = done.length   ? done.map(t=>renderTask(t,false)).join('')  : es('✅','Ninguna completada aún');
     }
 
-    // ── Mi Día — Método 1-3-5 ─────────────────────────────────────────────
-    function openPickerModal(size) {
-        pickerSize = size;
-        const names = { grande:'Tarea Grande', mediana:'Tarea Mediana', pequeña:'Tarea Pequeña' };
-        document.getElementById('pickerTitle').textContent = 'Seleccionar ' + names[size];
+    // ── Mi Día — lista sin límite, ordenada a mano ────────────────────────
+    // Devuelve las tareas del día en el orden elegido por el usuario.
+    function tareasDelDia() {
+        return tasks.filter(t => t && t.enDia)
+                    .sort((a,b) => (a.dayOrder ?? 1e9) - (b.dayOrder ?? 1e9));
+    }
+    // Reasigna dayOrder 0..n-1 según el orden actual del array
+    function renumerarDia(lista) { lista.forEach((t,i) => { t.dayOrder = i; }); }
+
+    function openPickerModal() {
+        document.getElementById('pickerTitle').textContent = 'Agregar tarea a Mi Día';
         document.getElementById('pickerSearch').value = '';
         renderPickerList('');
         document.getElementById('pickerModal').classList.add('show');
@@ -1654,7 +1679,7 @@
     function renderPickerList(filter) {
         const prio = { q1:0, q3:1, q2:2, q4:3 };
         const avail = tasks
-            .filter(t => !t.completed && t.daySize===null && (!filter || t.title.toLowerCase().includes(filter)))
+            .filter(t => !t.completed && !t.enDia && (!filter || t.title.toLowerCase().includes(filter)))
             .sort((a,b) => {
                 // 1° las urgentes arriba
                 const ua = a.urgency==='urgent' ? 0 : 1;
@@ -1678,62 +1703,93 @@
         }).join('');
     }
 
-    function closePickerModal() { document.getElementById('pickerModal').classList.remove('show'); pickerSize=null; }
+    function closePickerModal() { document.getElementById('pickerModal').classList.remove('show'); }
 
     function assignToDay(taskId) {
-        const t = tasks.find(x=>x.id===taskId); if (!t||!pickerSize) return;
-        const counts = { grande:0, mediana:0, pequeña:0 };
-        tasks.filter(x=>x.daySize&&!x.completed).forEach(x=>counts[x.daySize]=(counts[x.daySize]||0)+1);
-        const limits = { grande:1, mediana:3, pequeña:5 };
-        if ((counts[pickerSize]||0) >= limits[pickerSize]) {
-            const names = { grande:'1 tarea grande', mediana:'3 tareas medianas', pequeña:'5 tareas pequeñas' };
-            alert(`Límite alcanzado: máximo ${names[pickerSize]} por día.`); return;
-        }
-        t.daySize = pickerSize; saveTasks(); render(); closePickerModal();
+        const t = tasks.find(x=>x.id===taskId); if (!t) return;
+        t.enDia = true;
+        t.dayOrder = tareasDelDia().length;   // al final de la lista
+        saveTasks(); render(); closePickerModal();
     }
 
     function removeFromDay(taskId) {
         const t = tasks.find(x=>x.id===taskId);
-        if (t) { t.daySize=null; saveTasks(); render(); }
+        if (!t) return;
+        t.enDia = false; t.dayOrder = null; t.daySize = null;
+        renumerarDia(tareasDelDia());
+        saveTasks(); render();
     }
 
     function clearDayPlan() {
         if (!confirm('¿Limpiar el plan del día? Las tareas no se eliminan.')) return;
-        tasks.forEach(t => { t.daySize=null; }); saveTasks(); render();
+        tasks.forEach(t => { t.enDia = false; t.dayOrder = null; t.daySize = null; });
+        saveTasks(); render();
+    }
+
+    // ── Reordenar Mi Día arrastrando ──────────────────────────────────────
+    let dragDiaId = null;
+    function diaDragStart(e, id) {
+        dragDiaId = id;
+        e.dataTransfer.effectAllowed = 'move';
+        e.currentTarget.classList.add('dragging');
+    }
+    function diaDragEnd(e) {
+        dragDiaId = null;
+        document.querySelectorAll('.day-plan-item').forEach(el => el.classList.remove('dragging','drop-antes','drop-despues'));
+    }
+    function diaDragOver(e, id) {
+        e.preventDefault();
+        if (dragDiaId === null || dragDiaId === id) return;
+        e.dataTransfer.dropEffect = 'move';
+        const el = e.currentTarget;
+        const r = el.getBoundingClientRect();
+        const abajo = (e.clientY - r.top) > r.height / 2;
+        document.querySelectorAll('.day-plan-item').forEach(x => x.classList.remove('drop-antes','drop-despues'));
+        el.classList.add(abajo ? 'drop-despues' : 'drop-antes');
+    }
+    function diaDrop(e, id) {
+        e.preventDefault();
+        if (dragDiaId === null || dragDiaId === id) { diaDragEnd(e); return; }
+        const lista = tareasDelDia();
+        const desde = lista.findIndex(t => t.id === dragDiaId);
+        let hasta   = lista.findIndex(t => t.id === id);
+        if (desde < 0 || hasta < 0) { diaDragEnd(e); return; }
+        const r = e.currentTarget.getBoundingClientRect();
+        if ((e.clientY - r.top) > r.height / 2) hasta++;      // soltó en la mitad de abajo
+        const [movida] = lista.splice(desde, 1);
+        if (desde < hasta) hasta--;                            // se corrió al sacarla
+        lista.splice(hasta, 0, movida);
+        renumerarDia(lista);
+        dragDiaId = null;
+        saveTasks(); render();
     }
 
     function renderDayPlan() {
-        const bySize = s => tasks.filter(t=>t.daySize===s);
-        const grande  = bySize('grande');
-        const mediana = bySize('mediana');
-        const pequeña = bySize('pequeña');
-        const all     = [...grande,...mediana,...pequeña];
-        const done    = all.filter(t=>t.completed).length;
-        const pct     = all.length ? Math.round((done/all.length)*100) : 0;
+        const lista = tareasDelDia();
+        const done  = lista.filter(t=>t.completed).length;
+        const pct   = lista.length ? Math.round((done/lista.length)*100) : 0;
 
-        const sections = [
-            { key:'grande',  label:'Tarea Grande',   max:1, icon:'🎯', items:grande  },
-            { key:'mediana', label:'Tareas Medianas', max:3, icon:'📋', items:mediana },
-            { key:'pequeña', label:'Tareas Pequeñas', max:5, icon:'✏️', items:pequeña }
-        ];
-
-        const secHTML = sections.map(({key,label,max,icon,items}) => {
-            const used = items.length;
-            const rows = items.map(t=>`
-                <div class="day-plan-item ${t.completed?'done-day':''}" data-id="${t.id}">
-                    <button class="day-check-btn" onclick="toggleTask(${t.id})">${t.completed?'✓':''}</button>
-                    <div class="day-item-title">${t.title}</div>
-                    ${!t.completed?`<button class="day-remove-btn" onclick="removeFromDay(${t.id})" title="Quitar">✕</button>`:''}
-                </div>`).join('');
-            const empty = used < max
-                ? Array(max-used).fill(`<div class="day-slot-empty">Slot disponible</div>`).join('')
-                : '';
-            return `<div class="day-plan-section">
-                <div class="day-plan-section-header">
-                    <h4>${icon} ${label} <span class="day-section-badge">${used}/${max}</span></h4>
-                    ${used<max?`<button class="day-add-btn" onclick="openPickerModal('${key}')">+ Agregar</button>`:''}
+        const filas = lista.map((t,i) => {
+            const q = getQ(t.urgency, t.importance);
+            const fecha = t.date
+                ? new Date(t.date+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}) : '';
+            const meta = [];
+            if (t.area) meta.push(`📁 ${escHtml(t.area)}`);
+            if (t.proyecto) meta.push(`🗂️ ${escHtml(t.proyecto)}`);
+            if (fecha) meta.push(`📅 ${fecha}${t.time ? ' · '+t.time : ''}`);
+            return `<div class="day-plan-item ${t.completed?'done-day':''}" data-id="${t.id}"
+                 draggable="true"
+                 ondragstart="diaDragStart(event,${t.id})" ondragend="diaDragEnd(event)"
+                 ondragover="diaDragOver(event,${t.id})" ondrop="diaDrop(event,${t.id})">
+                <span class="day-drag" title="Arrastrar para reordenar">⠿</span>
+                <span class="day-num">${i+1}</span>
+                <button class="day-check-btn" onclick="toggleTask(${t.id})">${t.completed?'✓':''}</button>
+                <div class="day-item-main">
+                    <div class="day-item-title">${escHtml(t.title)}</div>
+                    ${meta.length?`<div class="day-item-meta">${meta.join(' · ')}</div>`:''}
                 </div>
-                <div class="day-plan-tasks">${rows}${empty}</div>
+                <span class="quadrant-badge ${q.bcls}" title="${q.label}">${q.icon}</span>
+                <button class="day-remove-btn" onclick="removeFromDay(${t.id})" title="Sacar de Mi Día">✕</button>
             </div>`;
         }).join('');
 
@@ -1741,18 +1797,21 @@
             ${objetivosBoxHTML()}
             <div class="day-plan-header">
                 <div class="day-progress-info">
-                    <h3>☀️ Mi Día — Método 1-3-5</h3>
-                    <p>1 tarea grande · 3 medianas · 5 pequeñas = máx. 9 tareas</p>
+                    <h3>☀️ Mi Día</h3>
+                    <p>Arrastrá ⠿ para ordenarlas como las vas a hacer.</p>
                 </div>
                 <div class="day-progress-right">
                     <div class="progress-bar-wrap">
                         <div class="progress-bar-fill" style="width:${pct}%"></div>
                     </div>
-                    <span class="day-progress-count">${done}/${all.length}</span>
-                    <button class="day-clear-btn" onclick="clearDayPlan()">Limpiar plan</button>
+                    <span class="day-progress-count">${done}/${lista.length}</span>
+                    <button class="day-add-btn" onclick="openPickerModal()">+ Agregar</button>
+                    ${lista.length?`<button class="day-clear-btn" onclick="clearDayPlan()">Limpiar</button>`:''}
                 </div>
             </div>
-            ${secHTML}`;
+            <div class="day-plan-section">
+                <div class="day-plan-tasks">${filas || '<div class="day-slot-empty">Todavía no elegiste nada para hoy. Tocá <strong>+ Agregar</strong> o mandá tareas desde la Recorrida.</div>'}</div>
+            </div>`;
     }
 
     // ── Revisión Semanal ──────────────────────────────────────────────────
@@ -1823,7 +1882,7 @@
         if (!confirm(`¿Archivar ${done.length} tarea(s) completada(s) y reiniciar el plan del día?`)) return;
         db.ref('vpremoldeados/historial').push({ date:new Date().toISOString(), tasks:done });
         tasks = tasks.filter(t => !t.completed);
-        tasks.forEach(t => { t.daySize = null; });
+        tasks.forEach(t => { t.enDia = false; t.dayOrder = null; t.daySize = null; });
         saveTasks(); render();
         alert(`✅ Semana cerrada. ${done.length} tarea(s) archivadas.`);
     }
@@ -2948,32 +3007,25 @@
 
     // ── Vínculo con Mi Día ────────────────────────────────────────────────
     // Al estar todo en una sola app, esto es lectura/escritura directa sobre `tasks`.
-    const MIDIA_LIMITES = {grande:1, mediana:3, 'pequeña':5};
-    const MIDIA_NOMBRES = {grande:'🎯 Grande', mediana:'📋 Mediana', 'pequeña':'✏️ Pequeña'};
-
     function tareaVinculada(pmTaskId) { return tasks.find(t => t && t.proyectoTaskId === pmTaskId) || null; }
-    function contarMiDia() {
-        const c = {grande:0, mediana:0, 'pequeña':0};
-        tasks.forEach(t => { if (t && t.daySize && !t.completed) c[t.daySize] = (c[t.daySize]||0)+1; });
-        return c;
-    }
-    function enviarAMiDia(projectId, taskId, size) {
+    function contarMiDia() { return tasks.filter(t => t && t.enDia && !t.completed).length; }
+
+    function enviarAMiDia(projectId, taskId) {
         const p = (pmData.projects||[]).find(x=>x.id===projectId); if (!p) return;
         const t = (p.tasks||[]).find(x=>x.id===taskId); if (!t) return;
         if (tareaVinculada(taskId)) return alert('Esta tarea ya está en tu lista de tareas.');
-        const c = contarMiDia();
-        if ((c[size]||0) >= MIDIA_LIMITES[size])
-            return alert(`Límite alcanzado: máximo ${MIDIA_LIMITES[size]} tarea${MIDIA_LIMITES[size]>1?'s':''} ${size} por día.\n\nSacá alguna de Mi Día o elegí otro tamaño.`);
         const hoy = hoyYMD();
         tasks.push({
             id: Date.now(), title: t.title,
             urgency: (t.dueDate && t.dueDate <= hoy) ? 'urgent' : 'normal',
             importance: 'importante', date: t.dueDate || null, time: null,
             alertBefore: 0, alerted: false, completed: false,
-            createdAt: Date.now(), completedAt: null, daySize: size,
+            createdAt: Date.now(), completedAt: null, daySize: null,
+            enDia: true, dayOrder: tareasDelDia().length,
+            area: p.area || null, ambito: p.type || 'empresa',
             origen: 'proyectos', proyecto: p.name, proyectoId: p.id, proyectoTaskId: t.id
         });
-        t.miDia = size;
+        t.miDia = true;
         saveTasks(); savePmData();
         renderMiDiaBox(); render(); pmRefresh();
     }
@@ -2995,8 +3047,8 @@
         if (vin) {
             const estado = vin.completed
                 ? '<span style="color:var(--success);">✅ Ya la completaste</span>'
-                : (vin.daySize ? `<span style="color:var(--accent);">☀️ En Mi Día como ${MIDIA_NOMBRES[vin.daySize]||vin.daySize}</span>`
-                               : '<span style="color:var(--accent);">📋 En tu lista de tareas</span>');
+                : (vin.enDia ? '<span style="color:var(--accent);">☀️ En Mi Día</span>'
+                             : '<span style="color:var(--accent);">📋 En tu lista de tareas</span>');
             box.innerHTML = `<h4>☀️ Mi Día</h4>
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                     <div class="midia-estado">${estado}</div>
@@ -3004,13 +3056,11 @@
                 </div>`;
             return;
         }
-        const c = contarMiDia();
-        box.innerHTML = `<h4>☀️ Enviar a Mi Día</h4><div class="midia-btns">
-            ${Object.keys(MIDIA_LIMITES).map(size => {
-                const u = c[size]||0, tope = MIDIA_LIMITES[size];
-                return `<button ${u>=tope?'disabled':''} title="${u} de ${tope} usadas" onclick="enviarAMiDia('${editingTaskProjectId}','${editingTaskId}','${size}')">
-                    ${MIDIA_NOMBRES[size]}<br><span style="font-size:9px;color:var(--text-3);">${u}/${tope}</span></button>`;
-            }).join('')}</div>`;
+        box.innerHTML = `<h4>☀️ Mi Día</h4><div class="midia-btns">
+            <button onclick="enviarAMiDia('${editingTaskProjectId}','${editingTaskId}')">
+                ☀️ Agregar a Mi Día
+                <br><span style="font-size:9px;color:var(--text-3);">${contarMiDia()} tarea${contarMiDia()===1?'':'s'} para hoy</span>
+            </button></div>`;
     }
 
     // ── Equipo ────────────────────────────────────────────────────────────
@@ -3306,7 +3356,7 @@
                 tipo:'suelta', id:t.id, title:t.title,
                 ambito: t.ambito || null, area: t.area || null,
                 urgency: t.urgency, importance: t.importance,
-                fecha: t.date || '', enMiDia: !!t.daySize, proyecto:null, projectId:null,
+                fecha: t.date || '', enMiDia: !!t.enDia, proyecto:null, projectId:null,
                 // las sueltas viejas no tienen estado: se consideran en curso
                 estado: t.state || 'en-curso',
                 vencida: !!(t.date && t.date < hoy), esHoy: t.date === hoy
@@ -3333,17 +3383,11 @@
 
     function recAddMiDia(tipo, id, projectId) {
         if (tipo === 'proyecto') {
-            // el tamaño lo decide el modal; acá usamos "pequeña" por defecto y avisamos si no entra
-            const c = contarMiDia();
-            const size = ['pequeña','mediana','grande'].find(s => (c[s]||0) < MIDIA_LIMITES[s]);
-            if (!size) return alert('Mi Día ya está completo (1 grande, 3 medianas y 5 pequeñas).');
-            enviarAMiDia(projectId, id, size);
+            enviarAMiDia(projectId, id);
         } else {
             const t = tasks.find(x => x.id === id); if (!t) return;
-            const c = contarMiDia();
-            const size = ['pequeña','mediana','grande'].find(s => (c[s]||0) < MIDIA_LIMITES[s]);
-            if (!size) return alert('Mi Día ya está completo (1 grande, 3 medianas y 5 pequeñas).');
-            t.daySize = size;
+            t.enDia = true;
+            t.dayOrder = tareasDelDia().length;   // se suma al final del día
             saveTasks(); render();
         }
         renderRecorrida();
@@ -3356,7 +3400,7 @@
         const todos = itemsRecorrida();
         const items = recFiltro === 'curso' ? todos.filter(i => i.estado === 'en-curso') : todos;
         const ocultas = todos.length - items.length;
-        const enMiDia = tasks.filter(t => t && t.daySize && !t.completed).length;
+        const enMiDia = contarMiDia();
         const venc = items.filter(i => i.vencida).length;
         const hoyN = items.filter(i => i.esHoy).length;
 
