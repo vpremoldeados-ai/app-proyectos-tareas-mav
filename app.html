@@ -523,6 +523,17 @@
         .obj-pill-ico { font-size:15px; line-height:1; flex-shrink:0; }
         .obj-pill-txt { font-size:12px; font-weight:600; color:var(--text-2); line-height:1.35; }
         .objetivo-ico { font-size:15px; flex-shrink:0; }
+        .btn-wa { padding:8px 13px; border:1px solid #25D366; background:rgba(37,211,102,0.1);
+            color:#128C4A; border-radius:6px; cursor:pointer; font-size:12px; font-weight:700;
+            font-family:'Inter',sans-serif; transition:all 0.16s; }
+        .btn-wa:hover { background:#25D366; color:#fff; }
+        .wa-texto { width:100%; padding:12px; border:1px solid var(--border); border-radius:var(--radius-sm);
+            font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:12px; line-height:1.55;
+            background:var(--surface-2); color:var(--text); resize:vertical; }
+        .wa-texto:focus { outline:none; border-color:var(--accent); }
+        .team-tel { flex:1; padding:6px 9px; border:1px solid var(--border); border-radius:5px;
+            font-size:12px; font-family:'Inter',sans-serif; background:var(--surface); color:var(--text); }
+        .team-tel:focus { outline:none; border-color:var(--accent); }
         .obj-toggle { margin-top:9px; background:none; border:none; cursor:pointer;
             font-size:11px; font-weight:700; color:var(--accent); padding:2px 0;
             font-family:'Inter',sans-serif; }
@@ -1101,6 +1112,22 @@
         <div class="picker-list" id="pickerList"></div>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closePickerModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: mensaje de WhatsApp -->
+<div id="waModal" class="modal">
+    <div class="modal-box pm-modal-box">
+        <h3>📱 Resumen para <span id="waPara"></span></h3>
+        <p style="font-size:11.5px;color:var(--text-3);margin-bottom:10px;">
+            Revisalo y editalo si querés antes de mandarlo.
+        </p>
+        <textarea id="waTexto" class="wa-texto" rows="14"></textarea>
+        <div class="modal-btns">
+            <button class="btn-save" onclick="abrirWaConTexto()">📱 Abrir WhatsApp</button>
+            <button class="btn-cancel" id="waCopiar" onclick="copiarMensajeWa()">📋 Copiar</button>
+            <button class="btn-cancel" onclick="closeWaModal()">Cerrar</button>
         </div>
     </div>
 </div>
@@ -2218,8 +2245,8 @@
     // vive dentro de Reuniones; y la Revisión Semanal, dentro de Métricas.
     function initTabs() {
         const tabs = [
-            {id:'tab-recorrida',  label:'🌅 Recorrida'},
             {id:'tab-dia',        label:'☀️ Mi Día'},
+            {id:'tab-recorrida',  label:'🌅 Recorrida'},
             {id:'tab-tareas',     label:'📋 Tareas'},
             {sep:true},
             {id:'tab-proyectos',  label:'🗂️ Proyectos'},
@@ -2233,9 +2260,10 @@
             const act = primera ? ' active' : ''; primera = false;
             return `<button class="tab-btn${act}" data-tab="${t.id}" onclick="goTab('${t.id}')">${t.label}</button>`;
         }).join('');
-        // la primera pestaña es la Recorrida: activar su contenido
+        // la app abre en Mi Día: es lo primero que se mira a la mañana
         document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-        document.getElementById('tab-recorrida')?.classList.add('active');
+        document.getElementById('tab-dia')?.classList.add('active');
+        renderDayPlan();
         pintarFiltroTareas();
     }
 
@@ -2255,6 +2283,7 @@
     document.getElementById('editAmbito').addEventListener('change', () => editLlenarAreas(''));
     document.getElementById('objetivosModal').addEventListener('click', e => { if(e.target===document.getElementById('objetivosModal')) closeObjetivosModal(); });
     document.getElementById('comprasModal').addEventListener('click',   e => { if(e.target===document.getElementById('comprasModal'))   closeComprasModal(); });
+    document.getElementById('waModal').addEventListener('click',        e => { if(e.target===document.getElementById('waModal'))        closeWaModal(); });
     document.getElementById('projectModal').addEventListener('click', e => { if(e.target===document.getElementById('projectModal')) closeProjectModal(); });
     document.getElementById('taskModal').addEventListener('click',    e => { if(e.target===document.getElementById('taskModal'))    pmCloseTaskModal(); });
     document.getElementById('teamModal').addEventListener('click',    e => { if(e.target===document.getElementById('teamModal'))    closeTeamModal(); });
@@ -2853,12 +2882,89 @@
         const esEquipo = reunionVista === 'equipo';
         document.getElementById('respButtons').innerHTML =
             (esEquipo ? '' : pmData.team.responsables.map(r => `<button class="filter-btn ${reunionesResp===r?'active':''}" onclick="showReuniones(${jsArg(r)})">👤 ${esc(r)}</button>`).join(''))
+            + (esEquipo ? '' : `<button class="btn-wa" onclick="verMensajeWhatsApp(${jsArg(reunionesResp)})" title="Mandarle el listado por WhatsApp">📱 WhatsApp</button>`)
             + `<div style="margin-left:auto;" class="vista-toggle">
                 <button class="${reunionVista==='proyecto'?'active':''}" onclick="setReunionVista('proyecto')">📊 Por proyecto</button>
                 <button class="${reunionVista==='tablero'?'active':''}" onclick="setReunionVista('tablero')">📋 Tablero</button>
                 <button class="${esEquipo?'active':''}" onclick="setReunionVista('equipo')">⚡ Todo el equipo</button></div>`;
     }
     function setReunionVista(v) { reunionVista = v; localStorage.setItem('vph_reunion_vista', v); showReuniones(reunionesResp); }
+
+    // ── Resumen de la reunión por WhatsApp ────────────────────────────────
+    // Arma el listado de tareas en curso agrupado por proyecto. Para quien
+    // tiene operarios a cargo, además separa lo que ya tiene ejecutor de lo
+    // que falta definir, que es la decisión que hay que tomar en la reunión.
+    function armarMensajeWhatsApp(resp) {
+        const enCurso = allPmTasks().filter(t => t.state === 'en-curso' && t.responsable === resp);
+        if (!enCurso.length) return null;
+
+        const hoy = new Date().toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+        const L = [];
+        L.push(`*Tareas en curso — ${resp}*`);
+        L.push(`_Repaso del ${hoy}_`);
+        L.push('');
+
+        const porProy = {};
+        enCurso.forEach(t => { (porProy[t.projectName] = porProy[t.projectName] || []).push(t); });
+
+        Object.keys(porProy).sort((a,b)=>a.localeCompare(b,'es')).forEach(proy => {
+            L.push(`📁 *${proy}*`);
+            porProy[proy].forEach(t => {
+                const extras = [];
+                if (t.ejecutor) extras.push(`lo hace ${t.ejecutor}`);
+                if (t.dueDate) {
+                    const d = diasHasta(t.dueDate);
+                    extras.push(d < 0 ? `VENCIDA hace ${Math.abs(d)} días` : (d === 0 ? 'vence hoy' : `vence en ${d} días`));
+                }
+                L.push(`• ${t.title}${extras.length ? ` _(${extras.join(' · ')})_` : ''}`);
+            });
+            L.push('');
+        });
+
+        L.push(`Total: ${enCurso.length} tarea${enCurso.length===1?'':'s'} en curso.`);
+
+        // Bloque de delegación: solo si hay operarios cargados a quien delegar
+        const operarios = pmData.team.operarios || [];
+        if (operarios.length) {
+            const sinEjecutor = enCurso.filter(t => !t.ejecutor);
+            if (sinEjecutor.length) {
+                L.push('');
+                L.push(`👉 *Definir quién ejecuta* (${operarios.join(', ')}):`);
+                sinEjecutor.forEach(t => L.push(`• ${t.title}`));
+            }
+        }
+        return L.join('\n');
+    }
+
+    let waDestinatario = null;
+    // Abre WhatsApp con el texto tal como quedó en el cuadro (por si lo editó)
+    function abrirWaConTexto() {
+        const msg = document.getElementById('waTexto').value;
+        if (!msg.trim()) return;
+        pmData.team.telefonos = pmData.team.telefonos || {};
+        const tel = pmData.team.telefonos[waDestinatario];
+        // Sin teléfono cargado, WhatsApp abre el selector de contacto
+        const url = (tel ? `https://wa.me/${tel}?text=` : 'https://wa.me/?text=') + encodeURIComponent(msg);
+        window.open(url, '_blank');
+        closeWaModal();
+    }
+
+    function verMensajeWhatsApp(resp) {
+        waDestinatario = resp;
+        const msg = armarMensajeWhatsApp(resp);
+        if (!msg) return alert(`${resp} no tiene tareas en curso.`);
+        document.getElementById('waTexto').value = msg;
+        document.getElementById('waPara').textContent = resp;
+        document.getElementById('waModal').classList.add('show');
+    }
+    function closeWaModal() { document.getElementById('waModal').classList.remove('show'); }
+    function copiarMensajeWa() {
+        const ta = document.getElementById('waTexto');
+        ta.select();
+        navigator.clipboard.writeText(ta.value)
+            .then(()=>{ const b=document.getElementById('waCopiar'); b.textContent='✓ Copiado'; setTimeout(()=>b.textContent='📋 Copiar',1800); })
+            .catch(()=>alert('No se pudo copiar. Seleccioná el texto y copialo a mano.'));
+    }
 
     function showReuniones(resp) {
         reunionesResp = resp;
@@ -3295,8 +3401,28 @@
                 <div class="team-add"><input type="text" id="${inputId}" placeholder="${ph}" onkeydown="if(event.key==='Enter'){addTeamMember(${jsArg(group)});}">
                 <button class="filter-btn" onclick="addTeamMember(${jsArg(group)})">+ Agregar</button></div>`;
         };
+        // Teléfonos: solo para responsables, para mandarles el resumen por WhatsApp
+        pmData.team.telefonos = pmData.team.telefonos || {};
+        const tels = `<div class="team-section-title">📱 WhatsApp — para mandar el resumen de la reunión</div>
+            <div class="team-hint">Con código de país y sin espacios ni signos. Ej: 5493514445566.
+                Si lo dejás vacío, WhatsApp te va a pedir elegir el contacto.</div>
+            ${(pmData.team.responsables||[]).map(r => `<div class="team-row">
+                <span class="objetivo-ico">📱</span>
+                <span style="flex:0 0 84px;font-size:12px;font-weight:600;">${esc(r)}</span>
+                <input type="tel" class="team-tel" value="${esc(pmData.team.telefonos[r]||'')}"
+                       placeholder="549351..." onchange="setTelefono(${jsArg(r)}, this.value)">
+            </div>`).join('')}`;
+
         box.innerHTML = seccion('responsables','👤 Responsables — a quién se le pide cuentas','Nombre del responsable')
-                      + seccion('operarios','🔧 Operarios — quién ejecuta el trabajo','Nombre del operario');
+                      + seccion('operarios','🔧 Operarios — quién ejecuta el trabajo','Nombre del operario')
+                      + tels;
+    }
+    function setTelefono(nombre, valor) {
+        pmData.team.telefonos = pmData.team.telefonos || {};
+        const limpio = String(valor||'').replace(/[^\d]/g,'');
+        if (limpio) pmData.team.telefonos[nombre] = limpio;
+        else delete pmData.team.telefonos[nombre];
+        savePmData();
     }
     function editTeamName(spanEl, group, oldName) {
         if (spanEl.querySelector('input')) return;
