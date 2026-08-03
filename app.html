@@ -543,6 +543,18 @@
             font-weight:700; font-size:14px; cursor:pointer; font-family:'Inter',sans-serif; }
         .login-btn:disabled { opacity:0.6; cursor:default; }
         .login-error { color:var(--danger); font-size:12px; margin-top:10px; min-height:16px; font-weight:600; }
+        .delega-aviso { margin-top:9px; padding:12px 14px; border-radius:var(--radius-sm);
+            background:rgba(245,158,11,0.09); border:1px solid rgba(245,158,11,0.4); }
+        .delega-tit { font-size:12.5px; font-weight:800; color:#b45309; margin-bottom:5px; }
+        .delega-txt { font-size:11.5px; color:var(--text-2); line-height:1.5; }
+        .delega-btns { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+        .delega-btns button { padding:7px 12px; border:1px solid var(--accent);
+            background:var(--surface); color:var(--accent); border-radius:6px; cursor:pointer;
+            font-size:11.5px; font-weight:700; font-family:'Inter',sans-serif; }
+        .delega-btns button:hover { background:var(--accent); color:#fff; }
+        .delega-btns .delega-quedarme { border-color:var(--border); color:var(--text-3); }
+        .delega-btns .delega-quedarme:hover { background:var(--surface-2); color:var(--text); }
+        .delega-ok { margin-top:9px; font-size:11.5px; font-weight:700; color:var(--success); }
         .objetivo-ico { font-size:15px; flex-shrink:0; }
         .btn-wa { padding:8px 13px; border:1px solid #25D366; background:rgba(37,211,102,0.1);
             color:#128C4A; border-radius:6px; cursor:pointer; font-size:12px; font-weight:700;
@@ -1293,7 +1305,8 @@
 
         <div class="form-group">
             <label>Responsable:</label>
-            <select id="ntResponsable"></select>
+            <select id="ntResponsable" onchange="ntChequearDelegacion()"></select>
+            <div id="ntDelegaAviso"></div>
         </div>
 
         <div class="form-group" id="ntEjecutorWrap" style="display:none;">
@@ -3668,6 +3681,7 @@
         if (s.value === '__nueva__') { inp.style.display='block'; inp.focus(); }
         else { inp.style.display='none'; inp.value=''; }
         ntLlenarProyectos();
+        ntChequearDelegacion();   // la sugerencia depende del área elegida
     }
     function ntAreaValor() {
         const s = document.getElementById('ntArea').value;
@@ -3717,6 +3731,67 @@
         const esProy = !!document.getElementById('ntProyecto').value;
         document.getElementById('ntHoraWrap').style.display = esProy ? 'none' : 'block';
     }
+    // ── Filtro de delegación ──────────────────────────────────────────────
+    // Al asignarse una tarea a sí mismo, la app pregunta antes de dejarlo pasar.
+    // Nace del diagnóstico: 22 tareas en curso propias contra 4 de cada
+    // colaborador. El formulario no frenaba esa acumulación.
+    const DUENIO = 'Marcelo';   // quien dirige: es a quien se le hace la pregunta
+
+    function contarEnCurso(resp) {
+        let n = 0;
+        (pmData.projects||[]).forEach(p => (p.tasks||[]).forEach(t => {
+            if (t && t.state === 'en-curso' && t.responsable === resp) n++;
+        }));
+        return n;
+    }
+
+    // Sugiere a quién podría ir, por el área elegida
+    function sugerenciaPorArea(area) {
+        const a = String(area||'').toLowerCase();
+        if (/produc|molde|máquina|maquina|manten|taller|acopio/.test(a))
+            return {quien:'Gustavo', porque:'es de planta'};
+        if (/compra|finanz|administra|recursos humanos|rrhh/.test(a))
+            return {quien:'Sofia', porque:'es administrativo o de compras'};
+        if (/market|venta/.test(a))
+            return {quien:'Sofia', porque:'Sofía maneja redes y clientes'};
+        return null;
+    }
+
+    function ntChequearDelegacion() {
+        const box = document.getElementById('ntDelegaAviso');
+        if (!box) return;
+        const resp = document.getElementById('ntResponsable').value;
+        box.innerHTML = '';
+        if (resp !== DUENIO) return;
+
+        const n = contarEnCurso(DUENIO);
+        const sug = sugerenciaPorArea(ntAreaValor());
+        const otros = (pmData.team.responsables||[]).filter(r => r !== DUENIO);
+
+        box.innerHTML = `<div class="delega-aviso">
+            <div class="delega-tit">🤔 ¿Esto lo tenés que hacer vos?</div>
+            <div class="delega-txt">
+                Ya tenés <strong>${n} tareas en curso</strong>${
+                    otros.map(r=>`, ${r} tiene ${contarEnCurso(r)}`).join('')}.
+                ${sug ? `Por el área, esto suena a que ${sug.porque} — podría ir a <strong>${sug.quien}</strong>.` : ''}
+                <br>Quedátela solo si requiere <em>tu decisión</em>: plata grande, una relación clave o diseño técnico que solo vos sabés.
+            </div>
+            <div class="delega-btns">
+                ${otros.map(r=>`<button type="button" onclick="ntPasarA(${jsArg(r)})">👤 Pasársela a ${esc(r)}</button>`).join('')}
+                <button type="button" class="delega-quedarme" onclick="ntMeLaQuedo()">Me la quedo</button>
+            </div>
+        </div>`;
+    }
+
+    function ntPasarA(quien) {
+        document.getElementById('ntResponsable').value = quien;
+        ntChequearDelegacion();
+    }
+    function ntMeLaQuedo() {
+        document.getElementById('ntDelegaAviso').innerHTML =
+            '<div class="delega-ok">✓ Anotada como tuya.</div>';
+    }
+
     function ntActualizarCuadrante() {
         const u = document.getElementById('ntUrgencia').value;
         const i = document.getElementById('ntImportancia').value;
@@ -3743,6 +3818,7 @@
         if (preset.proyectoId) document.getElementById('ntProyecto').value = preset.proyectoId;
         ntProyectoCambio(true);
         ntActualizarCuadrante();
+        ntChequearDelegacion();
         document.getElementById('nuevaTareaModal').classList.add('show');
         setTimeout(()=>document.getElementById('ntTitulo').focus(), 60);
     }
