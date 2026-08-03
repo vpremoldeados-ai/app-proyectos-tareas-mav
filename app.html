@@ -1902,18 +1902,38 @@
         saveTasks(); render(); closePickerModal();
     }
 
+    // Saca una tarea de Mi Día. Si era el espejo de una tarea de proyecto hay que
+    // cortar el vínculo de los dos lados: borrar el espejo y limpiar el miDia de
+    // la tarea del proyecto. Si no, el ☀️ seguía colgado en el tablero.
+    function desvincularDelProyecto(t) {
+        if (!t || !t.proyectoId || !t.proyectoTaskId) return false;
+        const p = (pmData.projects||[]).find(x => x.id === t.proyectoId);
+        const pt = p && (p.tasks||[]).find(x => x.id === t.proyectoTaskId);
+        if (pt) { delete pt.miDia; return true; }
+        return false;
+    }
+
     function removeFromDay(taskId) {
-        const t = tasks.find(x=>x.id===taskId);
+        const t = tasks.find(x => x.id === taskId);
         if (!t) return;
-        t.enDia = false; t.dayOrder = null; t.daySize = null;
+        const tocoProyecto = desvincularDelProyecto(t);
+        if (t.proyectoTaskId) tasks = tasks.filter(x => x.id !== taskId);  // espejo: se elimina
+        else { t.enDia = false; t.dayOrder = null; t.daySize = null; }     // propia: solo sale del día
         renumerarDia(tareasDelDia());
-        saveTasks(); render();
+        if (tocoProyecto) savePmData();
+        saveTasks(); render(); pmRefresh();
     }
 
     function clearDayPlan() {
-        if (!confirm('¿Limpiar el plan del día? Las tareas no se eliminan.')) return;
-        tasks.forEach(t => { t.enDia = false; t.dayOrder = null; t.daySize = null; });
-        saveTasks(); render();
+        const delDia = tasks.filter(t => t && t.enDia);
+        if (!delDia.length) return;
+        if (!confirm(`¿Sacar las ${delDia.length} tareas del plan de hoy?\n\nNo se elimina ninguna tarea: las de proyecto vuelven a su tablero y las sueltas quedan en tu lista.`)) return;
+        let tocoProyecto = false;
+        delDia.forEach(t => { if (desvincularDelProyecto(t)) tocoProyecto = true; });
+        tasks = tasks.filter(t => !(t && t.enDia && t.proyectoTaskId));
+        tasks.forEach(t => { if (t) { t.enDia = false; t.dayOrder = null; t.daySize = null; } });
+        if (tocoProyecto) savePmData();
+        saveTasks(); render(); pmRefresh();
     }
 
     // ── Reordenar Mi Día arrastrando ──────────────────────────────────────
