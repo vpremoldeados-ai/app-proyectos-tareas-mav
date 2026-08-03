@@ -1461,7 +1461,10 @@
                     'auth/invalid-credential':'Correo o contraseña incorrectos.',
                     'auth/too-many-requests':'Demasiados intentos. Esperá unos minutos.',
                     'auth/network-request-failed':'Sin conexión a internet.',
-                    'auth/operation-not-allowed':'Falta activar Email/Password en Firebase.'
+                    'auth/operation-not-allowed':'Falta activar Email/Password en Firebase.',
+                    // Firebase devuelve internal-error cuando el proveedor Email/Password
+                    // todavía no está habilitado en la consola del proyecto.
+                    'auth/internal-error':'Falta activar Email/Password en la consola de Firebase (Authentication → Sign-in method).'
                 };
                 err.textContent = m[e.code] || ('No se pudo entrar: ' + e.code);
             });
