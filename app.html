@@ -1150,6 +1150,7 @@
         </div>
         <div class="modal-btns">
             <button class="btn-save"   onclick="saveEdit()">Guardar</button>
+            <button class="btn-delete" onclick="borrarDesdeEdicion()">Borrar</button>
             <button class="btn-cancel" onclick="closeEdit()">Cancelar</button>
         </div>
     </div>
@@ -1709,6 +1710,25 @@
         t.completed = !t.completed;
         t.completedAt = t.completed ? Date.now() : null;
         saveTasks(); render();
+    }
+
+    // Borrar desde el modal de edición (se llega desde Recorrida, Mi Día o la
+    // lista de Tareas). Si la tarea es espejo de una de proyecto, corta el
+    // vínculo antes de borrar para no dejar el ☀️ colgado en el tablero.
+    function borrarDesdeEdicion() {
+        const t = tasks.find(x => x.id === editingId);
+        if (!t) return;
+        if (t.proyectoTaskId) {
+            if (!confirm(`¿Sacar "${t.title}" de tu lista?\n\nLa tarea original sigue en el proyecto ${t.proyecto || ''}, no se borra.`)) return;
+        } else if (!confirm(`¿Eliminar "${t.title}"?\n\nEsta acción no se puede deshacer.`)) return;
+
+        const tocoProyecto = desvincularDelProyecto(t);
+        tasks = tasks.filter(x => x.id !== editingId);
+        if (tocoProyecto) savePmData();
+        saveTasks();
+        closeEdit();
+        render(); pmRefresh();
+        if (document.getElementById('tab-recorrida')?.classList.contains('active')) renderRecorrida();
     }
 
     function deleteTask(id) {
