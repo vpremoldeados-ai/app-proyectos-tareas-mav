@@ -1,5 +1,6 @@
-const CACHE = 'mis-gestiones-v5';
-const ASSETS = ['./app.html', './index.html', './proyectos.html', './manifest.json'];
+const CACHE = 'mis-gestiones-v6';
+const ASSETS = ['./app.html', './index.html', './proyectos.html', './manifest.json',
+                './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
     e.waitUntil(
