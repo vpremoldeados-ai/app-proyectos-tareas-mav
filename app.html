@@ -773,6 +773,16 @@
             color:var(--text-3); font-family:'Inter',sans-serif; }
         .vista-toggle button.active { background:var(--surface); color:var(--accent); box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 
+        /* Casilla "poner en Mi Día" del modal de edición de tarea */
+        .edit-dia-row {
+            display: flex; align-items: center; gap: 10px;
+            margin: 4px 0 2px; padding: 12px 14px;
+            background: rgba(99,102,241,.10);
+            border: 1px solid rgba(99,102,241,.35);
+            border-radius: 10px; cursor: pointer; font-size: .95rem;
+        }
+        .edit-dia-row input { width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer; }
+
         /* Caja Mi Día dentro del modal de tarea de proyecto */
         .midia-box { border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px;
             background:var(--surface-2); margin-bottom:10px; }
@@ -1150,6 +1160,10 @@
                 <option value="120">🔔 2 horas antes</option>
             </select>
         </div>
+        <label class="edit-dia-row">
+            <input type="checkbox" id="editEnDia">
+            <span>☀️ Hacerla hoy — poner en Mi Día</span>
+        </label>
         <div class="modal-btns">
             <button class="btn-save"   onclick="saveEdit()">Guardar</button>
             <button class="btn-delete" onclick="borrarDesdeEdicion()">Borrar</button>
@@ -1755,6 +1769,7 @@
         document.getElementById('editAlert').value      = t.alertBefore || 0;
         document.getElementById('editAmbito').value     = t.ambito || '';
         document.getElementById('editState').value      = t.state || 'en-curso';
+        document.getElementById('editEnDia').checked    = !!t.enDia;
         editLlenarAreas(t.area || '');
         document.getElementById('editModal').classList.add('show');
     }
@@ -1782,7 +1797,20 @@
         t.ambito     = document.getElementById('editAmbito').value || null;
         t.area       = document.getElementById('editArea').value || null;
         t.state      = document.getElementById('editState').value || 'en-curso';
-        saveTasks(); render(); closeEdit();
+        // Mi Día: la casilla vale para poner y para sacar. Si la tarea es el espejo
+        // de una de proyecto, removeFromDay() corta el vínculo de los dos lados.
+        const quiereDia = document.getElementById('editEnDia').checked;
+        const id = editingId;
+        closeEdit();
+        if (quiereDia && !t.enDia) {
+            t.enDia = true;
+            t.dayOrder = tareasDelDia().length;   // al final de la lista
+        } else if (!quiereDia && t.enDia) {
+            saveTasks();
+            removeFromDay(id);                    // ya hace saveTasks + render
+            return;
+        }
+        saveTasks(); render();
     }
 
     // ── Drag & Drop ───────────────────────────────────────────────────────
