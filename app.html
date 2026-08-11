@@ -773,6 +773,25 @@
             color:var(--text-3); font-family:'Inter',sans-serif; }
         .vista-toggle button.active { background:var(--surface); color:var(--accent); box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 
+        /* Aviso flotante con Deshacer (abajo, sobre el botón ➕) */
+        #toast {
+            position: fixed; left: 50%; bottom: 88px; transform: translate(-50%, 20px);
+            display: flex; align-items: center; gap: 14px;
+            max-width: min(92vw, 460px);
+            background: #1e293b; color: #fff;
+            padding: 12px 16px; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.35);
+            font-size: 13px; z-index: 4000;
+            opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+        }
+        #toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+        #toast .toast-msg { flex: 1; min-width: 0; }
+        #toast button {
+            background: transparent; border: 0; color: #a5b4fc;
+            font-weight: 700; font-size: 13px; cursor: pointer;
+            padding: 4px 6px; white-space: nowrap;
+        }
+
         /* Casilla "poner en Mi Día" del modal de edición de tarea */
         .edit-dia-row {
             display: flex; align-items: center; gap: 10px;
@@ -1171,6 +1190,9 @@
         </div>
     </div>
 </div>
+
+<!-- Aviso flotante con Deshacer -->
+<div id="toast"><span class="toast-msg"></span><button onclick="toastDeshacer()">Deshacer</button></div>
 
 <!-- Modal: Selector de tarea para Mi Día -->
 <div id="pickerModal" class="modal">
@@ -1735,6 +1757,75 @@
         saveTasks(); render();
     }
 
+    // ── Aviso flotante con Deshacer ───────────────────────────────────────
+    let _undoFn = null, _undoTimer = null;
+    function toast(msg, undoFn, ms) {
+        const box = document.getElementById('toast'); if (!box) return;
+        box.querySelector('.toast-msg').textContent = msg;
+        box.querySelector('button').style.display = undoFn ? '' : 'none';
+        _undoFn = undoFn || null;
+        box.classList.add('show');
+        clearTimeout(_undoTimer);
+        _undoTimer = setTimeout(() => { box.classList.remove('show'); _undoFn = null; }, ms || 6000);
+    }
+    function toastDeshacer() {
+        const fn = _undoFn; _undoFn = null;
+        clearTimeout(_undoTimer);
+        document.getElementById('toast').classList.remove('show');
+        if (fn) fn();
+    }
+
+    // ── Tildar una tarea desde Mi Día ─────────────────────────────────────
+    // El ✓ de Mi Día cierra la tarea de verdad, no solo la tacha:
+    //   · si viene de un proyecto → la tarea del proyecto pasa a HECHO
+    //   · si es suelta            → se elimina de la lista
+    // En los dos casos queda el aviso "Deshacer" por unos segundos.
+    function completarDesdeDia(id) {
+        const t = tasks.find(x => x.id === id);
+        if (!t) return;
+
+        // Destildar una que ya estaba hecha: solo aplica a las de proyecto,
+        // porque las sueltas ya no están.
+        if (t.completed) {
+            t.completed = false; t.completedAt = null;
+            const pt = tareaDeProyectoDe(t);
+            if (pt) { pt.state = 'en-curso'; savePmData(); }
+            saveTasks(); render(); pmRefresh();
+            return;
+        }
+
+        const pt = tareaDeProyectoDe(t);
+        if (pt) {
+            const estadoAnterior = pt.state;
+            pt.state = 'hecho';
+            t.completed = true; t.completedAt = Date.now();
+            savePmData(); saveTasks(); render(); pmRefresh();
+            toast(`✅ "${t.title}" quedó Hecha en ${t.proyecto || 'el proyecto'}`, () => {
+                pt.state = estadoAnterior;
+                t.completed = false; t.completedAt = null;
+                savePmData(); saveTasks(); render(); pmRefresh();
+            });
+        } else {
+            const copia = Object.assign({}, t);
+            tasks = tasks.filter(x => x.id !== id);
+            renumerarDia(tareasDelDia());
+            saveTasks(); render();
+            toast(`✅ "${copia.title}" hecha y eliminada`, () => {
+                tasks.push(copia);
+                renumerarDia(tareasDelDia());
+                saveTasks(); render();
+            });
+        }
+        if (document.getElementById('tab-recorrida')?.classList.contains('active')) renderRecorrida();
+    }
+
+    // Devuelve la tarea de proyecto de la que esta tarea es espejo (o null).
+    function tareaDeProyectoDe(t) {
+        if (!t || !t.proyectoId || !t.proyectoTaskId) return null;
+        const p = (pmData.projects||[]).find(x => x.id === t.proyectoId);
+        return (p && (p.tasks||[]).find(x => x.id === t.proyectoTaskId)) || null;
+    }
+
     // Borrar desde el modal de edición (se llega desde Recorrida, Mi Día o la
     // lista de Tareas). Si la tarea es espejo de una de proyecto, corta el
     // vínculo antes de borrar para no dejar el ☀️ colgado en el tablero.
@@ -2050,7 +2141,8 @@
                  ondragover="diaDragOver(event,${t.id})" ondrop="diaDrop(event,${t.id})">
                 <span class="day-drag" title="Arrastrar para reordenar">⠿</span>
                 <span class="day-num">${i+1}</span>
-                <button class="day-check-btn" onclick="toggleTask(${t.id})">${t.completed?'✓':''}</button>
+                <button class="day-check-btn" onclick="completarDesdeDia(${t.id})"
+                        title="${t.proyecto ? 'Marcarla Hecha en el proyecto' : 'Hecha — se elimina de la lista'}">${t.completed?'✓':''}</button>
                 <div class="day-item-main">
                     <div class="day-item-title" onclick="irAlOrigenDesdeDia(${t.id})"
                          title="${t.proyecto ? 'Abrir el proyecto '+escHtml(t.proyecto) : 'Editar la tarea'}">${escHtml(t.title)}</div>
