@@ -3455,10 +3455,13 @@
             if (!pid) return alert('Seleccioná un proyecto');
             const p = pmData.projects.find(x=>x.id===pid); if (!p) return alert('Proyecto no encontrado');
             if (!p.tasks) p.tasks = [];
-            p.tasks.push({id:'t'+Date.now(), title,
+            const nuevoId = 't'+Date.now();
+            p.tasks.push({id:nuevoId, title,
                 state: document.getElementById('taskState').value || 'backlog',
                 dueDate: document.getElementById('taskDueDate').value || '',
                 responsable: document.getElementById('taskResponsable').value || '', ejecutor});
+            const chk = document.getElementById('taskEnDia');
+            if (chk && chk.checked) { savePmData(); enviarAMiDia(pid, nuevoId); }
         }
         savePmData(); pmCloseTaskModal(); pmRefresh();
     }
@@ -3555,8 +3558,19 @@
     }
     function renderMiDiaBox() {
         const box = document.getElementById('miDiaBox'); if (!box) return;
-        if (!editingTaskId || !editingTaskProjectId) { box.style.display = 'none'; return; }
         box.style.display = 'block';
+        // Tarea nueva: todavía no existe, así que se ofrece una casilla y el envío
+        // a Mi Día se hace recién al Guardar (pmSaveTask).
+        if (!editingTaskId || !editingTaskProjectId) {
+            box.innerHTML = `<h4>☀️ Mi Día</h4>
+                <label class="edit-dia-row" style="margin:0;">
+                    <input type="checkbox" id="taskEnDia">
+                    <span>Hacerla hoy — agregarla a Mi Día
+                        <br><span style="font-size:9px;color:var(--text-3);">${contarMiDia()} tarea${contarMiDia()===1?'':'s'} para hoy</span>
+                    </span>
+                </label>`;
+            return;
+        }
         const vin = tareaVinculada(editingTaskId);
         if (vin) {
             const estado = vin.completed
