@@ -1331,6 +1331,13 @@
             <select id="ntEjecutor"></select>
         </div>
 
+        <label class="edit-dia-row">
+            <input type="checkbox" id="ntEnDia">
+            <span>☀️ Hacerla hoy — agregarla a Mi Día
+                <br><span class="hint" id="ntEnDiaHint"></span>
+            </span>
+        </label>
+
         <div class="modal-btns">
             <button class="btn-save" onclick="guardarNuevaTarea()">Guardar</button>
             <button class="btn-cancel" onclick="cerrarNuevaTarea()">Cancelar</button>
@@ -3893,6 +3900,9 @@
         document.getElementById('ntFecha').value = '';
         document.getElementById('ntHora').value  = '';
         document.getElementById('ntAlerta').value = '0';
+        document.getElementById('ntEnDia').checked = !!preset.enDia;
+        document.getElementById('ntEnDiaHint').textContent =
+            `Hoy tenés ${contarMiDia()} tarea${contarMiDia()===1?'':'s'} para hacer`;
         llenarSelectResponsables('ntResponsable', preset.responsable || '');
         // reutiliza la lista de operarios del equipo
         const of = new Set(pmData.team.operarios);
@@ -3919,6 +3929,7 @@
         const imp    = document.getElementById('ntImportancia').value;
         const fecha  = document.getElementById('ntFecha').value || '';
         const resp   = document.getElementById('ntResponsable').value;
+        const alDia  = document.getElementById('ntEnDia').checked;
 
         if (pid) {
             // → tarea dentro de un proyecto
@@ -3927,13 +3938,16 @@
             if (!p.tasks) p.tasks = [];
             const ejec = document.getElementById('ntEjecutor').value;
             registrarOperarioSiEsNuevo(ejec);
+            const nuevoId = 't' + Date.now();
             p.tasks.push({
-                id: 't' + Date.now(), title: titulo,
+                id: nuevoId, title: titulo,
                 state: document.getElementById('ntEstado').value || 'backlog',
                 dueDate: fecha, responsable: resp || '', ejecutor: ejec || '',
                 urgency: urg, importance: imp
             });
             savePmData();
+            // el espejo en Mi Día se crea recién acá, con la tarea ya guardada
+            if (alDia) enviarAMiDia(pid, nuevoId);
         } else {
             // → tarea suelta en la lista personal, clasificada por ámbito y área
             tasks.push({
@@ -3944,7 +3958,8 @@
                 alerted: false, completed: false,
                 createdAt: Date.now(), completedAt: null, daySize: null,
                 ambito, area, assignee: resp || null,
-                state: document.getElementById('ntEstado').value || 'en-curso'
+                state: document.getElementById('ntEstado').value || 'en-curso',
+                enDia: alDia, dayOrder: alDia ? tareasDelDia().length : null
             });
             saveTasks();
         }
