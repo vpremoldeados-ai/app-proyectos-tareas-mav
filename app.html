@@ -2927,12 +2927,12 @@
 
     function pmHeaderStatsRender() {
         const box = document.getElementById('pmHeaderStats'); if (!box) return;
-        const projs = pmData.projects || [], t = allPmTasks();
+        const projs = proyectosActivos(), t = allPmTasks();
         const enCurso = t.filter(x => x.state === 'en-curso').length;
         const hechas  = t.filter(x => x.state === 'hecho').length;
         const venc    = pmVencidas().length;
         box.innerHTML = `
-            <div class="stat"><span>📊</span><span><span class="stat-value">${projs.length}</span> proyectos</span></div>
+            <div class="stat"><span>📊</span><span><span class="stat-value">${projs.length}</span> activos</span></div>
             <div class="stat"><span>📋</span><span><span class="stat-value">${t.length}</span> tareas</span></div>
             <div class="stat"><span>⚡</span><span><span class="stat-value" style="color:#f97316;">${enCurso}</span> en curso</span></div>
             <div class="stat"><span>✓</span><span><span class="stat-value" style="color:var(--success);">${hechas}</span> completadas</span></div>
@@ -3123,9 +3123,10 @@
     }
 
     function renderFilters() {
-        const projs = pmData.projects || [];
+        const todos = pmData.projects || [];
+        const projs = todos.filter(p => estadoProy(p) === filterEstado);
         const areas  = [...new Set(projs.map(p => p.area).filter(Boolean))];
-        const porEstado = e => projs.filter(p => estadoProy(p) === e).length;
+        const porEstado = e => todos.filter(p => estadoProy(p) === e).length;
         let html = Object.keys(ESTADOS_PROY).map(e => {
             const cuantos = porEstado(e);
             if (!cuantos && e !== 'activo') return '';
@@ -3241,7 +3242,7 @@
     }
 
     function renderMetricas() {
-        const projs = pmData.projects || [], t = allPmTasks();
+        const projs = proyectosActivos(), t = allPmTasks();
         const hechas = t.filter(x=>x.state==='hecho').length;
         const pct = t.length ? Math.round(hechas/t.length*100) : 0;
         const venc = pmVencidas(), hoyT = pmDeHoy();
