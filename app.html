@@ -2871,6 +2871,7 @@
         (pmData.projects || []).forEach(p => {
             if (!p) return;
             if (!incluirNoActivos && estadoProy(p) !== 'activo') return;
+            if (!incluirNoActivos && p.bandeja) return;
             (p.tasks || []).forEach(t => {
                 if (!t) return;
                 out.push({...t, projectName:p.name, projectId:p.id, area:p.area, type:p.type, projResponsable:p.responsable});
@@ -3068,7 +3069,7 @@
         cerrado:   {label:'Cerrado',   icono:'📦'}
     };
     function estadoProy(p) { return (p && p.estado) || 'activo'; }
-    function proyectosActivos() { return (pmData.projects || []).filter(p => estadoProy(p) === 'activo'); }
+    function proyectosActivos() { return (pmData.projects || []).filter(p => estadoProy(p) === 'activo' && !p.bandeja); }
 
     function cambiarEstadoProyecto(ev, id, nuevo) {
         if (ev) ev.stopPropagation();
