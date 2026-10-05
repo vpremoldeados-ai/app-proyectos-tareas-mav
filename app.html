@@ -773,6 +773,38 @@
             color:var(--text-3); font-family:'Inter',sans-serif; }
         .vista-toggle button.active { background:var(--surface); color:var(--accent); box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 
+        /* Caja "Para hoy": lo que la app sugiere sola al abrir Mi Día */
+        .sug-box {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: #fff; border-radius: 14px; padding: 16px 18px; margin-bottom: 16px;
+            box-shadow: 0 6px 20px rgba(79,70,229,.25);
+        }
+        .sug-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px; }
+        .sug-head h4 { margin:0; font-size:15px; font-weight:700; color:#fff; }
+        .sug-fecha { font-size:11px; opacity:.75; text-transform:capitalize; }
+        .sug-item {
+            display:flex; align-items:flex-start; gap:10px;
+            background: rgba(255,255,255,.12); border-radius:10px;
+            padding:10px 12px; margin-bottom:8px;
+        }
+        .sug-item:last-child { margin-bottom:0; }
+        .sug-ico { font-size:16px; line-height:1.3; flex-shrink:0; }
+        .sug-txt { flex:1; min-width:0; font-size:12.5px; line-height:1.45; }
+        .sug-txt b { font-weight:700; }
+        .sug-donde { opacity:.75; }
+        .sug-btn {
+            flex-shrink:0; background:rgba(255,255,255,.9); color:#4338ca;
+            border:0; border-radius:8px; padding:5px 11px;
+            font-size:11px; font-weight:700; cursor:pointer;
+        }
+        .sug-btn:hover { background:#fff; }
+        .sug-vacio { font-size:12.5px; opacity:.85; }
+        @media (max-width:600px) {
+            .sug-box { padding:14px; }
+            .sug-item { padding:9px 10px; }
+            .sug-txt { font-size:12px; }
+        }
+
         /* Aviso flotante con Deshacer (abajo, sobre el botón ➕) */
         #toast {
             position: fixed; left: 50%; bottom: 88px; transform: translate(-50%, 20px);
@@ -2154,6 +2186,7 @@
         }).join('');
 
         document.getElementById('dayPlanView').innerHTML = `
+            ${sugerenciasHoyHTML()}
             ${objetivosBoxHTML()}
             <div class="day-plan-header">
                 <div class="day-progress-info">
@@ -2172,6 +2205,126 @@
             <div class="day-plan-section">
                 <div class="day-plan-tasks">${filas || '<div class="day-slot-empty">Todavía no elegiste nada para hoy. Tocá <strong>+ Agregar</strong> o mandá tareas desde la Recorrida.</div>'}</div>
             </div>`;
+    }
+
+    // ── Sugerencias del día ───────────────────────────────────────────────
+    // Caja que se arma sola al abrir Mi Día. No inventa nada: mira la base y
+    // aplica cuatro reglas — la reunión de hoy, lo vencido, lo que lleva mucho
+    // sin moverse y los proyectos al borde de cerrarse.
+    const DIAS_REUNION = [1, 4];          // lunes y jueves
+    const DIAS_TRABADA = 21;              // una tarea sin fecha que lleva 3 semanas en curso
+    const WIP_MAXIMO   = 3;               // tope de tareas en curso por persona
+
+    // Tareas pendientes de una persona, juntando proyectos y lista suelta.
+    function pendientesDe(quien) {
+        const h = hoyYMD();
+        const deProyecto = allPmTasks()
+            .filter(t => t.state !== 'hecho' && t.responsable === quien)
+            .map(t => ({title:t.title, donde:t.projectName, vence:t.dueDate || '',
+                        vencida: !!(t.dueDate && t.dueDate < h), curso: t.state === 'en-curso'}));
+        const sueltas = tasks
+            .filter(t => t && !t.completed && !t.proyectoTaskId && t.assignee === quien)
+            .map(t => ({title:t.title, donde:t.area || 'suelta', vence:t.date || '',
+                        vencida: !!(t.date && t.date < h), curso: t.state !== 'backlog'}));
+        return deProyecto.concat(sueltas);
+    }
+
+    function sugLinea(icono, texto, accion) {
+        return `<div class="sug-item"><span class="sug-ico">${icono}</span>
+            <div class="sug-txt">${texto}</div>
+            ${accion ? `<button class="sug-btn" onclick="${accion}">Ver</button>` : ''}</div>`;
+    }
+
+    function sugerenciasHoyHTML() {
+        const hoy   = new Date();
+        const h     = hoyYMD();
+        const items = [];
+
+        // 1 · Reunión de hoy: qué le vas a preguntar a cada uno
+        if (DIAS_REUNION.includes(hoy.getDay())) {
+            (pmData.team.responsables || []).forEach(quien => {
+                if (quien === 'Marcelo' || !HORARIOS[quien]) return;
+                const suyas    = pendientesDe(quien);
+                const vencidas = suyas.filter(t => t.vencida);
+                const hora     = (HORARIOS[quien].match(/\d{1,2}:\d{2}/) || [''])[0];
+                let txt = `<b>Reunión con ${escHtml(quien)}${hora ? ' · ' + hora : ''}</b>`;
+                if (!suyas.length) {
+                    txt += `<br>No tiene ninguna tarea cargada. Algo está haciendo: anotalo o repartile trabajo.`;
+                } else if (vencidas.length) {
+                    txt += `<br>${vencidas.length} vencida${vencidas.length>1?'s':''}: `
+                         + vencidas.slice(0,3).map(t=>escHtml(t.title)).join(' · ');
+                } else {
+                    txt += `<br>${suyas.length} pendiente${suyas.length>1?'s':''}, ninguna vencida.`;
+                }
+                items.push(sugLinea('🤝', txt, "goTab('tab-reuniones')"));
+            });
+        }
+
+        // 2 · Lo vencido, que es lo único que no admite postergarse solo
+        const vencidasProy = allPmTasks().filter(t => t.state !== 'hecho' && t.dueDate && t.dueDate < h);
+        const vencidasSue  = tasks.filter(t => t && !t.completed && !t.proyectoTaskId && t.date && t.date < h);
+        const totalVenc    = vencidasProy.length + vencidasSue.length;
+        if (totalVenc) {
+            const mias = vencidasProy.filter(t => !t.responsable || t.responsable === 'Marcelo').length
+                       + vencidasSue.filter(t => !t.assignee || t.assignee === 'Marcelo').length;
+            items.push(sugLinea('⏰',
+                `<b>${totalVenc} tarea${totalVenc>1?'s':''} vencida${totalVenc>1?'s':''}</b>`
+                + (mias ? `<br>${mias} ${mias>1?'son tuyas':'es tuya'}. El resto hay que reclamarlo.` : `<br>Ninguna es tuya: hay que reclamarlas.`),
+                "goTab('tab-calendario')"));
+        }
+
+        // 3 · Tu foco: una sola, elegida con un criterio y no al azar
+        const miasCurso = allPmTasks().filter(t => t.state === 'en-curso' && (!t.responsable || t.responsable === 'Marcelo'));
+        const candidata = miasCurso.filter(t => t.dueDate && t.dueDate < h)
+                                   .sort((a,b) => a.dueDate.localeCompare(b.dueDate))[0]
+                       || miasCurso[0];
+        if (candidata) {
+            items.push(sugLinea('🎯',
+                `<b>Hacé esta antes de pisar la planta</b><br>${escHtml(candidata.title)}`
+                + ` <span class="sug-donde">— ${escHtml(candidata.projectName)}</span>`,
+                `openProjectDetail('${candidata.projectId}')`));
+        }
+
+        // 4 · Avisos del sistema: cuando el tablero deja de reflejar la realidad
+        if (miasCurso.length > WIP_MAXIMO) {
+            items.push(sugLinea('🚦',
+                `<b>Tenés ${miasCurso.length} tareas en curso a la vez</b>`
+                + `<br>Acordamos un máximo de ${WIP_MAXIMO}. Cerrá o pasá a "para más adelante" antes de empezar otra.`,
+                "goTab('tab-reuniones')"));
+        }
+        const casiListos = (pmData.projects || []).filter(p => {
+            const t = (p.tasks || []); if (t.length < 2) return false;
+            return t.filter(x => x.state !== 'hecho').length === 1;
+        });
+        const terminados = (pmData.projects || []).filter(p => {
+            const t = (p.tasks || []); if (!t.length) return false;
+            return t.every(x => x.state === 'hecho');
+        });
+        if (terminados.length) {
+            items.push(sugLinea('✅',
+                `<b>${terminados.length} proyecto${terminados.length>1?'s':''} terminado${terminados.length>1?'s':''} sin cerrar</b>`
+                + `<br>${terminados.slice(0,3).map(p=>escHtml(p.name)).join(' · ')}`,
+                "goTab('tab-proyectos')"));
+        } else if (casiListos.length) {
+            items.push(sugLinea('🏁',
+                `<b>${casiListos.length} proyecto${casiListos.length>1?'s':''} a una tarea del final</b>`
+                + `<br>${casiListos.slice(0,3).map(p=>escHtml(p.name)).join(' · ')}`,
+                "goTab('tab-proyectos')"));
+        }
+
+        if (!items.length) {
+            return `<div class="sug-box"><div class="sug-head"><h4>🎯 Para hoy</h4></div>
+                <div class="sug-vacio">Nada vencido ni trabado. Elegí vos qué hacer hoy.</div></div>`;
+        }
+
+        const fecha = hoy.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+        return `<div class="sug-box">
+            <div class="sug-head">
+                <h4>🎯 Para hoy</h4>
+                <span class="sug-fecha">${fecha}</span>
+            </div>
+            ${items.join('')}
+        </div>`;
     }
 
     // ── Revisión Semanal ──────────────────────────────────────────────────
