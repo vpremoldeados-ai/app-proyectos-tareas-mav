@@ -773,6 +773,74 @@
             color:var(--text-3); font-family:'Inter',sans-serif; }
         .vista-toggle button.active { background:var(--surface); color:var(--accent); box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 
+        /* Objetivos: metas, hábitos con racha y recordatorios */
+        .obj-seccion { margin-top: 14px; }
+        .obj-seccion-tit {
+            font-size: 11px; font-weight: 700; letter-spacing: .04em;
+            text-transform: uppercase; color: var(--text-3);
+            margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+        }
+        .obj-contador {
+            font-size: 11px; font-weight: 700; color: var(--accent);
+            background: rgba(99,102,241,.12); padding: 1px 7px; border-radius: 20px;
+        }
+        .obj-metas { display: flex; flex-direction: column; gap: 6px; }
+        .obj-meta {
+            display: flex; align-items: center; gap: 9px;
+            background: var(--surface-2); border-radius: 9px;
+            padding: 9px 12px; cursor: pointer; font-size: 13px; font-weight: 500;
+            border-left: 3px solid var(--accent);
+        }
+        .obj-meta:hover { background: rgba(99,102,241,.10); }
+        .obj-meta-ico { font-size: 15px; flex-shrink: 0; }
+        .obj-meta-txt { min-width: 0; }
+
+        .obj-habitos { display: flex; flex-wrap: wrap; gap: 6px; }
+        .obj-habito {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: var(--surface-2); border: 1px solid transparent;
+            border-radius: 20px; padding: 6px 12px 6px 8px;
+            font-size: 12.5px; font-family: inherit; color: var(--text);
+            cursor: pointer; transition: background .12s, border-color .12s;
+        }
+        .obj-habito:hover { border-color: var(--accent); }
+        .obj-habito-check {
+            width: 17px; height: 17px; border-radius: 50%; flex-shrink: 0;
+            border: 2px solid var(--text-3); display: grid; place-items: center;
+            font-size: 11px; font-weight: 700; line-height: 1; color: transparent;
+        }
+        .obj-habito.listo { background: rgba(34,197,94,.12); }
+        .obj-habito.listo .obj-habito-check {
+            background: var(--success); border-color: var(--success); color: #fff;
+        }
+        .obj-habito.listo .obj-habito-txt { color: var(--text-2); }
+        .obj-racha {
+            font-size: 10px; font-weight: 700; color: var(--accent);
+            background: rgba(99,102,241,.14); padding: 1px 6px; border-radius: 20px;
+        }
+
+        /* Modal de objetivos, agrupado por tipo */
+        .obj-grupo { margin-bottom: 18px; }
+        .obj-grupo-tit {
+            font-size: 11px; font-weight: 700; letter-spacing: .04em;
+            text-transform: uppercase; color: var(--text-3);
+            margin-bottom: 7px; display: flex; align-items: center; gap: 7px;
+        }
+        .obj-grupo-tit span {
+            background: var(--surface-2); padding: 1px 7px;
+            border-radius: 20px; font-size: 10px;
+        }
+        .obj-tipo-sel {
+            flex-shrink: 0; font-size: 11px; font-family: inherit;
+            padding: 3px 5px; border-radius: 6px; max-width: 150px;
+            border: 1px solid var(--border); background: var(--surface);
+            color: var(--text-2); cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            .obj-tipo-sel { max-width: 92px; }
+            .obj-habito { font-size: 12px; }
+        }
+
         /* Caja "Para hoy": lo que la app sugiere sola al abrir Mi Día */
         .sug-box {
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
@@ -2564,19 +2632,75 @@
         return '⭐';
     }
 
+    // ── Objetivos: metas, hábitos y mantras ───────────────────────────────
+    // Una lista de 13 "objetivos" mezclaba tres cosas que se gestionan distinto:
+    // metas que se miden una vez por trimestre, hábitos que se marcan todos los
+    // días y frases que solo se leen. Ahora cada una vive según lo que es.
+    const TIPOS_OBJ = {
+        meta:      {label:'Metas del trimestre', ico:'🎯', orden:1},
+        habito:    {label:'Hábitos',             ico:'🔁', orden:2},
+        mantra:    {label:'Recordatorios',       ico:'💭', orden:3},
+        archivado: {label:'Archivados',          ico:'📦', orden:4}
+    };
+    function tipoObj(o) { return (o && TIPOS_OBJ[o.tipo]) ? o.tipo : 'meta'; }
+    function objsDe(t)  { return objetivos.filter(o => tipoObj(o) === t); }
+
+    // Un hábito se marca una vez por día; la racha cuenta días seguidos.
+    function habitoHechoHoy(o) { return o && o.ultimoDia === hoyYMD(); }
+    function marcarHabito(id) {
+        const o = objetivos.find(x => x.id === id); if (!o) return;
+        const hoy = hoyYMD();
+        if (o.ultimoDia === hoy) {               // destildar: deshace la marca de hoy
+            o.ultimoDia = o.anteriorDia || null;
+            o.racha = Math.max(0, (o.racha || 1) - 1);
+        } else {
+            const ayer = ymd(new Date(Date.now() - 86400000));
+            o.anteriorDia = o.ultimoDia || null;
+            o.racha = (o.ultimoDia === ayer) ? (o.racha || 0) + 1 : 1;
+            o.ultimoDia = hoy;
+        }
+        saveObjetivos(); renderDayPlan();
+        const abierto = document.getElementById('objetivosModal');
+        if (abierto && abierto.classList.contains('show')) renderObjetivos();
+    }
+    function cambiarTipoObj(id, tipo) {
+        const o = objetivos.find(x => x.id === id); if (!o) return;
+        o.tipo = tipo;
+        saveObjetivos(); renderObjetivos(); renderDayPlan();
+    }
+
     function renderObjetivos() {
         const box = document.getElementById('objetivosList');
         if (!box) return;
-        box.innerHTML = objetivos.length ? objetivos.map((o,i) => `
-            <div class="objetivo-item" draggable="true"
-                 ondragstart="objDragStart(event,${i})" ondragover="objDragOver(event)"
-                 ondrop="objDrop(event,${i})" ondragend="objDragEnd(event)">
-                <span class="drag-handle" title="Arrastrar para reordenar">⠿</span>
-                <span class="objetivo-ico">${iconoObjetivo(o.text)}</span>
-                <span class="objetivo-text" onclick="editObjetivo(this, ${o.id})">${escHtml(o.text)}</span>
-                <button class="objetivo-del" onclick="deleteObjetivo(${o.id})" title="Borrar">✕</button>
-            </div>`).join('')
-            : '<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">Todavía no cargaste objetivos ni metas.</div>';
+        if (!objetivos.length) {
+            box.innerHTML = '<div style="color:var(--text-3);font-size:13px;padding:20px;text-align:center;">Todavía no cargaste objetivos ni metas.</div>';
+            return;
+        }
+        const grupos = Object.keys(TIPOS_OBJ).sort((a,b)=>TIPOS_OBJ[a].orden-TIPOS_OBJ[b].orden);
+        box.innerHTML = grupos.map(t => {
+            const lista = objsDe(t);
+            if (!lista.length) return '';
+            const d = TIPOS_OBJ[t];
+            return `<div class="obj-grupo">
+                <div class="obj-grupo-tit">${d.ico} ${d.label} <span>${lista.length}</span></div>
+                ${lista.map(o => {
+                    const i = objetivos.indexOf(o);
+                    return `<div class="objetivo-item" draggable="true"
+                         ondragstart="objDragStart(event,${i})" ondragover="objDragOver(event)"
+                         ondrop="objDrop(event,${i})" ondragend="objDragEnd(event)">
+                        <span class="drag-handle" title="Arrastrar para reordenar">⠿</span>
+                        <span class="objetivo-ico">${iconoObjetivo(o.text)}</span>
+                        <span class="objetivo-text" onclick="editObjetivo(this, ${o.id})">${escHtml(o.text)}</span>
+                        <select class="obj-tipo-sel" title="Qué es esto"
+                                onchange="cambiarTipoObj(${o.id}, this.value)">
+                            ${Object.keys(TIPOS_OBJ).map(k =>
+                                `<option value="${k}" ${tipoObj(o)===k?'selected':''}>${TIPOS_OBJ[k].ico} ${TIPOS_OBJ[k].label}</option>`).join('')}
+                        </select>
+                        <button class="objetivo-del" onclick="deleteObjetivo(${o.id})" title="Borrar">✕</button>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        }).join('');
     }
 
     function objetivosBoxHTML() {
@@ -2590,34 +2714,58 @@
             </div>`;
         }
 
-        // Destacado del día: rota solo, uno por jornada, siempre el mismo durante
-        // todo el día. Sin azar, para que no cambie cada vez que se refresca.
+        const metas   = objsDe('meta');
+        const habitos = objsDe('habito');
+        const mantras = objsDe('mantra');
+
+        // El foco del día sale de los recordatorios: son frases para leer, no
+        // trabajo. Rota una por jornada, siempre la misma durante todo el día.
+        const fuente = mantras.length ? mantras : metas;
         const hoy = new Date();
         const diaDelAnio = Math.floor((hoy - new Date(hoy.getFullYear(),0,0)) / 86400000);
-        const destacado = objetivos[diaDelAnio % objetivos.length];
-        const resto = objetivos.filter(o => o.id !== destacado.id);
+        const destacado = fuente[diaDelAnio % fuente.length];
+
+        const hechosHoy = habitos.filter(habitoHechoHoy).length;
 
         return `<div class="objetivos-box">
             <div class="objetivos-box-head">
                 <h4>🎯 Mis Objetivos y Metas</h4>
                 <a href="javascript:void(0)" onclick="openObjetivosModal()">Ver / Editar</a>
             </div>
-            <div class="obj-destacado" onclick="openObjetivosModal()" title="Foco de hoy">
+
+            ${destacado ? `<div class="obj-destacado" onclick="openObjetivosModal()" title="Rota todos los días">
                 <span class="obj-destacado-ico">${iconoObjetivo(destacado.text)}</span>
                 <div>
-                    <div class="obj-destacado-lbl">Foco de hoy</div>
+                    <div class="obj-destacado-lbl">Para acordarse hoy</div>
                     <div class="obj-destacado-txt">${escHtml(destacado.text)}</div>
                 </div>
-            </div>
-            <div class="obj-grid" ${objVerTodos() ? '' : 'style="display:none;"'}>
-                ${resto.map(o => `<div class="obj-pill" title="${escHtml(o.text)}">
-                    <span class="obj-pill-ico">${iconoObjetivo(o.text)}</span>
-                    <span class="obj-pill-txt">${escHtml(o.text)}</span>
-                </div>`).join('')}
-            </div>
-            <button class="obj-toggle" onclick="toggleObjVerTodos()">
-                ${objVerTodos() ? '▴ Ocultar los demás' : `▾ Ver los ${resto.length} objetivos`}
-            </button>
+            </div>` : ''}
+
+            ${metas.length ? `<div class="obj-seccion">
+                <div class="obj-seccion-tit">🎯 Metas del trimestre</div>
+                <div class="obj-metas">
+                    ${metas.map(o => `<div class="obj-meta" onclick="openObjetivosModal()">
+                        <span class="obj-meta-ico">${iconoObjetivo(o.text)}</span>
+                        <span class="obj-meta-txt">${escHtml(o.text)}</span>
+                    </div>`).join('')}
+                </div>
+            </div>` : ''}
+
+            ${habitos.length ? `<div class="obj-seccion">
+                <div class="obj-seccion-tit">🔁 Hábitos de hoy <span class="obj-contador">${hechosHoy}/${habitos.length}</span></div>
+                <div class="obj-habitos">
+                    ${habitos.map(o => {
+                        const listo = habitoHechoHoy(o);
+                        const racha = o.racha || 0;
+                        return `<button class="obj-habito ${listo ? 'listo' : ''}" onclick="marcarHabito(${o.id})"
+                                title="${listo ? 'Tocá para desmarcar' : 'Marcar como hecho hoy'}">
+                            <span class="obj-habito-check">${listo ? '✓' : ''}</span>
+                            <span class="obj-habito-txt">${escHtml(o.text)}</span>
+                            ${racha > 1 ? `<span class="obj-racha">${racha}d</span>` : ''}
+                        </button>`;
+                    }).join('')}
+                </div>
+            </div>` : ''}
         </div>`;
     }
 
