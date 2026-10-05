@@ -2212,7 +2212,7 @@
     // Caja que se arma sola al abrir Mi Día. No inventa nada: mira la base y
     // aplica cuatro reglas — la reunión de hoy, lo vencido, lo que lleva mucho
     // sin moverse y los proyectos al borde de cerrarse.
-    const DIAS_REUNION = [1, 4];          // lunes y jueves
+    const DIAS_REUNION = [2, 5];          // martes y viernes
     const DIAS_TRABADA = 21;              // una tarea sin fecha que lleva 3 semanas en curso
     const WIP_MAXIMO   = 3;               // tope de tareas en curso por persona
 
@@ -2817,7 +2817,7 @@
     const STATE_COLORS = {backlog:'#9ca3af', planificado:'#60a5fa', 'en-curso':'#f97316', revision:'#a78bfa', hecho:'#10b981'};
     const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const DIAS  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const HORARIOS = {Gustavo:'Lunes y Jueves · 11:00 hs', Sofia:'Lunes y Jueves · 16:00 hs', Marcelo:''};
+    const HORARIOS = {Gustavo:'Martes y Viernes · 11:00 hs', Sofia:'Martes y Viernes · 15:30 hs', Marcelo:''};
 
     let pmData = JSON.parse(localStorage.getItem('vph_pm_v1')) || {projects: []};
     let currentProjectId = null, editingProjectId = null;
