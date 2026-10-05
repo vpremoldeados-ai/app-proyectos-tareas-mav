@@ -781,7 +781,8 @@
         }
         .sug-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px; }
         .sug-head h4 { margin:0; font-size:15px; font-weight:700; color:#fff; }
-        .sug-fecha { font-size:11px; opacity:.75; text-transform:capitalize; }
+        .sug-fecha { font-size:11px; opacity:.75; }
+        .sug-fecha::first-letter { text-transform:uppercase; }
         .sug-item {
             display:flex; align-items:flex-start; gap:10px;
             background: rgba(255,255,255,.12); border-radius:10px;
@@ -2268,7 +2269,7 @@
             const mias = vencidasProy.filter(t => !t.responsable || t.responsable === 'Marcelo').length
                        + vencidasSue.filter(t => !t.assignee || t.assignee === 'Marcelo').length;
             items.push(sugLinea('⏰',
-                `<b>${totalVenc} tarea${totalVenc>1?'s':''} vencida${totalVenc>1?'s':''}</b>`
+                `<b>${totalVenc} vencidas</b> — ${vencidasProy.length} de proyectos y ${vencidasSue.length} sueltas`
                 + (mias ? `<br>${mias} ${mias>1?'son tuyas':'es tuya'}. El resto hay que reclamarlo.` : `<br>Ninguna es tuya: hay que reclamarlas.`),
                 "goTab('tab-calendario')"));
         }
@@ -2288,7 +2289,7 @@
         // 4 · Avisos del sistema: cuando el tablero deja de reflejar la realidad
         if (miasCurso.length > WIP_MAXIMO) {
             items.push(sugLinea('🚦',
-                `<b>Tenés ${miasCurso.length} tareas en curso a la vez</b>`
+                `<b>Tenés ${miasCurso.length} tareas de proyecto en curso a la vez</b>`
                 + `<br>Acordamos un máximo de ${WIP_MAXIMO}. Cerrá o pasá a "para más adelante" antes de empezar otra.`,
                 "goTab('tab-reuniones')"));
         }
