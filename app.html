@@ -2293,11 +2293,11 @@
                 + `<br>Acordamos un máximo de ${WIP_MAXIMO}. Cerrá o pasá a "para más adelante" antes de empezar otra.`,
                 "goTab('tab-reuniones')"));
         }
-        const casiListos = (pmData.projects || []).filter(p => {
+        const casiListos = proyectosActivos().filter(p => {
             const t = (p.tasks || []); if (t.length < 2) return false;
             return t.filter(x => x.state !== 'hecho').length === 1;
         });
-        const terminados = (pmData.projects || []).filter(p => {
+        const terminados = proyectosActivos().filter(p => {
             const t = (p.tasks || []); if (!t.length) return false;
             return t.every(x => x.state === 'hecho');
         });
@@ -2823,6 +2823,7 @@
     let currentProjectId = null, editingProjectId = null;
     let editingTaskId = null, editingTaskProjectId = null;
     let filterType = null, filterArea = null, filterResp = null;
+    let filterEstado = 'activo';   // el tablero abre mostrando solo los proyectos vivos
     let reunionesResp = null;
     let reunionVista = localStorage.getItem('vph_reunion_vista') || 'proyecto';
     let draggedPmTask = null;
@@ -2865,10 +2866,11 @@
         return t.ejecutor ? `<span class="pm-badge badge-ejecutor" title="Lo ejecuta">🔧 ${esc(t.ejecutor)}</span>` : '';
     }
 
-    function allPmTasks() {
+    function allPmTasks(incluirNoActivos) {
         const out = [];
         (pmData.projects || []).forEach(p => {
             if (!p) return;
+            if (!incluirNoActivos && estadoProy(p) !== 'activo') return;
             (p.tasks || []).forEach(t => {
                 if (!t) return;
                 out.push({...t, projectName:p.name, projectId:p.id, area:p.area, type:p.type, projResponsable:p.responsable});
@@ -3056,11 +3058,35 @@
             }).join('')}`;
     }
 
+    // ── Estado del proyecto: activo / congelado / cerrado ──────────────────
+    // Un proyecto terminado no se borra: se cierra. Deja de aparecer en el
+    // tablero, en la Recorrida y en las reuniones, pero queda entero y se puede
+    // reactivar. "Congelado" es lo mismo para algo que se decide no hacer ahora.
+    const ESTADOS_PROY = {
+        activo:    {label:'Activo',    icono:'🟢'},
+        congelado: {label:'Congelado', icono:'❄️'},
+        cerrado:   {label:'Cerrado',   icono:'📦'}
+    };
+    function estadoProy(p) { return (p && p.estado) || 'activo'; }
+    function proyectosActivos() { return (pmData.projects || []).filter(p => estadoProy(p) === 'activo'); }
+
+    function cambiarEstadoProyecto(ev, id, nuevo) {
+        if (ev) ev.stopPropagation();
+        const p = (pmData.projects || []).find(x => x.id === id); if (!p) return;
+        const antes = estadoProy(p);
+        p.estado = nuevo;
+        savePmData(); pmRefresh(); render();
+        const e = ESTADOS_PROY[nuevo];
+        toast(`${e.icono} "${p.name}" pasó a ${e.label}`, () => {
+            p.estado = antes; savePmData(); pmRefresh(); render();
+        });
+    }
+
     function renderProjects() {
         // Con un responsable elegido, la vista cambia a sus tareas en curso
         if (filterResp) return renderTareasDeResponsable(filterResp);
 
-        let f = pmData.projects || [];
+        let f = (pmData.projects || []).filter(p => estadoProy(p) === filterEstado);
         if (filterType) f = f.filter(p => p.type === filterType);
         if (filterArea) f = f.filter(p => p.area === filterArea);
 
@@ -3074,6 +3100,9 @@
                 <div class="project-actions" onclick="event.stopPropagation();">
                     <button onclick="editProject(event,'${p.id}')" title="Editar">✏️</button>
                     <button onclick="deleteProjectDirect(event,'${p.id}')" title="Borrar">🗑️</button>
+                    ${estadoProy(p)==='activo'
+                        ? `<button onclick="cambiarEstadoProyecto(event,'${p.id}','cerrado')" title="Cerrar: lo saca del tablero sin borrarlo">📦</button>`
+                        : `<button onclick="cambiarEstadoProyecto(event,'${p.id}','activo')" title="Reactivar">♻️</button>`}
                 </div>
                 <h3>${esc(p.name)}</h3>
                 <div class="project-meta">
@@ -3096,7 +3125,14 @@
     function renderFilters() {
         const projs = pmData.projects || [];
         const areas  = [...new Set(projs.map(p => p.area).filter(Boolean))];
-        let html = `<button class="filter-btn ${!filterType && !filterArea && !filterResp ? 'active' : ''}" onclick="setFiltro(null,null,null)">✓ Todos <span style="opacity:.6">(${projs.length})</span></button>
+        const porEstado = e => projs.filter(p => estadoProy(p) === e).length;
+        let html = Object.keys(ESTADOS_PROY).map(e => {
+            const cuantos = porEstado(e);
+            if (!cuantos && e !== 'activo') return '';
+            const d = ESTADOS_PROY[e];
+            return `<button class="filter-btn ${filterEstado===e?'active':''}" onclick="setEstadoFiltro('${e}')">${d.icono} ${d.label} <span style="opacity:.6">(${cuantos})</span></button>`;
+        }).join('') + '<span class="tab-sep"></span>';
+        html += `<button class="filter-btn ${!filterType && !filterArea && !filterResp ? 'active' : ''}" onclick="setFiltro(null,null,null)">✓ Todos <span style="opacity:.6">(${projs.length})</span></button>
             <button class="filter-btn ${filterType === 'empresa' ? 'active' : ''}" onclick="setFiltro('empresa',null,null)">🏢 Empresa <span style="opacity:.6">(${projs.filter(p=>p.type==='empresa').length})</span></button>
             <button class="filter-btn ${filterType === 'personal' ? 'active' : ''}" onclick="setFiltro('personal',null,null)">👤 Personal <span style="opacity:.6">(${projs.filter(p=>p.type==='personal').length})</span></button>`;
         if (areas.length) {
@@ -3120,6 +3156,7 @@
         }
         document.getElementById('filters').innerHTML = html;
     }
+    function setEstadoFiltro(e) { filterEstado = e; filterResp = null; renderProjects(); renderFilters(); }
     function setFiltro(t,a,r) { filterType=t; filterArea=a; filterResp=r; renderProjects(); renderFilters(); }
 
     // ── Vista "En curso" por responsable ──────────────────────────────────
@@ -3446,7 +3483,7 @@
         // Solo proyectos con al menos una tarea EN CURSO: en una reunión de seguimiento
         // no interesa el backlog ni lo ya cerrado.
         const grupos = [];
-        (pmData.projects || []).forEach(p => {
+        proyectosActivos().forEach(p => {
             const tareas = (p.tasks||[]).filter(t => t && t.responsable === resp);
             const enCursoT = tareas.filter(t => t.state === 'en-curso');
             if (enCursoT.length) grupos.push({p, tareas, enCursoT});
@@ -4033,7 +4070,7 @@
         const amb = document.getElementById('ntAmbito').value;
         const area = ntAreaValor();
         const s = document.getElementById('ntProyecto');
-        const candidatos = (pmData.projects||[]).filter(p => p && p.type === amb && (!area || p.area === area));
+        const candidatos = proyectosActivos().filter(p => p && p.type === amb && (!area || p.area === area));
         s.innerHTML = '<option value="">— Sin proyecto (tarea suelta) —</option>'
                     + candidatos.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
         ntProyectoCambio();
@@ -4076,7 +4113,7 @@
 
     function contarEnCurso(resp) {
         let n = 0;
-        (pmData.projects||[]).forEach(p => (p.tasks||[]).forEach(t => {
+        proyectosActivos().forEach(p => (p.tasks||[]).forEach(t => {
             if (t && t.state === 'en-curso' && t.responsable === resp) n++;
         }));
         return n;
@@ -4234,8 +4271,8 @@
                 vencida: !!(t.date && t.date < hoy), esHoy: t.date === hoy
             });
         });
-        // tareas de proyecto pendientes
-        (pmData.projects||[]).forEach(p => {
+        // tareas de proyecto pendientes (los congelados y cerrados no se recorren)
+        proyectosActivos().forEach(p => {
             if (!p) return;
             (p.tasks||[]).forEach(t => {
                 if (!t || t.state === 'hecho') return;
