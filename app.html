@@ -1416,28 +1416,26 @@
         .fab-nueva { background:var(--accent); box-shadow:0 6px 20px rgba(88,86,214,0.4); font-size:15px; }
         .fab-ico { font-size:20px; font-weight:400; line-height:1; margin-right:6px; vertical-align:-2px; }
 
-        /* ── Barra de pestañas de abajo (solo celular) ── */
+        /* ── Barra de abajo (solo celular): todas las secciones y herramientas,
+              se desliza de costado. Un degradé en el borde avisa que hay más. ── */
         .tabbar { display:none; position:fixed; left:0; right:0; bottom:0; z-index:950;
-                  padding:6px 4px calc(env(safe-area-inset-bottom) + 4px);
+                  padding:6px 6px calc(env(safe-area-inset-bottom) + 4px);
+                  overflow-x:auto; overflow-y:hidden; scrollbar-width:none;
+                  -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
                   background:var(--barra-fondo); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
                   border-top:0.5px solid var(--separador); }
-        .tabbar button { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; border:none; background:none;
-                         color:var(--text-3); font-size:10.5px; font-weight:500; padding:3px 0; cursor:pointer; letter-spacing:0; }
+        .tabbar::-webkit-scrollbar { display:none; }
+        .tabbar button { flex:0 0 72px; display:flex; flex-direction:column; align-items:center; gap:2px; border:none; background:none;
+                         color:var(--text-3); font-size:10.5px; font-weight:500; padding:3px 0; cursor:pointer; letter-spacing:0;
+                         white-space:nowrap; }
         .tabbar svg { width:27px; height:27px; }
         .tabbar button.active { color:var(--accent); }
         .tabbar button.active svg { stroke-width:2.2; }
-
-        /* Hoja "Más" */
-        .mas-box { background:var(--bg); }
-        .mas-grupo { background:var(--surface); border-radius:13px; overflow:hidden; margin-bottom:18px; }
-        .mas-fila { display:flex; align-items:center; gap:12px; width:100%; min-height:50px; padding:10px 16px; border:none;
-                    background:none; font-size:17px; color:var(--text); text-align:left; cursor:pointer; position:relative; }
-        .mas-fila + .mas-fila::before { content:''; position:absolute; top:0; left:58px; right:0; height:0.5px; background:var(--separador); }
-        .mas-fila::after { content:'›'; margin-left:auto; color:var(--text-3); font-size:22px; line-height:1; }
-        .mas-fila.peligro { color:var(--danger); justify-content:center; }
-        .mas-fila.peligro::after { content:none; }
-        .mas-ico { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;
-                   font-size:17px; background:var(--relleno); flex-shrink:0; }
+        .tabbar-sep { flex:0 0 0.5px; align-self:stretch; margin:8px 4px; background:var(--separador); }
+        .tabbar.hay-der:not(.hay-izq) { -webkit-mask-image:linear-gradient(to right, #000 82%, transparent); mask-image:linear-gradient(to right, #000 82%, transparent); }
+        .tabbar.hay-izq:not(.hay-der) { -webkit-mask-image:linear-gradient(to left, #000 82%, transparent); mask-image:linear-gradient(to left, #000 82%, transparent); }
+        .tabbar.hay-izq.hay-der { -webkit-mask-image:linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+                                  mask-image:linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); }
 
         /* En pantallas táctiles no hay "pasar por encima": sin saltos al tocar */
         @media (hover:none) {
@@ -1445,7 +1443,7 @@
             .obj-pill:hover, .obj-destacado:hover, .add-form button:hover, .objetivo-add button:hover,
             .shopping-add button:hover, .btn-save:hover, .close-week-btn:hover { transform:none; }
             .day-check-btn:hover { background:transparent; border-color:rgba(118,118,128,0.45); }
-            button:active, .chip-f:active, .mas-fila:active, .day-item-title:active, .rec-item-tit:active { opacity:0.55; }
+            button:active, .chip-f:active, .day-item-title:active, .rec-item-tit:active { opacity:0.55; }
         }
 
         /* ── Preguntarle a Claude ── */
@@ -1738,37 +1736,24 @@
 
 <button class="fab-nueva" onclick="abrirNuevaTarea()" aria-label="Nueva tarea"><span class="fab-ico">+</span><span class="fab-txt">Nueva tarea</span></button>
 
-<!-- Barra de pestañas de abajo (solo en el celular) -->
+<!-- Barra de abajo (solo en el celular): todas las secciones y herramientas, se desliza de costado -->
 <nav class="tabbar" id="tabBar">
     <button data-barra="tab-dia" onclick="goTab('tab-dia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.1M12 19.3v2.1M2.6 12h2.1M19.3 12h2.1M5.4 5.4l1.5 1.5M17.1 17.1l1.5 1.5M5.4 18.6l1.5-1.5M17.1 6.9l1.5-1.5"/></svg><span>Mi Día</span></button>
     <button data-barra="tab-recorrida" onclick="goTab('tab-recorrida')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4.2 3.6 6.1v13.7L9 17.9l6 2 5.4-1.9V4.3L15 6.1 9 4.2z"/><path d="M9 4.2v13.7M15 6.1v13.8"/></svg><span>Recorrida</span></button>
     <button data-barra="tab-tareas" onclick="goTab('tab-tareas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5h10M10 12h10M10 17.5h10"/><path d="m3.8 6.4 1.4 1.4 2.6-2.7M3.8 11.9l1.4 1.4 2.6-2.7M3.8 17.4l1.4 1.4 2.6-2.7"/></svg><span>Tareas</span></button>
     <button data-barra="tab-proyectos" onclick="goTab('tab-proyectos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.6a2.4 2.4 0 0 1 2.4-2.4h3.6l2.1 2.2h7.1a2.4 2.4 0 0 1 2.4 2.4v7.6a2.4 2.4 0 0 1-2.4 2.4H5.6a2.4 2.4 0 0 1-2.4-2.4z"/></svg><span>Proyectos</span></button>
-    <button data-barra="mas" onclick="abrirMas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="7.8" cy="12" r="0.9" fill="currentColor"/><circle cx="12" cy="12" r="0.9" fill="currentColor"/><circle cx="16.2" cy="12" r="0.9" fill="currentColor"/></svg><span>Más</span></button>
+    <button data-barra="tab-reuniones" onclick="goTab('tab-reuniones')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M15.6 14.7c2.3.1 4.2 1.7 4.9 4.8"/></svg><span>Reuniones</span></button>
+    <button data-barra="tab-calendario" onclick="goTab('tab-calendario')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.8h17M8 3.2v3.6M16 3.2v3.6"/></svg><span>Calendario</span></button>
+    <button data-barra="tab-metricas" onclick="goTab('tab-metricas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-10M3 20.5h18"/></svg><span>Métricas</span></button>
+    <span class="tabbar-sep"></span>
+    <button onclick="abrirClaude()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.3 14.8l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>Claude</span></button>
+    <button onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg><span>Compras</span></button>
+    <button onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg><span>Gimnasio</span></button>
+    <button onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg><span>Objetivos</span></button>
+    <button onclick="openTeamModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.3-5.6 6.5-5.6s5.8 2 6.5 5.6"/></svg><span>Equipo</span></button>
+    <button onclick="toggleNotificaciones()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span>Avisos</span></button>
+    <button onclick="cerrarSesion()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h9"/></svg><span>Salir</span></button>
 </nav>
-
-<!-- Hoja "Más": pestañas que no entran en la barra y herramientas del encabezado -->
-<div id="masModal" class="modal">
-    <div class="modal-box mas-box">
-        <h3>Más</h3>
-        <div class="mas-grupo">
-            <button class="mas-fila" onclick="masIr(() => goTab('tab-reuniones'))"><span class="mas-ico">🤝</span>Reuniones</button>
-            <button class="mas-fila" onclick="masIr(() => goTab('tab-calendario'))"><span class="mas-ico">📆</span>Calendario</button>
-            <button class="mas-fila" onclick="masIr(() => goTab('tab-metricas'))"><span class="mas-ico">📈</span>Métricas</button>
-        </div>
-        <div class="mas-grupo">
-            <button class="mas-fila" onclick="masIr(abrirClaude)"><span class="mas-ico">✨</span>Preguntarle a Claude</button>
-            <button class="mas-fila" onclick="masIr(openObjetivosModal)"><span class="mas-ico">🎯</span>Objetivos y metas</button>
-            <button class="mas-fila" onclick="masIr(openComprasModal)"><span class="mas-ico">🛒</span>Compras del súper</button>
-            <button class="mas-fila" onclick="masIr(openGymModal)"><span class="mas-ico">🏋️</span>Gimnasio</button>
-            <button class="mas-fila" onclick="masIr(openTeamModal)"><span class="mas-ico">👥</span>Equipo</button>
-            <button class="mas-fila" onclick="masIr(toggleNotificaciones)"><span class="mas-ico">🔔</span>Avisos de vencidas</button>
-        </div>
-        <div class="mas-grupo">
-            <button class="mas-fila peligro" onclick="masIr(cerrarSesion)">Cerrar sesión</button>
-        </div>
-    </div>
-</div>
 
 <!-- Banner de notificación -->
 <div id="notifBanner">
@@ -4367,9 +4352,15 @@
                       'tab-proyecto-detail':'Proyectos', 'tab-reuniones':'Reuniones', 'tab-calendario':'Calendario', 'tab-metricas':'Métricas' };
     function marcarPestania(id) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
-        const enBarra = ['tab-dia', 'tab-recorrida', 'tab-tareas', 'tab-proyectos'];
-        const barra = id === 'tab-proyecto-detail' ? 'tab-proyectos' : enBarra.includes(id) ? id : 'mas';
-        document.querySelectorAll('#tabBar button').forEach(b => b.classList.toggle('active', b.dataset.barra === barra));
+        const barra = id === 'tab-proyecto-detail' ? 'tab-proyectos' : id;
+        const tb = document.getElementById('tabBar');
+        document.querySelectorAll('#tabBar button').forEach(b => {
+            const act = b.dataset.barra === barra;
+            b.classList.toggle('active', act);
+            // la activa, centrada en la barra (si entra todo, no se mueve)
+            if (act && tb) tb.scrollLeft = Math.max(0, b.offsetLeft - (tb.clientWidth - b.offsetWidth) / 2);
+        });
+        sombrasBarra();
         const lat = id === 'tab-proyecto-detail' ? 'tab-proyectos' : id;
         document.querySelectorAll('.lateral-item[data-lateral]').forEach(b => b.classList.toggle('active', b.dataset.lateral === lat));
         document.body.classList.toggle('en-tab-tareas', id === 'tab-tareas');
@@ -4417,9 +4408,14 @@
         cerrarClaude();
         toast('✨ Abriendo Claude. Si el pedido no aparece escrito, pegalo: ya está copiado.', null, 7000);
     }
-    function abrirMas()  { document.getElementById('masModal').classList.add('show'); }
-    function cerrarMas() { document.getElementById('masModal').classList.remove('show'); }
-    function masIr(fn)   { cerrarMas(); fn(); }
+    // Degradé en los bordes de la barra de abajo cuando hay más botones para ese lado.
+    function sombrasBarra() {
+        const b = document.getElementById('tabBar'); if (!b) return;
+        b.classList.toggle('hay-izq', b.scrollLeft > 12);
+        b.classList.toggle('hay-der', b.scrollLeft + b.clientWidth < b.scrollWidth - 12);
+    }
+    document.getElementById('tabBar')?.addEventListener('scroll', sombrasBarra, { passive: true });
+    window.addEventListener('resize', sombrasBarra);
 
     function goTab(id) {
         document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
@@ -4480,7 +4476,6 @@
     document.getElementById('editAmbito').addEventListener('change', () => editLlenarAreas(''));
     document.getElementById('objetivosModal').addEventListener('click', e => { if(e.target===document.getElementById('objetivosModal')) closeObjetivosModal(); });
     document.getElementById('comprasModal').addEventListener('click',   e => { if(e.target===document.getElementById('comprasModal'))   closeComprasModal(); });
-    document.getElementById('masModal').addEventListener('click',       e => { if(e.target===document.getElementById('masModal'))       cerrarMas(); });
     document.getElementById('claudeModal').addEventListener('click',    e => { if(e.target===document.getElementById('claudeModal'))    cerrarClaude(); });
     document.getElementById('gymModal').addEventListener('click',       e => { if(e.target===document.getElementById('gymModal'))       closeGymModal(); });
     document.getElementById('waModal').addEventListener('click',        e => { if(e.target===document.getElementById('waModal'))        closeWaModal(); });
