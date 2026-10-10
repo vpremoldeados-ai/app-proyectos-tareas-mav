@@ -1448,6 +1448,66 @@
             button:active, .chip-f:active, .mas-fila:active, .day-item-title:active, .rec-item-tit:active { opacity:0.55; }
         }
 
+        /* ── Computadora: barra lateral estilo Mac ── */
+        .lateral, .btn-nueva-header { display:none; }
+        .lateral-marca { display:flex; align-items:center; gap:10px; padding:2px 10px 14px; }
+        .lateral-marca img { width:34px; height:34px; border-radius:9px; }
+        .lateral-marca b { display:block; font-size:15px; font-weight:700; letter-spacing:-0.01em; color:var(--text); }
+        .lateral-marca span { display:block; font-size:11.5px; color:var(--text-3); margin-top:1px; }
+        .lateral-tit { font-size:11.5px; font-weight:600; color:var(--text-3); padding:16px 10px 5px; }
+        .lateral-item { display:flex; align-items:center; gap:11px; width:100%; min-height:36px; padding:7px 10px;
+                        border:none; background:none; border-radius:9px; font-size:14px; font-weight:500;
+                        color:var(--text); cursor:pointer; text-align:left; }
+        .lateral-item svg { width:20px; height:20px; color:var(--accent); flex-shrink:0; }
+        .lateral-item:hover { background:var(--relleno); }
+        .lateral-item.active { background:var(--accent); color:#fff; }
+        .lateral-item.active svg { color:#fff; }
+        .lateral-cuenta { margin-left:auto; font-size:12.5px; font-weight:600; color:var(--text-3); font-variant-numeric:tabular-nums; }
+        .lateral-cuenta.alerta { color:#fff; background:var(--danger); border-radius:999px; padding:1px 7px; font-size:11.5px; }
+        .lateral-item.active .lateral-cuenta { color:rgba(255,255,255,0.85); }
+        .lateral-item.active .lateral-cuenta.alerta { background:rgba(255,255,255,0.25); }
+        .lateral-pie { margin-top:auto; padding-top:12px; }
+        .lateral-item.salir { color:var(--text-2); }
+        .lateral-item.salir svg { color:var(--text-3); }
+
+        @media (min-width:769px) {
+            :root { --lateral:250px; }
+            body { padding:0; }
+            .lateral { display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; width:var(--lateral);
+                       padding:22px 12px 14px; background:var(--surface); border-right:0.5px solid var(--separador);
+                       overflow-y:auto; z-index:900; }
+            .container { max-width:none; margin:0 0 0 var(--lateral); padding:30px 40px 70px; }
+            .container > * { max-width:1120px; margin-left:auto; margin-right:auto; }
+            .tabs, .fab-nueva { display:none; }
+            /* Los números de cuadrantes, solo en Tareas; los del súper están en Compras */
+            .stats-row.misc { display:none; }
+            body:not(.en-tab-tareas) .stats-section { display:none; }
+            header { align-items:flex-end; padding:0 0 16px; margin-bottom:14px; }
+            .header-left h1, .header-left p { display:none; }
+            .titulo-fecha { display:block; font-size:13px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.03em; }
+            .titulo-grande { display:block; font-size:34px; font-weight:700; letter-spacing:-0.03em; line-height:1.1; color:var(--text); margin-top:2px; }
+            .header-acciones .icon-btn { display:none; }
+            .btn-nueva-header { display:inline-flex; align-items:center; gap:6px; height:38px; padding:0 18px; border:none;
+                                border-radius:999px; background:var(--accent); color:#fff; font-size:14px; font-weight:600; cursor:pointer;
+                                box-shadow:0 4px 14px rgba(88,86,214,0.3); }
+            .btn-nueva-header span { font-size:20px; font-weight:400; line-height:1; margin-top:-2px; }
+            .btn-nueva-header:hover { filter:brightness(1.08); }
+            /* Mi Día: la lista a la izquierda; Para hoy, gimnasio y objetivos a la derecha */
+            #dayPlanView { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:22px; align-items:start; }
+            .dia-lista { grid-column:1; grid-row:1; }
+            .dia-lado  { grid-column:2; grid-row:1; position:sticky; top:24px; }
+            .dia-lado > :last-child { margin-bottom:0; }
+            .day-progress-info h3 { display:none; }   /* ya está el título grande */
+            #toast { left:calc(50% + var(--lateral) / 2); bottom:28px; }
+            .modal-box { max-width:520px; }
+        }
+        @media (min-width:769px) and (max-width:1100px) {
+            .container { padding:24px 28px 60px; }
+            #dayPlanView { grid-template-columns:1fr; }
+            .dia-lista, .dia-lado { grid-column:auto; grid-row:auto; position:static; }
+            .dia-lado { order:-1; }
+        }
+
         /* ── iPhone ── */
         @keyframes subeHoja { from { transform:translateY(100%); } to { transform:translateY(0); } }
         @media (max-width:768px) {
@@ -1512,6 +1572,27 @@
     </div>
 </div>
 
+<!-- Barra lateral (solo en la computadora) -->
+<nav class="lateral" id="lateral">
+    <div class="lateral-marca"><img src="icon-192.png" alt=""><div><b>Mis Gestiones</b><span>VASSALLO · Premoldeados</span></div></div>
+    <div class="lateral-tit">Mi trabajo</div>
+    <button class="lateral-item" data-lateral="tab-dia" onclick="goTab('tab-dia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.1M12 19.3v2.1M2.6 12h2.1M19.3 12h2.1M5.4 5.4l1.5 1.5M17.1 17.1l1.5 1.5M5.4 18.6l1.5-1.5M17.1 6.9l1.5-1.5"/></svg>Mi Día<span class="lateral-cuenta" id="cuentaDia"></span></button>
+    <button class="lateral-item" data-lateral="tab-recorrida" onclick="goTab('tab-recorrida')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4.2 3.6 6.1v13.7L9 17.9l6 2 5.4-1.9V4.3L15 6.1 9 4.2z"/><path d="M9 4.2v13.7M15 6.1v13.8"/></svg>Recorrida</button>
+    <button class="lateral-item" data-lateral="tab-tareas" onclick="goTab('tab-tareas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5h10M10 12h10M10 17.5h10"/><path d="m3.8 6.4 1.4 1.4 2.6-2.7M3.8 11.9l1.4 1.4 2.6-2.7M3.8 17.4l1.4 1.4 2.6-2.7"/></svg>Tareas<span class="lateral-cuenta" id="cuentaTareas"></span></button>
+    <div class="lateral-tit">Empresa</div>
+    <button class="lateral-item" data-lateral="tab-proyectos" onclick="goTab('tab-proyectos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.6a2.4 2.4 0 0 1 2.4-2.4h3.6l2.1 2.2h7.1a2.4 2.4 0 0 1 2.4 2.4v7.6a2.4 2.4 0 0 1-2.4 2.4H5.6a2.4 2.4 0 0 1-2.4-2.4z"/></svg>Proyectos<span class="lateral-cuenta" id="cuentaProyectos"></span></button>
+    <button class="lateral-item" data-lateral="tab-reuniones" onclick="goTab('tab-reuniones')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M15.6 14.7c2.3.1 4.2 1.7 4.9 4.8"/></svg>Reuniones</button>
+    <button class="lateral-item" data-lateral="tab-calendario" onclick="goTab('tab-calendario')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.8h17M8 3.2v3.6M16 3.2v3.6"/></svg>Calendario</button>
+    <button class="lateral-item" data-lateral="tab-metricas" onclick="goTab('tab-metricas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-10M3 20.5h18"/></svg>Métricas</button>
+    <div class="lateral-tit">Herramientas</div>
+    <button class="lateral-item" onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Objetivos y metas</button>
+    <button class="lateral-item" onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg>Compras del súper</button>
+    <button class="lateral-item" onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg>Gimnasio</button>
+    <button class="lateral-item" onclick="openTeamModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.3-5.6 6.5-5.6s5.8 2 6.5 5.6"/></svg>Equipo</button>
+    <button class="lateral-item" onclick="toggleNotificaciones()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>Avisos de vencidas</button>
+    <div class="lateral-pie"><button class="lateral-item salir" onclick="cerrarSesion()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h9"/></svg>Cerrar sesión</button></div>
+</nav>
+
 <div class="container">
 
     <header>
@@ -1532,6 +1613,7 @@
                 <div class="sync-dot" id="syncDot"></div>
                 <span class="sync-label" id="syncText">Conectando...</span>
             </div>
+            <button class="btn-nueva-header" onclick="abrirNuevaTarea()"><span>+</span> Nueva tarea</button>
         </div>
     </header>
 
@@ -2814,9 +2896,12 @@
         }).join('');
 
         document.getElementById('dayPlanView').innerHTML = `
+            <div class="dia-lado">
             ${sugerenciasHoyHTML()}
             ${gymHoyHTML()}
             ${objetivosBoxHTML()}
+            </div>
+            <div class="dia-lista">
             <div class="day-plan-header">
                 <div class="day-progress-info">
                     <h3>☀️ Mi Día</h3>
@@ -2833,7 +2918,9 @@
             </div>
             <div class="day-plan-section">
                 <div class="day-plan-tasks">${filas || '<div class="day-slot-empty">Todavía no elegiste nada para hoy. Tocá <strong>+ Agregar</strong> o mandá tareas desde la Recorrida.</div>'}</div>
+            </div>
             </div>`;
+        pintarContadores();
     }
 
     // ── Sugerencias del día ───────────────────────────────────────────────
@@ -4235,10 +4322,26 @@
         const enBarra = ['tab-dia', 'tab-recorrida', 'tab-tareas', 'tab-proyectos'];
         const barra = id === 'tab-proyecto-detail' ? 'tab-proyectos' : enBarra.includes(id) ? id : 'mas';
         document.querySelectorAll('#tabBar button').forEach(b => b.classList.toggle('active', b.dataset.barra === barra));
+        const lat = id === 'tab-proyecto-detail' ? 'tab-proyectos' : id;
+        document.querySelectorAll('.lateral-item[data-lateral]').forEach(b => b.classList.toggle('active', b.dataset.lateral === lat));
+        document.body.classList.toggle('en-tab-tareas', id === 'tab-tareas');
+        pintarContadores();
         const t = document.getElementById('tituloGrande'); if (t) t.textContent = TITULOS[id] || 'Mis Gestiones';
         const f = document.getElementById('tituloFecha');
         if (f) f.textContent = new Date().toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
         window.scrollTo(0, 0);
+    }
+    // Números al costado de cada sección en la barra lateral.
+    function pintarContadores() {
+        const poner = (id, n, alerta) => {
+            const el = document.getElementById(id); if (!el) return;
+            el.textContent = n || ''; el.classList.toggle('alerta', !!(alerta && n));
+        };
+        try {
+            poner('cuentaDia', contarMiDia());
+            poner('cuentaTareas', tasks.filter(t => t && !t.completed && !t.proyectoTaskId).length);
+            poner('cuentaProyectos', pmVencidas().length, true);
+        } catch (e) { /* todavía no cargaron los datos */ }
     }
     function abrirMas()  { document.getElementById('masModal').classList.add('show'); }
     function cerrarMas() { document.getElementById('masModal').classList.remove('show'); }
@@ -4288,7 +4391,7 @@
     }
 
     function render() {
-        renderTasks(); updateStats(); renderShopping(); renderObjetivos(); pintarFiltroTareas();
+        renderTasks(); updateStats(); renderShopping(); renderObjetivos(); pintarFiltroTareas(); pintarContadores();
         const act = document.querySelector('.tab-content.active');
         if (act?.id === 'tab-dia')       renderDayPlan();
         if (act?.id === 'tab-metricas')  renderWeeklyReview();
@@ -4503,7 +4606,7 @@
     }
 
     function pmRefresh() {
-        pmHeaderStatsRender(); checkVencidas();
+        pmHeaderStatsRender(); checkVencidas(); pintarContadores();
         const act = document.querySelector('.tab-content.active')?.id;
         if      (act === 'tab-dia')        renderDayPlan();
         else if (act === 'tab-proyectos')  { renderProjects(); renderFilters(); }
