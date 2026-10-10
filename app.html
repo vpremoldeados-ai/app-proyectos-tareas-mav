@@ -2,17 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
     <title>Mis Gestiones — Tareas y Proyectos</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mis Gestiones">
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="icon" href="icon-192.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -1216,6 +1216,281 @@
             .shopping-label { white-space:normal; }
             .shopping-buttons { justify-content:flex-start; }
         }
+
+        /* ══════════ DISEÑO iOS (2026-10) ══════════
+           Capa por encima de todo lo anterior. Paleta y letra del iPhone, modo
+           oscuro automático y, en pantallas chicas, barra de pestañas abajo,
+           título grande y ventanas que suben desde abajo. Los colores van en
+           variables: el modo oscuro solo las redefine. */
+        :root {
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --bg:#F2F2F7; --surface:#FFFFFF; --surface-2:#F2F2F7;
+            --relleno:rgba(118,118,128,0.12);        /* fondo de campos y botones grises */
+            --border:rgba(60,60,67,0.12); --separador:rgba(60,60,67,0.18);
+            --accent:#5856D6; --accent-2:#5856D6; --accent-tinte:rgba(88,86,214,0.12);
+            --success:#34C759; --warning:#FF9500; --danger:#FF3B30; --info:#007AFF;
+            --naranja-texto:#C93400; --wa-texto:#128C4A;
+            --text:#1C1C1E; --text-2:#636366; --text-3:#8E8E93;
+            --q1:#FF3B30; --q2:#E8A200; --q3:#FF9500; --q4:#8E8E93;
+            --radius:16px; --radius-sm:11px;
+            --sombra:0 1px 2px rgba(0,0,0,0.04), 0 3px 12px rgba(0,0,0,0.05);
+            --barra-fondo:rgba(249,249,251,0.86);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg:#000000; --surface:#1C1C1E; --surface-2:#2C2C2E;
+                --relleno:rgba(118,118,128,0.24);
+                --border:rgba(84,84,88,0.45); --separador:rgba(84,84,88,0.6);
+                --accent:#5E5CE6; --accent-2:#5E5CE6; --accent-tinte:rgba(94,92,230,0.22);
+                --success:#30D158; --warning:#FF9F0A; --danger:#FF453A; --info:#0A84FF;
+                --naranja-texto:#FF9F0A; --wa-texto:#25D366;
+                --text:#FFFFFF; --text-2:#AEAEB2; --text-3:#8E8E93;
+                --q1:#FF453A; --q2:#FFD60A; --q3:#FF9F0A; --q4:#8E8E93;
+                --sombra:none;
+                --barra-fondo:rgba(22,22,24,0.86);
+            }
+        }
+
+        /* Base */
+        html { -webkit-text-size-adjust:100%; }
+        body { font-family:var(--font); background:var(--bg); background-image:none; color:var(--text);
+               -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent; letter-spacing:-0.01em; }
+        body *:not(.wa-texto) { font-family:inherit !important; }
+        ::-webkit-scrollbar-thumb { background:var(--relleno); }
+
+        /* Encabezado */
+        header { background:transparent; border:none; box-shadow:none; padding:4px 2px 12px; margin-bottom:8px; }
+        .header-left h1 { background:none; -webkit-text-fill-color:currentColor; color:var(--text);
+                          font-size:24px; font-weight:700; letter-spacing:-0.025em; }
+        .header-left p { color:var(--text-3); font-size:13px; }
+        .titulo-fecha, .titulo-grande { display:none; }
+        .header-acciones { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        /* Con un emoji queda redondo; con texto ("Ver calendario →"), píldora */
+        .icon-btn { min-width:38px; height:38px; padding:0 10px; display:inline-flex; align-items:center; justify-content:center;
+                    border:none; border-radius:999px; background:var(--surface); box-shadow:var(--sombra); font-size:17px;
+                    white-space:nowrap; color:var(--text); }
+        .alert-banner .icon-btn { font-size:13px; font-weight:600; color:var(--accent); padding:0 14px; }
+        .icon-btn:hover { background:var(--relleno); }
+        .icon-btn.on { background:var(--accent-tinte); }
+        .sync-status { background:transparent; border:none; padding:6px 4px; color:var(--text-3); }
+
+        /* Pestañas de arriba (escritorio): control segmentado */
+        .tabs { background:var(--relleno); border:none; padding:3px; border-radius:12px; gap:2px; }
+        .tab-sep { display:none; }
+        .tab-btn { color:var(--text); font-size:13px; font-weight:500; border-radius:9px; padding:7px 14px; }
+        .tab-btn:hover { background:transparent; color:var(--text); }
+        .tab-btn.active { background:var(--surface); color:var(--text); font-weight:600;
+                          box-shadow:0 1px 3px rgba(0,0,0,0.12), 0 1px 1px rgba(0,0,0,0.04); }
+        @media (prefers-color-scheme: dark) { .tab-btn.active { background:#636366; } }
+
+        /* Tarjetas: sin borde, con sombra suave (en oscuro, solo el contraste) */
+        .add-form, .day-plan-header, .day-plan-section, .week-header, .week-stat-card, .week-progress-section,
+        .week-oldest, .shopping-add, .shopping-category, .pm-stats, .project-card, .metric-section,
+        .reunion-header, .proy-card, .rec-head, .rec-area, .objetivos-box, .stat-card, .objetivo-item {
+            border:none; border-radius:var(--radius); box-shadow:var(--sombra); background:var(--surface);
+        }
+        .stat-card { border-left:none; border-radius:14px; }
+        .stat-card .number { font-size:22px; letter-spacing:-0.02em; }
+        .stat-card .label { font-size:10.5px; text-transform:none; letter-spacing:0; color:var(--text-3); }
+        .task-card { border:none; border-left:4px solid var(--accent); border-radius:var(--radius); box-shadow:var(--sombra); padding:14px 16px; }
+        .task-card.t-q1, .task-card.t-q2, .task-card.t-q3, .task-card.t-q4 { background:var(--surface); }
+        .task-card.t-q2 .quadrant-corner-label { color:var(--success); }
+        .task-title { font-size:16px; font-weight:500; line-height:1.35; }
+        .kpi-card { border:none; border-top:3px solid var(--kpi-color, var(--accent)); border-radius:var(--radius); box-shadow:var(--sombra); }
+        .proy-card.con-atraso { box-shadow:inset 0 0 0 1.5px rgba(255,59,48,0.45), var(--sombra); }
+        .kanban-column { border:none; background:var(--relleno); border-radius:var(--radius); }
+        .pm-card { border:none; border-left:4px solid var(--accent); border-radius:12px; box-shadow:var(--sombra); padding:11px 12px; }
+        .pm-card-title { font-size:14px; }
+        .pm-card-meta { font-size:11.5px; }
+        .cal-cell { border:none; border-radius:10px; box-shadow:var(--sombra); }
+        .cal-cell.today { box-shadow:0 0 0 2px var(--accent); }
+
+        /* Botones */
+        .btn { border:none; border-radius:10px; padding:9px 6px; font-size:13.5px; }
+        .btn-complete { background:rgba(52,199,89,0.14); }
+        .btn-edit     { background:rgba(0,122,255,0.12); }
+        .btn-delete   { background:rgba(255,59,48,0.12); }
+        .btn-save, .add-form button, .objetivo-add button, .login-btn, .rep-dia.on {
+            background:var(--accent); box-shadow:none; }
+        .shopping-add button { background:var(--success); box-shadow:none; }
+        .btn-cancel { background:var(--relleno); color:var(--accent); border:none; }
+        .btn-cancel:hover { background:var(--relleno); color:var(--accent); }
+        .close-week-btn { background:var(--danger); box-shadow:none; border-radius:12px; }
+        .modal-btns button { border-radius:12px; padding:13px 10px; font-size:16px; font-weight:600; }
+        .filter-btn { border:none; background:var(--relleno); border-radius:999px; padding:8px 14px; font-size:13px; font-weight:500; color:var(--text); }
+        .filter-btn:hover { color:var(--text); }
+        .filter-btn.active, .chip-f.active { background:var(--accent); color:#fff; box-shadow:none; }
+        .chip-f.q1.active { background:var(--q1); }
+        .chip-f { border:none; background:var(--surface); box-shadow:var(--sombra); font-size:14px; font-weight:500; color:var(--text); padding:8px 14px; }
+        .chip-f:hover { color:var(--text); }
+        .filters { background:transparent; border:none; padding:0; box-shadow:none; }
+        .btn-tengo, .btn-comprar, .btn-compre, .btn-del { border-radius:999px; padding:6px 11px; }
+        .btn-wa { color:var(--wa-texto); border-radius:999px; }
+        .rec-add, .day-add-btn { border:none; background:var(--accent-tinte); color:var(--accent); border-radius:999px;
+                                 padding:7px 13px; font-size:13px; font-weight:600; }
+        .rec-add:hover:not(:disabled), .day-add-btn:hover { color:var(--accent); background:var(--accent-tinte); }
+        .day-clear-btn { border:none; background:rgba(255,59,48,0.1); color:var(--danger); border-radius:999px; padding:7px 13px; font-size:13px; font-weight:600; }
+        .vista-toggle { background:var(--relleno); border:none; border-radius:10px; }
+        .vista-toggle button.active { border-radius:8px; }
+
+        /* Campos */
+        .modal-box input, .modal-box select, .modal-box textarea, .add-form input, .add-form select,
+        .shopping-add input, .shopping-add select, .objetivo-add input, .login-box input {
+            border:none; background:var(--relleno); border-radius:11px; font-size:16px; padding:11px 13px; color:var(--text); }
+        .modal-box input:focus, .modal-box select:focus, .add-form input:focus, .shopping-add input:focus,
+        .objetivo-add input:focus, .login-box input:focus { box-shadow:0 0 0 3px var(--accent-tinte); }
+        .form-group label { font-size:13px; color:var(--text-2); font-weight:600; }
+
+        /* Colores de texto que estaban fijos (se leían mal en oscuro) */
+        .badge-today, .rec-count.hoy, .delega-tit, .alert-banner.only-today .alert-title { color:var(--naranja-texto); }
+        .badge-soon { color:var(--q3); } .badge-on-time { color:var(--success); } .badge-ejecutor { color:var(--info); }
+        .day-slot-empty { border:none; padding:28px 16px; font-size:14px; }
+        .oldest-item, .shopping-item { border-bottom-color:var(--separador); }
+
+        /* Ventanas */
+        .modal { background:rgba(0,0,0,0.38); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); }
+        .modal-box { border:none; border-radius:20px; box-shadow:0 20px 60px rgba(0,0,0,0.25); padding:22px 20px; }
+        .modal-box h3 { font-size:20px; font-weight:700; letter-spacing:-0.02em; }
+
+        /* Aviso flotante y banner */
+        #toast { background:rgba(30,30,32,0.94); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-radius:14px; font-size:14px; }
+        #toast button { color:#A5A4FF; font-size:14px; }
+        #notifBanner { border:none; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.2); top:calc(env(safe-area-inset-top) + 10px); }
+
+        /* Login */
+        #loginGate { background:linear-gradient(160deg,#5856D6,#7B61FF); }
+        .login-box { border-radius:22px; padding:32px 24px; }
+        .login-box h1 { font-size:26px; letter-spacing:-0.02em; }
+        .login-btn { border-radius:12px; padding:14px; font-size:16px; }
+
+        /* ── Mi Día: lista agrupada como Recordatorios ── */
+        .day-plan-header { padding:16px; }
+        .day-progress-info h3 { font-size:17px; }
+        .progress-bar-wrap { height:8px; border-radius:4px; background:var(--relleno); }
+        .progress-bar-fill { background:var(--success); border-radius:4px; }
+        .day-progress-count { color:var(--text); font-size:15px; font-variant-numeric:tabular-nums; }
+        .day-plan-tasks { padding:0; gap:0; }
+        .day-plan-item { background:transparent; border:none; border-radius:0; padding:12px 14px; gap:12px; min-height:58px; position:relative; }
+        .day-plan-item + .day-plan-item::before { content:''; position:absolute; top:0; left:112px; right:0; height:0.5px; background:var(--separador); }
+        .day-plan-item:hover { background:transparent; }
+        .day-check-btn { width:26px; height:26px; border:2px solid rgba(118,118,128,0.45); font-size:13px; font-weight:700; }
+        .day-plan-item.done-day .day-check-btn, .day-check-btn:hover { background:var(--success); border-color:var(--success); color:#fff; }
+        .day-item-title { font-size:16px; font-weight:400; line-height:1.3; }
+        .day-item-title:hover { text-decoration:none; color:var(--text); }
+        .day-plan-item.done-day .day-item-title { color:var(--text-3); }
+        .day-item-meta { font-size:12.5px; color:var(--text-3); margin-top:3px; line-height:1.35; }
+        .day-num { min-width:22px; height:22px; background:var(--relleno); color:var(--text-2); font-size:11px; }
+        .day-drag { color:rgba(118,118,128,0.55); font-size:16px; }
+        .day-remove-btn { border:none; background:transparent; color:var(--text-3); width:28px; height:28px; border-radius:50%; font-size:13px; }
+        .day-remove-btn:hover { background:rgba(255,59,48,0.12); color:var(--danger); }
+        .sug-box { background:linear-gradient(135deg,#5856D6,#8E5BE8); border-radius:20px; box-shadow:0 8px 24px rgba(88,86,214,0.25); padding:16px; }
+        .sug-head h4 { font-size:17px; }
+        .sug-item { border-radius:12px; background:rgba(255,255,255,0.14); }
+        .sug-txt { font-size:14px; }
+        .sug-btn { border-radius:999px; padding:6px 12px; font-size:13px; color:#5856D6; }
+        .objetivos-box-head h4 { font-size:17px; }
+        .obj-destacado { background:var(--accent); box-shadow:none; border-radius:14px; }
+        .obj-pill { border:none; background:var(--relleno); }
+        .obj-meta { border-radius:11px; } .obj-habito { background:var(--relleno); }
+        .gym-hoy { border-radius:var(--radius); }
+
+        /* ── Recorrida ── */
+        .rec-ambito-tit { font-size:20px; font-weight:700; letter-spacing:-0.02em; border-bottom:none; }
+        .rec-area-head { background:transparent; border-bottom:0.5px solid var(--separador); padding:12px 16px; }
+        .rec-area-head h4 { font-size:15px; font-weight:600; }
+        .rec-items { padding:0; gap:0; }
+        .rec-item { background:transparent; border:none; border-left:3px solid transparent; border-radius:0; padding:11px 16px 11px 13px; position:relative; }
+        .rec-item + .rec-item::before { content:''; position:absolute; top:0; left:16px; right:0; height:0.5px; background:var(--separador); }
+        .rec-item-tit { font-size:15px; }
+        .rec-item-sub { font-size:12px; }
+
+        /* ── Proyectos ── */
+        .project-card h3 { font-size:16px; letter-spacing:-0.01em; }
+        .project-type-badge { border-radius:999px; }
+        .progress-bar { height:6px; border-radius:3px; background:var(--relleno); }
+        .progress-fill { background:var(--success); }
+        .project-actions button { background:transparent; }
+        .chip { border:none; background:var(--relleno); }
+
+        /* Botón ➕ */
+        .fab-nueva { background:var(--accent); box-shadow:0 6px 20px rgba(88,86,214,0.4); font-size:15px; }
+        .fab-ico { font-size:20px; font-weight:400; line-height:1; margin-right:6px; vertical-align:-2px; }
+
+        /* ── Barra de pestañas de abajo (solo celular) ── */
+        .tabbar { display:none; position:fixed; left:0; right:0; bottom:0; z-index:950;
+                  padding:6px 4px calc(env(safe-area-inset-bottom) + 4px);
+                  background:var(--barra-fondo); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+                  border-top:0.5px solid var(--separador); }
+        .tabbar button { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; border:none; background:none;
+                         color:var(--text-3); font-size:10.5px; font-weight:500; padding:3px 0; cursor:pointer; letter-spacing:0; }
+        .tabbar svg { width:27px; height:27px; }
+        .tabbar button.active { color:var(--accent); }
+        .tabbar button.active svg { stroke-width:2.2; }
+
+        /* Hoja "Más" */
+        .mas-box { background:var(--bg); }
+        .mas-grupo { background:var(--surface); border-radius:13px; overflow:hidden; margin-bottom:18px; }
+        .mas-fila { display:flex; align-items:center; gap:12px; width:100%; min-height:50px; padding:10px 16px; border:none;
+                    background:none; font-size:17px; color:var(--text); text-align:left; cursor:pointer; position:relative; }
+        .mas-fila + .mas-fila::before { content:''; position:absolute; top:0; left:58px; right:0; height:0.5px; background:var(--separador); }
+        .mas-fila::after { content:'›'; margin-left:auto; color:var(--text-3); font-size:22px; line-height:1; }
+        .mas-fila.peligro { color:var(--danger); justify-content:center; }
+        .mas-fila.peligro::after { content:none; }
+        .mas-ico { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+                   font-size:17px; background:var(--relleno); flex-shrink:0; }
+
+        /* En pantallas táctiles no hay "pasar por encima": sin saltos al tocar */
+        @media (hover:none) {
+            .task-card:hover, .project-card:hover, .stat-card:hover, .pm-card:hover, .fab-nueva:hover, .btn:hover,
+            .obj-pill:hover, .obj-destacado:hover, .add-form button:hover, .objetivo-add button:hover,
+            .shopping-add button:hover, .btn-save:hover, .close-week-btn:hover { transform:none; }
+            .day-check-btn:hover { background:transparent; border-color:rgba(118,118,128,0.45); }
+            button:active, .chip-f:active, .mas-fila:active, .day-item-title:active, .rec-item-tit:active { opacity:0.55; }
+        }
+
+        /* ── iPhone ── */
+        @keyframes subeHoja { from { transform:translateY(100%); } to { transform:translateY(0); } }
+        @media (max-width:768px) {
+            body { padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 96px); }
+            header { padding:4px 0 10px; margin-bottom:6px; align-items:flex-start; flex-wrap:nowrap; gap:10px; }
+            .header-left { min-width:0; }
+            .header-left h1, .header-left p { display:none; }
+            .titulo-fecha { display:block; font-size:13px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.02em; }
+            .titulo-fecha::first-letter { text-transform:uppercase; }
+            .titulo-grande { display:block; font-size:34px; font-weight:700; letter-spacing:-0.03em; line-height:1.1; color:var(--text); margin-top:1px; }
+            .header-acciones { flex-wrap:nowrap; gap:8px; margin-top:4px; }
+            .solo-escritorio { display:none !important; }
+            .stats-section, .tabs { display:none; }
+            .tabbar { display:flex; }
+
+            .fab-nueva { width:56px; height:56px; padding:0; border-radius:50%; right:18px;
+                         bottom:calc(env(safe-area-inset-bottom) + 74px); display:flex; align-items:center; justify-content:center; }
+            .fab-nueva .fab-txt { display:none; }
+            .fab-nueva .fab-ico { font-size:32px; font-weight:300; margin:0; color:#fff; }
+            #toast { bottom:calc(env(safe-area-inset-bottom) + 140px); }
+
+            /* Las ventanas suben desde abajo, como las hojas de iOS */
+            .modal { align-items:flex-end; }
+            .modal-box, .pm-modal-box, .picker-box { width:100%; max-width:100%; max-height:92dvh; overflow-y:auto;
+                border-radius:20px 20px 0 0; padding:8px 18px calc(env(safe-area-inset-bottom) + 18px);
+                animation:subeHoja 0.32s cubic-bezier(.2,.8,.2,1); }
+            .modal-box::before { content:''; display:block; width:36px; height:5px; border-radius:3px;
+                background:rgba(118,118,128,0.4); margin:0 auto 14px; flex-shrink:0; }
+            /* iOS agranda la pantalla al tocar un campo con letra menor a 16 px */
+            input, select, textarea { font-size:16px !important; }
+
+            .day-progress-info h3, .day-progress-info p { display:none; }
+            .day-plan-header { padding:14px 16px; }
+            /* Renglón 1: barra y cuenta. Renglón 2: los dos botones a lo ancho. */
+            .day-progress-right { width:100%; flex-wrap:wrap; row-gap:12px; }
+            .progress-bar-wrap { min-width:0; flex:1 1 calc(100% - 70px); }
+            .day-add-btn, .day-clear-btn { flex:1; padding:10px 13px; font-size:15px; }
+            .alert-banner { border:none; border-radius:var(--radius); }
+            .chips-filtro, .filters { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-left:-16px; margin-right:-16px; padding:2px 16px 4px; }
+            .chips-filtro::-webkit-scrollbar, .filters::-webkit-scrollbar { display:none; }
+            .chip-f, .filter-btn { flex-shrink:0; }
+            .tasks-grid { gap:12px; }
+        }
     </style>
 </head>
 <body>
@@ -1243,14 +1518,16 @@
         <div class="header-left">
             <h1>Mis Gestiones</h1>
             <p>Tareas &amp; Productividad</p>
+            <div class="titulo-fecha" id="tituloFecha"></div>
+            <div class="titulo-grande" id="tituloGrande">Mi Día</div>
         </div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <button class="icon-btn" onclick="openObjetivosModal()" title="Mis objetivos y metas">🎯</button>
+        <div class="header-acciones">
+            <button class="icon-btn solo-escritorio" onclick="openObjetivosModal()" title="Mis objetivos y metas">🎯</button>
             <button class="icon-btn" onclick="openComprasModal()" title="Compras supermercado">🛒</button>
             <button class="icon-btn" onclick="openGymModal()" title="Rutina de gimnasio">🏋️</button>
-            <button class="icon-btn" onclick="openTeamModal()" title="Equipo: responsables y operarios">👥</button>
-            <button class="icon-btn" id="notifBtn" onclick="toggleNotificaciones()" title="Notificaciones de tareas vencidas">🔔</button>
-            <button class="icon-btn" onclick="cerrarSesion()" title="Cerrar sesión">🚪</button>
+            <button class="icon-btn solo-escritorio" onclick="openTeamModal()" title="Equipo: responsables y operarios">👥</button>
+            <button class="icon-btn solo-escritorio" id="notifBtn" onclick="toggleNotificaciones()" title="Notificaciones de tareas vencidas">🔔</button>
+            <button class="icon-btn solo-escritorio" onclick="cerrarSesion()" title="Cerrar sesión">🚪</button>
             <div class="sync-status">
                 <div class="sync-dot" id="syncDot"></div>
                 <span class="sync-label" id="syncText">Conectando...</span>
@@ -1351,7 +1628,38 @@
 
 </div>
 
-<button class="fab-nueva" onclick="abrirNuevaTarea()">➕ Nueva tarea</button>
+<button class="fab-nueva" onclick="abrirNuevaTarea()" aria-label="Nueva tarea"><span class="fab-ico">+</span><span class="fab-txt">Nueva tarea</span></button>
+
+<!-- Barra de pestañas de abajo (solo en el celular) -->
+<nav class="tabbar" id="tabBar">
+    <button data-barra="tab-dia" onclick="goTab('tab-dia')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.1M12 19.3v2.1M2.6 12h2.1M19.3 12h2.1M5.4 5.4l1.5 1.5M17.1 17.1l1.5 1.5M5.4 18.6l1.5-1.5M17.1 6.9l1.5-1.5"/></svg><span>Mi Día</span></button>
+    <button data-barra="tab-recorrida" onclick="goTab('tab-recorrida')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4.2 3.6 6.1v13.7L9 17.9l6 2 5.4-1.9V4.3L15 6.1 9 4.2z"/><path d="M9 4.2v13.7M15 6.1v13.8"/></svg><span>Recorrida</span></button>
+    <button data-barra="tab-tareas" onclick="goTab('tab-tareas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6.5h10M10 12h10M10 17.5h10"/><path d="m3.8 6.4 1.4 1.4 2.6-2.7M3.8 11.9l1.4 1.4 2.6-2.7M3.8 17.4l1.4 1.4 2.6-2.7"/></svg><span>Tareas</span></button>
+    <button data-barra="tab-proyectos" onclick="goTab('tab-proyectos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.6a2.4 2.4 0 0 1 2.4-2.4h3.6l2.1 2.2h7.1a2.4 2.4 0 0 1 2.4 2.4v7.6a2.4 2.4 0 0 1-2.4 2.4H5.6a2.4 2.4 0 0 1-2.4-2.4z"/></svg><span>Proyectos</span></button>
+    <button data-barra="mas" onclick="abrirMas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="7.8" cy="12" r="0.9" fill="currentColor"/><circle cx="12" cy="12" r="0.9" fill="currentColor"/><circle cx="16.2" cy="12" r="0.9" fill="currentColor"/></svg><span>Más</span></button>
+</nav>
+
+<!-- Hoja "Más": pestañas que no entran en la barra y herramientas del encabezado -->
+<div id="masModal" class="modal">
+    <div class="modal-box mas-box">
+        <h3>Más</h3>
+        <div class="mas-grupo">
+            <button class="mas-fila" onclick="masIr(() => goTab('tab-reuniones'))"><span class="mas-ico">🤝</span>Reuniones</button>
+            <button class="mas-fila" onclick="masIr(() => goTab('tab-calendario'))"><span class="mas-ico">📆</span>Calendario</button>
+            <button class="mas-fila" onclick="masIr(() => goTab('tab-metricas'))"><span class="mas-ico">📈</span>Métricas</button>
+        </div>
+        <div class="mas-grupo">
+            <button class="mas-fila" onclick="masIr(openObjetivosModal)"><span class="mas-ico">🎯</span>Objetivos y metas</button>
+            <button class="mas-fila" onclick="masIr(openComprasModal)"><span class="mas-ico">🛒</span>Compras del súper</button>
+            <button class="mas-fila" onclick="masIr(openGymModal)"><span class="mas-ico">🏋️</span>Gimnasio</button>
+            <button class="mas-fila" onclick="masIr(openTeamModal)"><span class="mas-ico">👥</span>Equipo</button>
+            <button class="mas-fila" onclick="masIr(toggleNotificaciones)"><span class="mas-ico">🔔</span>Avisos de vencidas</button>
+        </div>
+        <div class="mas-grupo">
+            <button class="mas-fila peligro" onclick="masIr(cerrarSesion)">Cerrar sesión</button>
+        </div>
+    </div>
+</div>
 
 <!-- Banner de notificación -->
 <div id="notifBanner">
@@ -3918,10 +4226,27 @@
     }
 
     // ── Tabs ──────────────────────────────────────────────────────────────
+    // Marca la pestaña en la barra de arriba (escritorio) y en la de abajo
+    // (celular), y pone el título grande del celular.
+    const TITULOS = { 'tab-dia':'Mi Día', 'tab-recorrida':'Recorrida', 'tab-tareas':'Tareas', 'tab-proyectos':'Proyectos',
+                      'tab-proyecto-detail':'Proyectos', 'tab-reuniones':'Reuniones', 'tab-calendario':'Calendario', 'tab-metricas':'Métricas' };
+    function marcarPestania(id) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+        const enBarra = ['tab-dia', 'tab-recorrida', 'tab-tareas', 'tab-proyectos'];
+        const barra = id === 'tab-proyecto-detail' ? 'tab-proyectos' : enBarra.includes(id) ? id : 'mas';
+        document.querySelectorAll('#tabBar button').forEach(b => b.classList.toggle('active', b.dataset.barra === barra));
+        const t = document.getElementById('tituloGrande'); if (t) t.textContent = TITULOS[id] || 'Mis Gestiones';
+        const f = document.getElementById('tituloFecha');
+        if (f) f.textContent = new Date().toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
+        window.scrollTo(0, 0);
+    }
+    function abrirMas()  { document.getElementById('masModal').classList.add('show'); }
+    function cerrarMas() { document.getElementById('masModal').classList.remove('show'); }
+    function masIr(fn)   { cerrarMas(); fn(); }
+
     function goTab(id) {
-        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-        document.querySelector(`[data-tab="${id}"]`)?.classList.add('active');
+        marcarPestania(id);
         document.getElementById(id)?.classList.add('active');
         // personales
         if (id==='tab-recorrida') renderRecorrida();
@@ -3957,6 +4282,7 @@
         // la app abre en Mi Día: es lo primero que se mira a la mañana
         document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
         document.getElementById('tab-dia')?.classList.add('active');
+        marcarPestania('tab-dia');
         renderDayPlan();
         pintarFiltroTareas();
     }
@@ -3977,6 +4303,7 @@
     document.getElementById('editAmbito').addEventListener('change', () => editLlenarAreas(''));
     document.getElementById('objetivosModal').addEventListener('click', e => { if(e.target===document.getElementById('objetivosModal')) closeObjetivosModal(); });
     document.getElementById('comprasModal').addEventListener('click',   e => { if(e.target===document.getElementById('comprasModal'))   closeComprasModal(); });
+    document.getElementById('masModal').addEventListener('click',       e => { if(e.target===document.getElementById('masModal'))       cerrarMas(); });
     document.getElementById('gymModal').addEventListener('click',       e => { if(e.target===document.getElementById('gymModal'))       closeGymModal(); });
     document.getElementById('waModal').addEventListener('click',        e => { if(e.target===document.getElementById('waModal'))        closeWaModal(); });
     document.getElementById('projectModal').addEventListener('click', e => { if(e.target===document.getElementById('projectModal')) closeProjectModal(); });
@@ -4170,7 +4497,7 @@
 
     // ── Navegación interna ────────────────────────────────────────────────
     function showPmOnlyTab(id) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        marcarPestania(id);
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.getElementById(id)?.classList.add('active');
     }
