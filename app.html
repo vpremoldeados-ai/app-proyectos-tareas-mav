@@ -1607,16 +1607,49 @@
             .day-progress-info h3 { display:none; }   /* ya está el título grande */
             #toast { left:calc(50% + var(--lateral) / 2); bottom:28px; }
             .modal-box { max-width:520px; }
-            /* Herramientas (gimnasio, alimentación, compras, objetivos, equipo,
-               Claude): se abren como una página más al lado del menú, no como
-               ventana encima. Los formularios chicos siguen siendo ventanas. */
-            .modal.herramienta { left:var(--lateral); width:auto; right:0; background:var(--bg); backdrop-filter:none; -webkit-backdrop-filter:none;
-                                 align-items:stretch; justify-content:stretch; overflow-y:auto; z-index:850; }
+        }
+
+        /* ── Herramientas a pantalla completa ──
+           Gimnasio, alimentación, compras, objetivos, equipo y Claude se ven
+           como Mi Día o Recorrida: fondo gris, fecha y título grande, y el
+           contenido en una tarjeta. En la compu quedan al lado del menú; en el
+           celular la barra de abajo sigue a la vista. Los formularios chicos
+           (nueva tarea, editar) siguen siendo ventanas. */
+        .modal.herramienta { background:var(--bg); backdrop-filter:none; -webkit-backdrop-filter:none; align-items:stretch; justify-content:stretch;
+                             overflow-y:auto; overscroll-behavior:contain; z-index:850; }
+        .modal.herramienta .modal-box { width:100%; max-width:none !important; max-height:none; min-height:100%; overflow:visible; border:none;
+                                        border-radius:0; box-shadow:none; background:var(--bg); animation:none; }
+        .modal.herramienta .modal-box::before { display:none; }
+        .modal.herramienta .modal-box > h3 { font-size:34px; font-weight:700; letter-spacing:-0.03em; line-height:1.1; color:var(--text); }
+        .modal.herramienta .modal-box > h3::before { content:attr(data-fecha); display:block; font-size:13px; font-weight:600; color:var(--text-3);
+                                                     text-transform:uppercase; letter-spacing:0.03em; line-height:1.4; margin-bottom:2px; }
+        .modal.herramienta .h-emoji, .modal.herramienta .btn-cancel { display:none; }
+        .modal.herramienta .herramienta-cuerpo { background:var(--surface); border-radius:16px; box-shadow:var(--sombra); padding:16px; }
+        /* Alimentación y Compras ya traen sus propias tarjetas */
+        .modal.herramienta .nut-box .herramienta-cuerpo, #comprasModal.herramienta .herramienta-cuerpo { background:none; box-shadow:none; border-radius:0; padding:0; }
+        body.con-herramienta .fab-nueva { display:none; }
+        @media (min-width:769px) {
+            .modal.herramienta { left:var(--lateral); width:auto; right:0; }
             body.lateral-oculta .modal.herramienta { left:0; }
-            .modal.herramienta .modal-box { width:100%; max-width:none !important; max-height:none; min-height:100%; overflow:visible;
-                                            border-radius:0; box-shadow:none; padding:30px max(40px, calc((100% - 760px) / 2)) 70px; }
-            .modal.herramienta .modal-box > h3 { font-size:34px; font-weight:700; letter-spacing:-0.03em; line-height:1.1; margin:22px 0 20px; }
-            .modal.herramienta .modal-box > .modal-btns:last-child { max-width:320px; margin-left:auto; }
+            .modal.herramienta .modal-box { padding:30px 40px 70px; }
+            .modal.herramienta .modal-box > * { max-width:1120px; margin-left:auto; margin-right:auto; }
+            .modal.herramienta .modal-box > h3 { padding-bottom:16px; margin-bottom:14px; }
+            .modal.herramienta .herramienta-cuerpo { padding:22px 26px; }
+            .modal.herramienta .modal-btns { justify-content:flex-end; }
+            .modal.herramienta .modal-btns .btn-save { flex:0 0 260px; }
+            .modal.herramienta #gymTimer { bottom:16px; }
+            /* el botón de ocultar el menú, igual que en las secciones */
+            .modal.herramienta .modal-box > h3.con-boton { position:relative; padding-left:48px; }
+            .modal.herramienta h3 .btn-lateral { position:absolute; left:0; bottom:19px; }
+        }
+        @media (min-width:769px) and (max-width:1100px) {
+            .modal.herramienta .modal-box { padding:24px 28px 60px; }
+        }
+        @media (max-width:768px) {
+            .modal.herramienta .modal-box { padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 96px); }
+            .modal.herramienta .modal-box > h3 { padding:4px 0 10px; margin-bottom:6px; }
+            .modal.herramienta .herramienta-cuerpo { padding:14px; }
+            .modal.herramienta #gymTimer { bottom:calc(env(safe-area-inset-bottom) + 66px); }
         }
         @media (min-width:769px) and (max-width:1100px) {
             .container { padding:24px 28px 60px; }
@@ -1849,12 +1882,12 @@
     <button data-barra="tab-calendario" onclick="goTab('tab-calendario')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.8h17M8 3.2v3.6M16 3.2v3.6"/></svg><span>Calendario</span></button>
     <button data-barra="tab-metricas" onclick="goTab('tab-metricas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-10M3 20.5h18"/></svg><span>Métricas</span></button>
     <span class="tabbar-sep"></span>
-    <button onclick="abrirClaude()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.3 14.8l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>Claude</span></button>
-    <button onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg><span>Compras</span></button>
-    <button onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg><span>Gimnasio</span></button>
-    <button onclick="abrirComidas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7.5M4.5 3v4.8a2.5 2.5 0 0 0 5 0V3M7 10.5V21"/><path d="M17 3c-1.9 0-3.2 2.3-3.2 5.3 0 2.4 1.2 3.9 3.2 4.1V21"/></svg><span>Comidas</span></button>
-    <button onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg><span>Objetivos</span></button>
-    <button onclick="openTeamModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.3-5.6 6.5-5.6s5.8 2 6.5 5.6"/></svg><span>Equipo</span></button>
+    <button data-herramienta="claudeModal" onclick="abrirClaude()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.3 14.8l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>Claude</span></button>
+    <button data-herramienta="comprasModal" onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg><span>Compras</span></button>
+    <button data-herramienta="gymModal" onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg><span>Gimnasio</span></button>
+    <button data-herramienta="comidaModal" onclick="abrirComidas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7.5M4.5 3v4.8a2.5 2.5 0 0 0 5 0V3M7 10.5V21"/><path d="M17 3c-1.9 0-3.2 2.3-3.2 5.3 0 2.4 1.2 3.9 3.2 4.1V21"/></svg><span>Comidas</span></button>
+    <button data-herramienta="objetivosModal" onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg><span>Objetivos</span></button>
+    <button data-herramienta="teamModal" onclick="openTeamModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.3-5.6 6.5-5.6s5.8 2 6.5 5.6"/></svg><span>Equipo</span></button>
     <button onclick="toggleNotificaciones()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span>Avisos</span></button>
     <button onclick="cerrarSesion()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h9"/></svg><span>Salir</span></button>
 </nav>
@@ -1953,7 +1986,8 @@
 <!-- Modal: Objetivos y metas -->
 <div id="objetivosModal" class="modal herramienta">
     <div class="modal-box pm-modal-box">
-        <h3>🎯 Mis Objetivos y Metas</h3>
+        <h3><span class="h-emoji">🎯 </span>Mis Objetivos y Metas</h3>
+        <div class="herramienta-cuerpo">
         <p style="font-size:12px;color:var(--text-3);margin-bottom:14px;">
             Arrastrá ⠿ para reordenar. Clic en un objetivo para editarlo. Esta lista aparece
             arriba de ☀️ Mi Día, para leerla cada mañana.
@@ -1964,6 +1998,7 @@
                    onkeydown="if(event.key==='Enter'){addObjetivo();}">
             <button onclick="addObjetivo()">+ Agregar</button>
         </div>
+        </div>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closeObjetivosModal()">Cerrar</button>
         </div>
@@ -1973,7 +2008,8 @@
 <!-- Modal: Compras supermercado -->
 <div id="comprasModal" class="modal herramienta">
     <div class="modal-box pm-modal-box">
-        <h3>🛒 Compras Supermercado</h3>
+        <h3><span class="h-emoji">🛒 </span>Compras Supermercado</h3>
+        <div class="herramienta-cuerpo">
         <div class="shopping-add">
             <input type="text" id="newItem" placeholder="Nuevo artículo...">
             <select id="newCat">
@@ -1989,6 +2025,7 @@
             <button onclick="addShoppingItem()">+ Agregar</button>
         </div>
         <div id="shoppingList"></div>
+        </div>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closeComprasModal()">Cerrar</button>
         </div>
@@ -1998,7 +2035,8 @@
 <!-- Modal: Preguntarle a Claude (abre la app de Claude con el pedido; usa el conector) -->
 <div id="claudeModal" class="modal herramienta">
     <div class="modal-box claude-box">
-        <h3>✨ Preguntarle a Claude</h3>
+        <h3><span class="h-emoji">✨ </span>Preguntarle a Claude</h3>
+        <div class="herramienta-cuerpo">
         <p class="claude-sub">Se abre Claude con tu pedido. Lee y carga directo en Mis Gestiones con el conector.</p>
         <div class="claude-rapidos">
             <button onclick="preguntarAClaude('¿Qué tengo hoy?')">¿Qué tengo hoy?</button>
@@ -2010,6 +2048,7 @@
             <button onclick="cerrarClaude(); abrirComidas('cocinar')">¿Qué cocino con lo que tengo?</button>
         </div>
         <textarea class="claude-texto" id="claudeTexto" placeholder="O escribí (o dictá con el micrófono del teclado) lo que necesitás. Ej: pasá lo de compras para el lunes"></textarea>
+        </div>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="cerrarClaude()">Cancelar</button>
             <button class="btn-save" onclick="preguntarAClaude(document.getElementById('claudeTexto').value)">Abrir en Claude</button>
@@ -2020,8 +2059,8 @@
 <!-- Modal: Alimentación (registro del día, recetas y plan) -->
 <div id="comidaModal" class="modal herramienta">
     <div class="modal-box nut-box">
-        <h3>🍽️ Alimentación</h3>
-        <div id="comidaView"></div>
+        <h3><span class="h-emoji">🍽️ </span>Alimentación</h3>
+        <div class="herramienta-cuerpo"><div id="comidaView"></div></div>
         <div class="modal-btns" style="margin-top:16px;">
             <button class="btn-cancel" onclick="cerrarComidas()">Cerrar</button>
         </div>
@@ -2031,8 +2070,8 @@
 <!-- Modal: Gimnasio -->
 <div id="gymModal" class="modal herramienta">
     <div class="modal-box pm-modal-box">
-        <h3>🏋️ Gimnasio</h3>
-        <div id="gymView"></div>
+        <h3><span class="h-emoji">🏋️ </span>Gimnasio</h3>
+        <div class="herramienta-cuerpo"><div id="gymView"></div></div>
         <div id="gymTimer"></div>
         <div class="modal-btns" style="margin-top:14px;">
             <button class="btn-cancel" onclick="closeGymModal()">Cerrar</button>
@@ -2228,11 +2267,13 @@
 <!-- Modal: Equipo -->
 <div id="teamModal" class="modal herramienta">
     <div class="modal-box pm-modal-box" style="max-width:440px;">
-        <h3>👥 Equipo</h3>
+        <h3><span class="h-emoji">👥 </span>Equipo</h3>
+        <div class="herramienta-cuerpo">
         <div class="team-hint">Arrastrá ⠿ para reordenar. Clic en un nombre para renombrar — se
             actualiza en todos los proyectos y tareas. 🗑️ borra a la persona sin borrar sus
             proyectos ni tareas (quedan sin asignar).</div>
         <div id="teamModalBody"></div>
+        </div>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closeTeamModal()">Cerrar</button>
         </div>
@@ -4876,11 +4917,11 @@
     document.getElementById('tabBar')?.addEventListener('scroll', sombrasBarra, { passive: true });
     window.addEventListener('resize', sombrasBarra);
 
-    // ── Herramientas como páginas (computadora) ──
-    // En la compu, gimnasio, alimentación, compras, objetivos, equipo y Claude
-    // se ven como una página al lado del menú (CSS .modal.herramienta): se
-    // abre una sola por vez, el menú marca cuál está abierta y al ir a otra
-    // sección se cierra. En el celular siguen siendo hojas que suben.
+    // ── Herramientas a pantalla completa ──
+    // Gimnasio, alimentación, compras, objetivos, equipo y Claude se ven como
+    // una sección más (CSS .modal.herramienta): se abre una sola por vez, el
+    // menú de la compu y la barra del celular marcan cuál está abierta, y al
+    // ir a otra sección se cierra.
     const HERRAMIENTAS = { claudeModal: cerrarClaude, objetivosModal: closeObjetivosModal, comprasModal: closeComprasModal,
                            gymModal: closeGymModal, comidaModal: cerrarComidas, teamModal: closeTeamModal };
     const herramientaAbierta = () => Object.keys(HERRAMIENTAS).find(id => document.getElementById(id)?.classList.contains('show'));
@@ -4891,12 +4932,27 @@
         const abierta = herramientaAbierta();
         let t = document.querySelector('.tab-content.active')?.id;
         if (t === 'tab-proyecto-detail') t = 'tab-proyectos';
+        document.body.classList.toggle('con-herramienta', !!abierta);
         document.querySelectorAll('.lateral-item[data-herramienta]').forEach(b => b.classList.toggle('active', b.dataset.herramienta === abierta));
         document.querySelectorAll('.lateral-item[data-lateral]').forEach(b => b.classList.toggle('active', !abierta && b.dataset.lateral === t));
+        const tb = document.getElementById('tabBar');
+        document.querySelectorAll('#tabBar button').forEach(b => {
+            const act = abierta ? b.dataset.herramienta === abierta : b.dataset.barra === t;
+            b.classList.toggle('active', act);
+            if (act && abierta && tb) tb.scrollLeft = Math.max(0, b.offsetLeft - (tb.clientWidth - b.offsetWidth) / 2);
+        });
+        if (abierta) {
+            const h = document.querySelector('#' + abierta + ' .modal-box > h3');
+            if (h) h.dataset.fecha = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+            // con el menú oculto, sin este botón no habría cómo volver a mostrarlo (salvo Ctrl+B)
+            const bl = document.querySelector('.btn-lateral');
+            if (h && bl && !h.querySelector('.btn-lateral')) { h.prepend(bl.cloneNode(true)); h.classList.add('con-boton'); }
+        }
+        sombrasBarra();
     }
     const vigilarHerramientas = new MutationObserver(cambios => {
         cambios.forEach(({ target: el }) => {
-            if (el.classList.contains('show') && matchMedia('(min-width:769px)').matches) { cerrarHerramientas(el.id); el.scrollTop = 0; }
+            if (el.classList.contains('show')) { cerrarHerramientas(el.id); el.scrollTop = 0; }
         });
         marcarHerramienta();
     });

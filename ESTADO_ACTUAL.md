@@ -235,14 +235,23 @@ automático con las variables redefinidas en prefers-color-scheme: dark.
   se ven solo en Tareas (clase en-tab-tareas en el body). Las pestañas de arriba ya no se usan.
   El menú se oculta con el botón junto al título o Ctrl+B (clase lateral-oculta, guardada en
   localStorage vph_lateral_oculta).
-- **Herramientas como páginas en la compu (10/10, a Marcelo no le gustan las ventanas encimadas):**
+- **Herramientas a pantalla completa (10/10).** A Marcelo no le gustan las ventanas encimadas y pidió
+  que Compras y las demás herramientas se vean "en la pantalla completa, como Mi Día o Recorrida".
   Claude, Objetivos, Compras, Gimnasio, Alimentación y Equipo (modales con clase `herramienta`) se
-  muestran al lado del menú ocupando el área de contenido, sin fondo oscuro ni ventana flotante, con
-  título grande. Se abre una sola por vez y el menú la marca (data-herramienta). Ir a otra sección la
-  cierra (goTab → cerrarHerramientas), y al cerrarla vuelve la sección en la que estaba (MutationObserver
-  vigilarHerramientas → marcarHerramienta). Los formularios chicos (nueva tarea, editar) siguen como
-  ventana. En el celular no cambió: siguen siendo hojas que suben. Respaldo:
-  _respaldo/app_2026-10-10_antes_herramientas_pagina.html
+  muestran como una sección más, en la compu y en el celular:
+  - Fondo gris, fecha arriba y título grande sin emoji (h3 con data-fecha y ::before; el emoji va en
+    .h-emoji y se oculta).
+  - El contenido va en una tarjeta blanca (.herramienta-cuerpo). Alimentación y Compras no la usan
+    porque ya traen sus propias tarjetas.
+  - En la compu ocupa el área al lado del menú, con el mismo ancho (1120 px) y el mismo botón de
+    ocultar el menú (clonado en el h3) que las secciones.
+  - En el celular tapa toda la pantalla pero deja la barra de abajo, que marca la herramienta abierta
+    (z-index 850, por debajo de la barra, 950, y de las ventanas, 1000). El botón + se oculta (body.con-herramienta).
+  - Sin botón "Cerrar" ni "Cancelar" (.btn-cancel oculto): se sale yendo a otra sección. Se abre una
+    sola por vez (MutationObserver vigilarHerramientas). Ir a otra sección la cierra (goTab →
+    cerrarHerramientas), y marcarHerramienta sincroniza el menú y la barra.
+  - Los formularios chicos (nueva tarea, editar) siguen siendo ventana.
+  - Respaldos: _respaldo/app_2026-10-10_antes_herramientas_pagina.html y _antes_herramientas_pantalla_completa.html
 - Respaldo antes de la barra lateral: _respaldo/app_2026-10-10_antes_diseno_pc.html
 - marcarPestania(id) sincroniza las dos barras y el título; goTab y showPmOnlyTab la llaman.
 - Los campos van a 16 px en el celular: con menos, iOS agranda la pantalla al tocarlos.
