@@ -1449,7 +1449,11 @@
         }
 
         /* ── Computadora: barra lateral estilo Mac ── */
-        .lateral, .btn-nueva-header { display:none; }
+        .lateral, .btn-nueva-header, .btn-lateral { display:none; }
+        .btn-lateral { width:36px; height:36px; border:none; border-radius:9px; background:transparent; color:var(--text-2);
+                       cursor:pointer; align-items:center; justify-content:center; flex-shrink:0; }
+        .btn-lateral svg { width:22px; height:22px; }
+        .btn-lateral:hover { background:var(--relleno); color:var(--text); }
         .lateral-marca { display:flex; align-items:center; gap:10px; padding:2px 10px 14px; }
         .lateral-marca img { width:34px; height:34px; border-radius:9px; }
         .lateral-marca b { display:block; font-size:15px; font-weight:700; letter-spacing:-0.01em; color:var(--text); }
@@ -1476,7 +1480,15 @@
             .lateral { display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; width:var(--lateral);
                        padding:22px 12px 14px; background:var(--surface); border-right:0.5px solid var(--separador);
                        overflow-y:auto; z-index:900; }
-            .container { max-width:none; margin:0 0 0 var(--lateral); padding:30px 40px 70px; }
+            .container { max-width:none; margin:0 0 0 var(--lateral); padding:30px 40px 70px; transition:margin-left 0.25s ease; }
+            .lateral { transition:transform 0.25s ease; }
+            /* Menú oculto: se desliza afuera y el contenido usa todo el ancho */
+            body.lateral-oculta .lateral { transform:translateX(-100%); }
+            body.lateral-oculta .container { margin-left:0; }
+            body.lateral-oculta #toast { left:50%; }
+            .btn-lateral { display:inline-flex; align-self:flex-end; margin-bottom:3px; }
+            header { gap:12px; }
+            .header-left { flex:1; min-width:0; }
             .container > * { max-width:1120px; margin-left:auto; margin-right:auto; }
             .tabs, .fab-nueva { display:none; }
             /* Los números de cuadrantes, solo en Tareas; los del súper están en Compras */
@@ -1596,6 +1608,9 @@
 <div class="container">
 
     <header>
+        <button class="btn-lateral" onclick="alternarLateral()" title="Ocultar o mostrar el menú (Ctrl + B)" aria-label="Ocultar o mostrar el menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></svg>
+        </button>
         <div class="header-left">
             <h1>Mis Gestiones</h1>
             <p>Tareas &amp; Productividad</p>
@@ -4343,6 +4358,16 @@
             poner('cuentaProyectos', pmVencidas().length, true);
         } catch (e) { /* todavía no cargaron los datos */ }
     }
+    // Menú lateral de la computadora: se oculta y se muestra con el botón o
+    // con Ctrl + B (Cmd + B en Mac). Cada navegador recuerda cómo quedó.
+    function alternarLateral() {
+        const oculta = document.body.classList.toggle('lateral-oculta');
+        try { localStorage.setItem('vph_lateral_oculta', oculta ? '1' : '0'); } catch (e) {}
+    }
+    try { if (localStorage.getItem('vph_lateral_oculta') === '1') document.body.classList.add('lateral-oculta'); } catch (e) {}
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b') { e.preventDefault(); alternarLateral(); }
+    });
     function abrirMas()  { document.getElementById('masModal').classList.add('show'); }
     function cerrarMas() { document.getElementById('masModal').classList.remove('show'); }
     function masIr(fn)   { cerrarMas(); fn(); }
