@@ -1135,6 +1135,21 @@
         .gym-hoy.ok { opacity:0.7; }
         .gym-ej.pausado { opacity:0.55; }
         .gym-ej-nombre.con-guia { cursor:pointer; }
+        .gym-cambiar { background:none; border:1px solid var(--border); border-radius:999px; font-size:11px; color:var(--text-2); padding:3px 9px; margin-top:5px; cursor:pointer; font-family:inherit; }
+        .gym-cambiar.on { border-color:var(--accent); color:var(--accent); }
+        .gym-alt-tag { font-size:11px; color:var(--accent); margin-top:1px; }
+        .gym-cambio { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; margin:0 0 10px; }
+        .gym-cambio .gym-guia { background:var(--surface); }
+        .gym-cambio-head { font-size:12.5px; color:var(--text-2); margin-bottom:8px; }
+        .gym-grupos { display:flex; gap:5px; overflow-x:auto; padding-bottom:6px; margin-bottom:4px; }
+        .gym-grupos .gym-chip { flex-shrink:0; padding:5px 10px; font-size:11.5px; }
+        .gym-alt { display:flex; gap:10px; align-items:center; padding:8px 0; border-top:1px solid var(--border); }
+        .gym-alt img { width:76px; height:56px; object-fit:cover; border-radius:6px; flex-shrink:0; cursor:pointer; background:var(--border); }
+        .gym-alt-main { flex:1; min-width:0; }
+        .gym-alt-nombre { font-size:13px; font-weight:600; color:var(--text); cursor:pointer; }
+        .gym-alt-nombre small { font-weight:400; color:var(--text-3); }
+        .gym-alt-btns { display:flex; gap:12px; align-items:center; margin-top:4px; }
+        .gym-alt-btns .gym-mini { padding:0 12px; background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
         .gym-ej.con-ctrl { border-bottom:none; padding-bottom:4px; }
         .gym-ctrl { display:flex; align-items:center; gap:5px; flex-wrap:wrap; padding:0 0 10px 32px; border-bottom:1px solid var(--border); }
         .gym-serie { width:30px; height:30px; border-radius:50%; border:2px solid var(--accent); background:transparent; color:var(--accent); font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; }
@@ -2796,7 +2811,7 @@
     // están copiadas en hosting/gym/ para no depender de otro sitio.
     // Músculos: ids del mapa del cuerpo de gymCuerpoSVG().
     const GYM_GUIAS = {
-        cinta: { foto:'Jogging_Treadmill', p:['cuadriceps','isquios','gemelos'], s:['gluteos'],
+        cinta: { nombre:'Cinta caminadora', grupo:'cardio', equipo:'Máquina', foto:'Jogging_Treadmill', p:['cuadriceps','isquios','gemelos'], s:['gluteos'],
             pasos:['Subí con la cinta parada y agarrate de las barandas para arrancar.',
                    'Empezá caminando 1–2 minutos y subí de a poco a un trote suave.',
                    'Torso erguido, mirada al frente, brazos sueltos a los costados.',
@@ -2804,7 +2819,7 @@
                    'Ritmo en el que todavía puedas hablar: es calentamiento, no carrera.'],
             errores:['Agarrarse de las barandas todo el tiempo.','Zancadas largas que caen con el talón muy adelante.'],
             cuidado:'Si molesta la rodilla al trotar, bajá a caminata rápida con un poco de inclinación.' },
-        pressPlano: { foto:'Dumbbell_Bench_Press', p:['pecho'], s:['hombros','triceps'],
+        pressPlano: { nombre:'Press plano con mancuernas', grupo:'pecho', equipo:'Mancuernas', foto:'Dumbbell_Bench_Press', p:['pecho'], s:['hombros','triceps'],
             pasos:['Sentate en el banco con las mancuernas apoyadas en los muslos y acostate llevándolas al pecho.',
                    'Pies firmes en el piso, omóplatos juntos y apoyados en el banco.',
                    'Empujá hacia arriba hasta casi estirar los brazos, sin chocar las mancuernas.',
@@ -2812,7 +2827,7 @@
                    'Soltá el aire al subir, tomalo al bajar.'],
             errores:['Codos abiertos a 90° del cuerpo: llevalos a unos 45°.','Despegar la cadera o arquear de más la espalda.'],
             cuidado:'Hombro: no bajes más de lo cómodo. Si hay pinchazo adelante del hombro, acortá el recorrido.' },
-        jalon: { foto:'Wide-Grip_Lat_Pulldown', p:['dorsales'], s:['biceps','espaldaMedia','hombrosPost'],
+        jalon: { nombre:'Jalón al pecho', grupo:'dorsales', equipo:'Polea', foto:'Wide-Grip_Lat_Pulldown', p:['dorsales'], s:['biceps','espaldaMedia','hombrosPost'],
             pasos:['Ajustá el rodillo para que trabe bien los muslos.',
                    'Agarrá la barra un poco más ancho que los hombros, palmas hacia adelante.',
                    'Pecho arriba y leve inclinación hacia atrás.',
@@ -2820,7 +2835,7 @@
                    'Subí despacio hasta estirar los brazos sin soltar la tensión.'],
             errores:['Bajar la barra por detrás de la nuca.','Tirar con impulso balanceando el torso.'],
             cuidado:'Hombro: siempre adelante del cuerpo, nunca detrás de la nuca.' },
-        pressMilitar: { foto:'Dumbbell_Shoulder_Press', p:['hombros'], s:['triceps','trapecio'],
+        pressMilitar: { nombre:'Press militar con mancuernas', grupo:'hombros', equipo:'Mancuernas', foto:'Dumbbell_Shoulder_Press', p:['hombros'], s:['triceps','trapecio'],
             pasos:['Sentado con respaldo vertical, espalda bien apoyada.',
                    'Mancuernas a la altura de las orejas, palmas al frente, codos un poco adelante del cuerpo.',
                    'Empujá hacia arriba hasta casi estirar, sin juntar las mancuernas arriba.',
@@ -2828,7 +2843,7 @@
                    'Abdomen firme para no arquear la zona lumbar.'],
             errores:['Arquear la espalda para ayudar el empuje.','Bajar las mancuernas muy por debajo de las orejas.'],
             cuidado:'Hombro: si molesta, trabajá con las palmas mirándose entre sí (agarre neutro).' },
-        remo: { foto:'Seated_Cable_Rows', p:['espaldaMedia','dorsales'], s:['biceps','hombrosPost','trapecio'],
+        remo: { nombre:'Remo sentado en polea', grupo:'espalda', equipo:'Polea', foto:'Seated_Cable_Rows', p:['espaldaMedia','dorsales'], s:['biceps','hombrosPost','trapecio'],
             pasos:['Sentado, pies en la plataforma y rodillas apenas flexionadas.',
                    'Espalda recta, pecho arriba; el torso no se mueve durante la serie.',
                    'Tirá del agarre hacia el ombligo llevando los codos pegados y hacia atrás.',
@@ -2836,7 +2851,7 @@
                    'Volvé despacio estirando los brazos sin encorvar la espalda.'],
             errores:['Balancear el torso adelante y atrás.','Encoger los hombros hacia las orejas.'],
             cuidado:'Lumbares: si la espalda se redondea al estirar, bajá el peso.' },
-        hack: { foto:'Hack_Squat', p:['cuadriceps','gluteos'], s:['isquios','gemelos'],
+        hack: { nombre:'Sentadilla Hack Slide', grupo:'piernas', equipo:'Máquina', foto:'Hack_Squat', p:['cuadriceps','gluteos'], s:['isquios','gemelos'],
             pasos:['Espalda y hombros bien apoyados en el respaldo.',
                    'Pies al ancho de hombros, en el medio de la plataforma, puntas un poco afuera.',
                    'Destrabá y bajá controlado, rodillas en la misma dirección que las puntas de los pies.',
@@ -2844,7 +2859,7 @@
                    'Subí empujando con todo el pie, sin trabar las rodillas arriba.'],
             errores:['Rodillas que se van hacia adentro.','Despegar los talones.'],
             cuidado:'SUSPENDIDO por molestia en la parte externa de la rodilla al bajar. Retomar solo sin dolor, con recorrido corto y pies un poco más altos en la plataforma.' },
-        curlFemoral: { foto:'Lying_Leg_Curls', p:['isquios'], s:['gemelos'],
+        curlFemoral: { nombre:'Curl femoral acostado', grupo:'isquios', equipo:'Máquina', foto:'Lying_Leg_Curls', p:['isquios'], s:['gemelos'],
             pasos:['Boca abajo, rodillas justo pasando el borde del banco.',
                    'El rodillo apoya arriba del talón, no sobre la pantorrilla.',
                    'Agarrate de las manijas y mantené la cadera pegada al banco.',
@@ -2852,19 +2867,301 @@
                    'Bajá despacio, sin dejar caer el peso.'],
             errores:['Levantar la cadera para ayudar.','Bajar de golpe.'],
             cuidado:'Rodilla: si molesta, acortá el recorrido y bajá el peso.' },
-        plancha: { foto:'Plank', p:['abdominales'], s:['oblicuos','hombros','lumbares'],
+        plancha: { nombre:'Plancha abdominal', grupo:'abdomen', equipo:'Peso corporal', foto:'Plank', p:['abdominales'], s:['oblicuos','hombros','lumbares'],
             pasos:['Antebrazos en el piso, codos debajo de los hombros.',
                    'Estirá las piernas y apoyate en las puntas de los pies.',
                    'Cuerpo en línea recta de la cabeza a los talones.',
                    'Apretá abdomen y glúteos; meté un poco la pelvis.',
                    'Respirá normal. Cortá la serie cuando se pierda la postura.'],
             errores:['Cadera caída (carga la zona lumbar).','Cola muy levantada.'],
-            cuidado:'Si molesta la zona lumbar, apoyá las rodillas.' }
+            cuidado:'Si molesta la zona lumbar, apoyá las rodillas.' },
+
+        // ── Alternativas, por si la máquina está ocupada ──
+        // Pecho
+        pressMaquina: { nombre:'Press de pecho en máquina', grupo:'pecho', equipo:'Máquina', foto:'Machine_Bench_Press', p:['pecho'], s:['hombros','triceps'],
+            pasos:['Ajustá el asiento para que las manijas queden a la altura del medio del pecho.',
+                   'Espalda apoyada, omóplatos juntos y pies firmes.',
+                   'Empujá hasta casi estirar los brazos, sin trabar los codos.',
+                   'Volvé despacio hasta sentir el estiramiento en el pecho, sin que las placas choquen.'],
+            errores:['Asiento muy alto o muy bajo (carga el hombro).','Despegar la espalda del respaldo.'],
+            cuidado:'Hombro: si molesta, acortá la vuelta y no lleves los codos tan atrás.' },
+        pressInclinado: { nombre:'Press inclinado con mancuernas', grupo:'pecho', equipo:'Mancuernas', foto:'Incline_Dumbbell_Press', p:['pecho'], s:['hombros','triceps'],
+            pasos:['Banco a 30°, no más (más inclinado pasa a trabajar el hombro).',
+                   'Mancuernas a los costados del pecho, codos a unos 45° del cuerpo.',
+                   'Empujá hacia arriba sin chocar las mancuernas.',
+                   'Bajá controlado en 2–3 segundos.'],
+            errores:['Banco demasiado inclinado.','Rebotar abajo.'],
+            cuidado:'Hombro: recorrido cómodo, sin forzar el estiramiento abajo.' },
+        mariposa: { nombre:'Mariposa (pec deck)', grupo:'pecho', equipo:'Máquina', foto:'Butterfly', p:['pecho'], s:['hombros'],
+            pasos:['Asiento a una altura en la que los brazos queden paralelos al piso.',
+                   'Codos apenas flexionados y fijos durante todo el movimiento.',
+                   'Juntá las manijas adelante del pecho y apretá un segundo.',
+                   'Abrí despacio, sin pasar la línea de los hombros.'],
+            errores:['Abrir demasiado hacia atrás.','Empujar con las manos en lugar de abrazar con los brazos.'],
+            cuidado:'Hombro: es el que más lo estira. Si molesta, cerrá el recorrido.' },
+        flexiones: { nombre:'Flexiones de brazos', grupo:'pecho', equipo:'Peso corporal', foto:'Pushups', p:['pecho'], s:['triceps','hombros','abdominales'],
+            pasos:['Manos un poco más anchas que los hombros, a la altura del pecho.',
+                   'Cuerpo recto de la cabeza a los talones, abdomen firme.',
+                   'Bajá hasta que el pecho quede cerca del piso, codos a 45°.',
+                   'Empujá hasta estirar los brazos.'],
+            errores:['Cadera caída.','Codos abiertos en cruz.'],
+            cuidado:'Para hacerlas más fáciles, apoyá las rodillas o poné las manos sobre un banco.' },
+        // Dorsales
+        jalonCerrado: { nombre:'Jalón con agarre cerrado', grupo:'dorsales', equipo:'Polea', foto:'Close-Grip_Front_Lat_Pulldown', p:['dorsales'], s:['biceps','espaldaMedia'],
+            pasos:['Agarre al ancho de los hombros (o con el triángulo), palmas hacia vos o enfrentadas.',
+                   'Muslos trabados, pecho arriba y leve inclinación hacia atrás.',
+                   'Bajá la barra hasta el pecho llevando los codos hacia las costillas.',
+                   'Subí despacio hasta estirar los brazos.'],
+            errores:['Tirar con impulso del torso.','Encoger los hombros.'],
+            cuidado:'Suele molestar menos al hombro que el agarre ancho.' },
+        pullover: { nombre:'Pullover en polea alta', grupo:'dorsales', equipo:'Polea', foto:'Straight-Arm_Pulldown', p:['dorsales'], s:['triceps','hombrosPost'],
+            pasos:['De pie frente a la polea alta, barra recta, agarre al ancho de los hombros.',
+                   'Torso un poco inclinado adelante, brazos estirados con los codos apenas flexionados.',
+                   'Bajá la barra en arco hasta los muslos, sin doblar los codos.',
+                   'Volvé despacio hasta que los brazos queden a la altura de la cabeza.'],
+            errores:['Doblar los codos y convertirlo en un ejercicio de tríceps.','Balancear el cuerpo.'],
+            cuidado:'Se siente mucho con poco peso: arrancá liviano.' },
+        dominadaAsistida: { nombre:'Dominada asistida', grupo:'dorsales', equipo:'Máquina', foto:'Band_Assisted_Pull-Up', p:['dorsales'], s:['biceps','espaldaMedia'],
+            pasos:['En la máquina de dominadas asistidas: más contrapeso es más ayuda.',
+                   'Agarre un poco más ancho que los hombros, palmas al frente.',
+                   'Subí llevando el pecho hacia la barra y los codos hacia abajo.',
+                   'Bajá despacio hasta estirar los brazos.'],
+            errores:['Patear o balancearse.','Bajar de golpe.'],
+            cuidado:'Hombro: no quedes colgado y relajado abajo; mantené los hombros firmes.' },
+        // Hombros
+        pressHombroMaquina: { nombre:'Press de hombros en máquina', grupo:'hombros', equipo:'Máquina', foto:'Machine_Shoulder_Military_Press', p:['hombros'], s:['triceps','trapecio'],
+            pasos:['Asiento a una altura en la que las manijas queden a la altura de los hombros.',
+                   'Espalda apoyada y abdomen firme.',
+                   'Empujá hacia arriba hasta casi estirar los brazos.',
+                   'Bajá controlado hasta la altura de las orejas.'],
+            errores:['Arquear la espalda.','Trabar los codos arriba.'],
+            cuidado:'Hombro: si la máquina tiene agarre neutro (palmas enfrentadas), usá ese.' },
+        vuelosLaterales: { nombre:'Vuelos laterales', grupo:'hombros', equipo:'Mancuernas', foto:'Side_Lateral_Raise', p:['hombros'], s:['trapecio'],
+            pasos:['De pie, mancuernas a los costados y codos apenas flexionados.',
+                   'Subí los brazos hacia los costados hasta la altura de los hombros, no más.',
+                   'Pensá en llevar los codos hacia afuera, no las manos hacia arriba.',
+                   'Bajá despacio en 2–3 segundos.'],
+            errores:['Subir por encima de los hombros.','Tomar impulso con el cuerpo.'],
+            cuidado:'Hombro: subí un poco por delante del cuerpo y con peso muy liviano.' },
+        elevacionFrontal: { nombre:'Elevaciones frontales', grupo:'hombros', equipo:'Mancuernas', foto:'Front_Dumbbell_Raise', p:['hombros'], s:['pecho'],
+            pasos:['De pie, mancuernas adelante de los muslos.',
+                   'Subí un brazo (o los dos) al frente hasta la altura de los hombros.',
+                   'Codos apenas flexionados, sin balancear el torso.',
+                   'Bajá despacio.'],
+            errores:['Subir por encima de la cabeza.','Echarse hacia atrás para ayudar.'],
+            cuidado:'Hombro: si hay pinchazo adelante del hombro, mejor el press en máquina.' },
+        // Espalda media
+        remoMancuerna: { nombre:'Remo a una mano con mancuerna', grupo:'espalda', equipo:'Mancuernas', foto:'One-Arm_Dumbbell_Row', p:['espaldaMedia','dorsales'], s:['biceps','hombrosPost'],
+            pasos:['Rodilla y mano del mismo lado apoyadas en el banco, espalda recta y paralela al piso.',
+                   'Con la otra mano tomá la mancuerna con el brazo estirado.',
+                   'Llevá la mancuerna hacia la cadera, con el codo pegado al cuerpo.',
+                   'Bajá despacio hasta estirar el brazo. Después, el otro lado.'],
+            errores:['Girar el torso para subir más.','Redondear la espalda.'],
+            cuidado:'Lumbares: espalda siempre recta; si molesta, bajá el peso.' },
+        remoPoleaUnaMano: { nombre:'Remo en polea a una mano', grupo:'espalda', equipo:'Polea', foto:'Seated_One-arm_Cable_Pulley_Rows', p:['espaldaMedia','dorsales'], s:['biceps','hombrosPost'],
+            pasos:['Sentado en el remo bajo, con un agarre de una mano.',
+                   'Espalda recta; el torso no se mueve.',
+                   'Tirá llevando el codo hacia atrás pegado al cuerpo y apretá el omóplato.',
+                   'Volvé despacio estirando el brazo. Después, el otro lado.'],
+            errores:['Girar el torso.','Encoger el hombro.'] },
+        remoMaquina: { nombre:'Remo en máquina con apoyo de pecho', grupo:'espalda', equipo:'Máquina', foto:'Leverage_Iso_Row', p:['espaldaMedia','dorsales'], s:['biceps','hombrosPost','trapecio'],
+            pasos:['Ajustá el asiento para que las manijas queden a la altura del pecho, y apoyá el pecho en el respaldo.',
+                   'Tomá las manijas con los brazos estirados.',
+                   'Tirá llevando los codos hacia atrás y juntando los omóplatos.',
+                   'Volvé despacio sin despegar el pecho del apoyo.'],
+            errores:['Despegar el pecho para tirar con el cuerpo.','Encoger los hombros.'],
+            cuidado:'Cuida la zona lumbar: el pecho queda apoyado todo el tiempo.' },
+        // Piernas
+        prensa: { nombre:'Prensa de piernas', grupo:'piernas', equipo:'Máquina', foto:'Leg_Press', p:['cuadriceps','gluteos'], s:['isquios','gemelos'],
+            pasos:['Espalda y cadera bien apoyadas en el respaldo.',
+                   'Pies al ancho de los hombros; más arriba en la plataforma carga menos la rodilla.',
+                   'Destrabá y bajá despacio hasta donde no haya molestia, sin que la cola se despegue.',
+                   'Empujá con todo el pie, sin trabar las rodillas arriba.'],
+            errores:['Bajar tanto que la cola se despega del asiento.','Rodillas que se van hacia adentro.'],
+            cuidado:'Rodilla: recorrido corto y pies altos. Si aparece la molestia del costado de afuera, cortá.' },
+        puente: { nombre:'Puente de glúteos', grupo:'piernas', equipo:'Peso corporal', foto:'Butt_Lift_Bridge', p:['gluteos'], s:['isquios'],
+            pasos:['Boca arriba, rodillas flexionadas y pies apoyados al ancho de la cadera.',
+                   'Brazos a los costados, palmas al piso.',
+                   'Subí la cadera apretando los glúteos hasta formar una línea de hombros a rodillas.',
+                   'Sostené un segundo arriba y bajá despacio.'],
+            errores:['Arquear la zona lumbar en lugar de usar el glúteo.','Pies demasiado lejos de la cola.'],
+            cuidado:'Casi no carga la rodilla: buena opción mientras dure la molestia.' },
+        goblet: { nombre:'Sentadilla goblet', grupo:'piernas', equipo:'Mancuerna', foto:'Goblet_Squat', p:['cuadriceps','gluteos'], s:['isquios','abdominales'],
+            pasos:['De pie, pies un poco más anchos que los hombros y puntas apenas afuera.',
+                   'Sostené una mancuerna vertical contra el pecho.',
+                   'Bajá como para sentarte, pecho arriba y rodillas en la dirección de los pies.',
+                   'Subí empujando con todo el pie.'],
+            errores:['Rodillas hacia adentro.','Despegar los talones.'],
+            cuidado:'Rodilla: bajá solo hasta donde no moleste. Podés bajar hasta sentarte en un banco y volver a pararte.' },
+        sillon: { nombre:'Sillón de cuádriceps', grupo:'piernas', equipo:'Máquina', foto:'Leg_Extensions', p:['cuadriceps'], s:[],
+            pasos:['Ajustá el respaldo para que la rodilla quede alineada con el eje de la máquina.',
+                   'El rodillo apoya en el tobillo, justo arriba del pie.',
+                   'Estirá las piernas y apretá el muslo un segundo arriba.',
+                   'Bajá despacio sin dejar caer el peso.'],
+            errores:['Patear con impulso.','Levantar la cola del asiento.'],
+            cuidado:'Rodilla: carga la articulación. Peso liviano y recorrido corto; si molesta, no lo hagas.' },
+        // Isquiotibiales
+        curlSentado: { nombre:'Curl femoral sentado', grupo:'isquios', equipo:'Máquina', foto:'Seated_Leg_Curl', p:['isquios'], s:['gemelos'],
+            pasos:['Rodilla alineada con el eje de la máquina y rodillo apoyado arriba del talón.',
+                   'Trabá los muslos con el rodillo de arriba.',
+                   'Flexioná las rodillas llevando los talones hacia abajo y atrás.',
+                   'Volvé despacio sin dejar caer el peso.'],
+            errores:['Despegar la cola del asiento.','Volver de golpe.'],
+            cuidado:'Rodilla: si molesta, acortá el recorrido.' },
+        curlParado: { nombre:'Curl femoral de pie', grupo:'isquios', equipo:'Máquina', foto:'Standing_Leg_Curl', p:['isquios'], s:['gemelos'],
+            pasos:['De pie en la máquina, el rodillo detrás del tobillo y el muslo apoyado.',
+                   'Agarrate de las manijas y mantené la cadera quieta.',
+                   'Llevá el talón hacia la cola.',
+                   'Bajá despacio. Después, la otra pierna.'],
+            errores:['Mover la cadera para ayudar.','Bajar de golpe.'] },
+        pesoMuertoRumano: { nombre:'Peso muerto rumano con mancuernas', grupo:'isquios', equipo:'Mancuernas', foto:'Stiff-Legged_Dumbbell_Deadlift', p:['isquios'], s:['gluteos','lumbares'],
+            pasos:['De pie, mancuernas adelante de los muslos y rodillas apenas flexionadas.',
+                   'Llevá la cadera hacia atrás bajando las mancuernas pegadas a las piernas.',
+                   'Espalda siempre recta; bajá hasta sentir el estiramiento atrás del muslo.',
+                   'Subí empujando la cadera hacia adelante y apretando los glúteos.'],
+            errores:['Redondear la espalda.','Doblar mucho las rodillas (pasa a ser una sentadilla).'],
+            cuidado:'Lumbares: peso liviano hasta dominar la técnica.' },
+        // Abdomen
+        planchaLateral: { nombre:'Plancha lateral', grupo:'abdomen', equipo:'Peso corporal', foto:'Side_Bridge', p:['oblicuos'], s:['abdominales','hombros'],
+            pasos:['De costado, antebrazo apoyado con el codo debajo del hombro.',
+                   'Piernas estiradas una encima de la otra (o rodillas apoyadas, más fácil).',
+                   'Subí la cadera hasta formar una línea recta.',
+                   'Sostené el tiempo indicado y cambiá de lado.'],
+            errores:['Cadera caída.','Hombro hundido.'],
+            cuidado:'Hombro: si molesta el que apoya, hacela con las rodillas en el piso.' },
+        bichoMuerto: { nombre:'Bicho muerto (dead bug)', grupo:'abdomen', equipo:'Peso corporal', foto:'Dead_Bug', p:['abdominales'], s:['oblicuos'],
+            pasos:['Boca arriba, brazos estirados hacia el techo y rodillas a 90°.',
+                   'Zona lumbar pegada al piso todo el tiempo.',
+                   'Estirá un brazo hacia atrás y la pierna contraria hacia adelante, despacio.',
+                   'Volvé al centro y cambiá de lado.'],
+            errores:['Despegar la zona lumbar del piso.','Hacerlo rápido.'],
+            cuidado:'Muy amable con la espalda: buena opción si molesta la plancha.' },
+        pallof: { nombre:'Press Pallof', grupo:'abdomen', equipo:'Polea', foto:'Pallof_Press', p:['oblicuos','abdominales'], s:['hombros'],
+            pasos:['De costado a la polea, manija a la altura del pecho y pies al ancho de la cadera.',
+                   'Llevá la manija al centro del pecho con las dos manos.',
+                   'Estirá los brazos al frente sin dejar que la polea te gire.',
+                   'Sostené un par de segundos y volvé. Después, del otro lado.'],
+            errores:['Dejar que el torso gire.','Tanto peso que hay que inclinarse.'] },
+        crunch: { nombre:'Abdominales cortos (crunch)', grupo:'abdomen', equipo:'Peso corporal', foto:'Crunches', p:['abdominales'], s:['oblicuos'],
+            pasos:['Boca arriba, rodillas flexionadas y pies apoyados.',
+                   'Manos en el pecho o detrás de la cabeza, sin tirar del cuello.',
+                   'Despegá los hombros del piso llevando las costillas hacia la cadera.',
+                   'Bajá despacio sin apoyar del todo la cabeza.'],
+            errores:['Tirar de la cabeza con las manos.','Subir hasta sentarse.'],
+            cuidado:'Cuello: mirada al techo y mentón separado del pecho.' },
+        // Cardio
+        bici: { nombre:'Bicicleta fija', grupo:'cardio', equipo:'Máquina', foto:'Bicycling_Stationary', p:['cuadriceps'], s:['isquios','gemelos','gluteos'],
+            pasos:['Asiento a la altura de tu cadera, parado al lado de la bici.',
+                   'Con el pedal abajo, la rodilla queda apenas flexionada.',
+                   'Pedaleá a ritmo suave con resistencia baja.',
+                   'Espalda recta, sin cargar el peso en el manubrio.'],
+            errores:['Asiento bajo (carga la rodilla).','Resistencia alta desde el arranque.'],
+            cuidado:'Rodilla: suele ser la opción más amable. Si molesta, subí un poco el asiento.' },
+        eliptico: { nombre:'Elíptico', grupo:'cardio', equipo:'Máquina', foto:'Elliptical_Trainer', p:['cuadriceps','gluteos'], s:['isquios','gemelos'],
+            pasos:['Subí con los pies centrados en los pedales.',
+                   'Agarrá las manijas móviles para sumar los brazos.',
+                   'Ritmo constante y suave, torso erguido.',
+                   'Talones apoyados durante todo el recorrido.'],
+            errores:['Colgarse de las manijas.','Ir en puntas de pie.'],
+            cuidado:'Sin impacto: buena opción para la rodilla.' },
+        remoErgometro: { nombre:'Remo ergómetro', grupo:'cardio', equipo:'Máquina', foto:'Rowing_Stationary', p:['cuadriceps','espaldaMedia'], s:['isquios','biceps','gluteos'],
+            pasos:['Pies trabados en las correas; agarrá el manubrio con los brazos estirados.',
+                   'Empujá primero con las piernas, después inclinate apenas atrás y al final tirá con los brazos hacia el abdomen.',
+                   'Volvé en orden inverso: brazos, torso y piernas.',
+                   'Ritmo suave y constante.'],
+            errores:['Tirar con los brazos antes de empujar con las piernas.','Encorvar la espalda.'],
+            cuidado:'Rodilla y lumbares: resistencia baja y movimiento fluido.' }
     };
-    const GYM_ALIAS = [[/cinta|trote|camin/i,'cinta'], [/press (plano|banca)/i,'pressPlano'], [/jal[oó]n/i,'jalon'],
+    const GYM_GRUPOS = [['pecho','Pecho'], ['dorsales','Dorsales'], ['espalda','Espalda media'], ['hombros','Hombros'],
+                        ['piernas','Piernas'], ['isquios','Isquiotibiales'], ['abdomen','Abdomen'], ['cardio','Cardio']];
+    const GYM_ALIAS = [[/prensa/i,'prensa'], [/goblet/i,'goblet'], [/sill[oó]n|extensi[oó]n/i,'sillon'], [/puente/i,'puente'],
+                       [/femoral sentado/i,'curlSentado'], [/femoral de pie/i,'curlParado'], [/rumano/i,'pesoMuertoRumano'],
+                       [/plancha lateral/i,'planchaLateral'], [/dead bug|bicho/i,'bichoMuerto'], [/pallof/i,'pallof'], [/crunch|abdominales cortos/i,'crunch'],
+                       [/bici/i,'bici'], [/el[ií]ptico/i,'eliptico'], [/ergómetro|ergometro/i,'remoErgometro'],
+                       [/press inclinado/i,'pressInclinado'], [/press de pecho|press.*m[aá]quina.*pecho/i,'pressMaquina'], [/mariposa|pec ?deck/i,'mariposa'], [/flexiones/i,'flexiones'],
+                       [/jal[oó]n.*cerrado/i,'jalonCerrado'], [/pullover/i,'pullover'], [/dominada/i,'dominadaAsistida'],
+                       [/press de hombros/i,'pressHombroMaquina'], [/vuelos|laterales/i,'vuelosLaterales'], [/frontales/i,'elevacionFrontal'],
+                       [/remo.*una mano.*mancuerna|remo con mancuerna/i,'remoMancuerna'], [/remo.*polea.*una mano/i,'remoPoleaUnaMano'], [/remo.*m[aá]quina/i,'remoMaquina'],
+                       [/cinta|trote|camin/i,'cinta'], [/press (plano|banca)/i,'pressPlano'], [/jal[oó]n/i,'jalon'],
                        [/press militar/i,'pressMilitar'], [/remo/i,'remo'], [/hack|sentadilla/i,'hack'],
                        [/femoral/i,'curlFemoral'], [/plancha/i,'plancha']];
-    const gymGuiaDe = e => GYM_GUIAS[e.guia] || GYM_GUIAS[(GYM_ALIAS.find(([re]) => re.test(e.nombre)) || [])[1]] || null;
+    const gymGuiaKey = e => GYM_GUIAS[e.guia] ? e.guia : (GYM_ALIAS.find(([re]) => re.test(e.nombre)) || [])[1] || null;
+    const gymGuiaDe  = e => GYM_GUIAS[gymGuiaKey(e)] || null;
+
+    // Lo que se hace hoy en el lugar de un ejercicio: el de la rutina, o la
+    // alternativa elegida porque la máquina estaba ocupada. Cada alternativa
+    // recuerda su propio peso (gym.pesosAlt) y su historial (pesos 'a_<clave>').
+    function gymEf(e, s) {
+        const alt = s?.cambios?.['e'+e.id];
+        if (alt && GYM_GUIAS[alt]) return { alt, nombre: GYM_GUIAS[alt].nombre, guia: GYM_GUIAS[alt],
+                                            k: 'a_'+alt, keys: ['a_'+alt], peso: gym.pesosAlt[alt] ?? null };
+        const g = gymGuiaKey(e);
+        return { alt: null, nombre: e.nombre, guia: gymGuiaDe(e), k: 'e'+e.id,
+                 keys: ['e'+e.id].concat(g ? ['a_'+g] : []), peso: e.peso ?? null };
+    }
+    let gymCambiando = null, gymAltVer = null;   // selector de alternativas abierto
+    function gymAbrirCambio(ejId) {
+        if (gymCambiando?.ejId === ejId) { gymCambiando = null; return renderGym(); }
+        const r = gymRutina(gymRutinaSel); const e = r?.ejercicios.find(x => x.id === ejId); if (!e) return;
+        const ef = gymEf(e, gymSesionHoy(r.id));
+        gymCambiando = { ejId, grupo: ef.guia?.grupo || gymGuiaDe(e)?.grupo || 'pecho' }; gymAltVer = null;
+        renderGym();
+    }
+    function gymCambioGrupo(g) { if (gymCambiando) gymCambiando.grupo = g; gymAltVer = null; renderGym(); }
+    function gymAltVerGuia(k)  { gymAltVer = gymAltVer === k ? null : k; renderGym(); }
+    // Cambia el ejercicio solo por hoy. Con la clave del original (o null) vuelve a él.
+    function gymUsarHoy(ejId, key) {
+        const r = gymRutina(gymRutinaSel); const e = r?.ejercicios.find(x => x.id === ejId); if (!e) return;
+        const s = gymSesionDeHoyCreando(r);
+        s.cambios = s.cambios || {};
+        if (!key || key === gymGuiaKey(e)) delete s.cambios['e'+ejId]; else s.cambios['e'+ejId] = key;
+        gymCambiando = null; gymAltVer = null;
+        saveGym(); renderGym();
+    }
+    // Deja la alternativa como el ejercicio de la rutina. Series, repeticiones y
+    // descanso se conservan; el ejercicio anterior queda como alternativa.
+    function gymUsarSiempre(ejId, key) {
+        const r = gymRutina(gymRutinaSel); const e = r?.ejercicios.find(x => x.id === ejId); const g = GYM_GUIAS[key];
+        if (!e || !g) return;
+        if (!confirm(`¿Reemplazar "${e.nombre}" por "${g.nombre}" en la rutina? Series, repeticiones y descanso quedan iguales.`)) return;
+        const viejo = gymGuiaKey(e);
+        if (viejo && e.peso != null) gym.pesosAlt[viejo] = e.peso;
+        const nuevo = Date.now(), s = gymSesionHoy(r.id);
+        if (s) {
+            s.hechos = s.hechos.map(x => x === e.id ? nuevo : x);
+            if (s.series?.['e'+e.id] != null) { s.series['e'+nuevo] = s.series['e'+e.id]; delete s.series['e'+e.id]; }
+            if (s.cambios) delete s.cambios['e'+e.id];
+        }
+        Object.assign(e, { id: nuevo, nombre: g.nombre, guia: key, peso: gym.pesosAlt[key] ?? null, nota: '', pausado: false });
+        gymCambiando = null; gymAltVer = null;
+        saveGym(); renderGym();
+    }
+    function gymCambioHTML(e, ef) {
+        const g = gymCambiando.grupo, orig = gymGuiaKey(e);
+        const opciones = Object.entries(GYM_GUIAS).filter(([k, x]) => x.grupo === g && k !== (ef.alt || orig));
+        return `<div class="gym-cambio">
+            <div class="gym-cambio-head">En lugar de <b>${escHtml(ef.nombre)}</b>, podés hacer:</div>
+            <div class="gym-grupos">${GYM_GRUPOS.map(([k, l]) =>
+                `<button class="gym-chip ${k === g ? 'active' : ''}" onclick="gymCambioGrupo('${k}')">${l}</button>`).join('')}</div>
+            ${opciones.map(([k, x]) => `
+                <div class="gym-alt">
+                    <img src="gym/${x.foto}_0.jpg" alt="" loading="lazy" onclick="gymAltVerGuia('${k}')">
+                    <div class="gym-alt-main">
+                        <div class="gym-alt-nombre" onclick="gymAltVerGuia('${k}')">${escHtml(x.nombre)}${k === orig ? ' <small>(el de la rutina)</small>' : ''}</div>
+                        <div class="gym-ej-meta">${x.p.map(m => GYM_MUSC_NOMBRE[m]).join(', ')} · ${x.equipo}</div>
+                        <div class="gym-alt-btns">
+                            <button class="gym-mini" onclick="gymUsarHoy(${e.id},'${k}')">${k === orig ? 'Volver a este' : 'Usar hoy'}</button>
+                            <button class="gym-link" onclick="gymAltVerGuia('${k}')">${gymAltVer === k ? 'Ocultar' : 'Cómo se hace'}</button>
+                        </div>
+                    </div>
+                </div>
+                ${gymAltVer === k ? gymGuiaHTML(x) : ''}`).join('') || '<div class="gym-vacio">No hay alternativas cargadas para este grupo.</div>'}
+            <div class="gym-sub" style="margin-top:8px;">
+                ${ef.alt ? `<button class="gym-link" onclick="gymUsarSiempre(${e.id},'${ef.alt}')">📌 Dejarlo fijo en la rutina</button>` : '<span></span>'}
+                <button class="gym-link" onclick="gymAbrirCambio(${e.id})">Cerrar</button>
+            </div>
+        </div>`;
+    }
     const gymAbiertos = new Set();
     function gymVerGuia(ejId) { gymAbiertos.has(ejId) ? gymAbiertos.delete(ejId) : gymAbiertos.add(ejId); renderGym(); }
 
@@ -2939,7 +3236,8 @@
         return {
             rutinas:  arr(d.rutinas).map(r => ({ ...r, dias: arr(r.dias), ejercicios: arr(r.ejercicios) })),
             sesiones: arr(d.sesiones).map(s => ({ ...s, hechos: arr(s.hechos), pesos: s.pesos || {} })),
-            peso:     arr(d.peso)
+            peso:     arr(d.peso),
+            pesosAlt: d.pesosAlt || {}
         };
     }
     function saveGym() {
@@ -2954,7 +3252,7 @@
     const gymRutina      = id  => gym.rutinas.find(r => r.id === id);
     const gymRutinasHoy  = ()  => gym.rutinas.filter(r => r.dias.includes(new Date().getDay()));
     const gymSesionHoy   = rid => gym.sesiones.find(s => s.fecha === hoyYMD() && s.rutinaId === rid);
-    const gymActivos     = r   => r.ejercicios.filter(e => !e.pausado);
+    const gymActivos     = r   => { const s = gymSesionHoy(r.id); return r.ejercicios.filter(e => !e.pausado || s?.cambios?.['e'+e.id]); };
     const gymKg          = v   => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; };
     const gymFecha       = f   => parseYMD(f).toLocaleDateString('es-AR', {weekday:'short', day:'numeric', month:'short'});
 
@@ -2968,11 +3266,11 @@
         return gym.rutinas.length ? gym.rutinas[(i + 1) % gym.rutinas.length].id : null;
     }
     // El peso de la última vez que se hizo ese ejercicio, sin contar hoy.
-    function gymPesoAnterior(ejId) {
+    function gymPesoAnterior(keys) {
         const h = hoyYMD();
-        const s = gym.sesiones.filter(s => s.fecha < h && s.pesos['e'+ejId] != null)
+        const s = gym.sesiones.filter(s => s.fecha < h && keys.some(k => s.pesos[k] != null))
                               .sort((a,b) => a.fecha < b.fecha ? 1 : -1)[0];
-        return s ? s.pesos['e'+ejId] : null;
+        return s ? s.pesos[keys.find(k => s.pesos[k] != null)] : null;
     }
     function gymSesionDeHoyCreando(r) {
         let s = gymSesionHoy(r.id);
@@ -2999,7 +3297,8 @@
         s.hechos = s.hechos.filter(x => x !== ej.id);
         if (!hecho) return;
         s.hechos.push(ej.id);
-        if (ej.peso != null) s.pesos['e'+ej.id] = ej.peso;
+        const ef = gymEf(ej, s);
+        if (ef.peso != null) s.pesos[ef.k] = ef.peso;
         if (ej.reps) { s.reps = s.reps || {}; s.reps['e'+ej.id] = (ej.series ? ej.series + ' × ' : '') + ej.reps; }
     }
     const gymDescansoDe = ej => ej.descanso || 90;
@@ -3014,7 +3313,8 @@
         s.series['e'+ejId] = ahora;
         gymSetHecho(s, ej, ahora >= (ej.series || 1));
         saveGym(); renderGym();
-        if (ahora > antes) gymDescansar(gymDescansoDe(ej), ahora >= ej.series ? `${ej.nombre} terminado` : `${ej.nombre} · serie ${ahora + 1} de ${ej.series}`);
+        const nom = gymEf(ej, s).nombre;
+        if (ahora > antes) gymDescansar(gymDescansoDe(ej), ahora >= ej.series ? `${nom} terminado` : `${nom} · serie ${ahora + 1} de ${ej.series}`);
     }
     function gymDescansoEj(ejId, seg) {
         const r = gymRutina(gymRutinaSel); const ej = r?.ejercicios.find(e => e.id === ejId); if (!ej) return;
@@ -3090,9 +3390,10 @@
         const r = gymRutina(gymRutinaSel); if (!r) return;
         const ej = r.ejercicios.find(e => e.id === ejId); if (!ej) return;
         const kg = gymKg(valor);
-        ej.peso = kg;
         const s = gymSesionDeHoyCreando(r);
-        if (kg == null) delete s.pesos['e'+ejId]; else s.pesos['e'+ejId] = kg;
+        const ef = gymEf(ej, s);
+        if (ef.alt) gym.pesosAlt[ef.alt] = kg; else ej.peso = kg;
+        if (kg == null) delete s.pesos[ef.k]; else s.pesos[ef.k] = kg;
         saveGym(); renderGym();
     }
 
@@ -3227,13 +3528,15 @@
             const toca = r.dias.length ? 'Toca ' + [1,2,3,4,5,6,0].filter(d => r.dias.includes(d)).map(d => NOMBRE_DIA[d]).join(' · ') : 'Sin días fijos';
             const filas = r.ejercicios.map(e => {
                 const hecho = hechos.includes(e.id);
-                const ant = gymPesoAnterior(e.id);
+                const ef = gymEf(e, s);
+                const pausado = e.pausado && !ef.alt;
+                const ant = gymPesoAnterior(ef.keys);
                 const meta = [];
                 if (!e.series && e.reps) meta.push(escHtml(e.reps));
-                if (ant != null) meta.push(`la vez pasada ${ant} kg` + (e.peso != null && e.peso > ant ? ' ↑' : ''));
+                if (ant != null) meta.push(`la vez pasada ${ant} kg` + (ef.peso != null && ef.peso > ant ? ' ↑' : ''));
                 const hechas = Math.min(s?.series?.['e'+e.id] ?? (hecho ? e.series || 0 : 0), e.series || 0);
                 const desc = gymDescansoDe(e);
-                const ctrl = e.pausado || !e.series ? '' : `<div class="gym-ctrl">
+                const ctrl = pausado || !e.series ? '' : `<div class="gym-ctrl">
                     ${Array.from({length: e.series}, (_, k) =>
                         `<button class="gym-serie ${k < hechas ? 'on' : ''}" onclick="gymSerie(${e.id},${k+1})" title="Serie ${k+1}">${k+1}</button>`).join('')}
                     <label>× <input value="${escHtml(e.reps || '')}" onchange="gymEditEj(${e.id},'reps',this.value); renderGym()" title="Repeticiones"></label>
@@ -3242,21 +3545,24 @@
                             .map(v => `<option value="${v}" ${v===desc?'selected':''}>${v<60 ? v+' s' : Math.floor(v/60)+':'+String(v%60).padStart(2,'0')}</option>`).join('')}
                     </select></label>
                 </div>`;
-                return `<div class="gym-ej ${hecho?'hecho':''} ${e.pausado?'pausado':''} ${ctrl?'con-ctrl':''}">
-                    <button class="day-check-btn" ${e.pausado ? 'disabled title="En pausa"' : `onclick="gymMarcar(${e.id})" title="Hecho"`}>${e.pausado?'⏸':hecho?'✓':''}</button>
+                const conAlt = !!ef.guia?.grupo;
+                return `<div class="gym-ej ${hecho?'hecho':''} ${pausado?'pausado':''} ${ctrl?'con-ctrl':''}">
+                    <button class="day-check-btn" ${pausado ? 'disabled title="En pausa"' : `onclick="gymMarcar(${e.id})" title="Hecho"`}>${pausado?'⏸':hecho?'✓':''}</button>
                     <div class="gym-ej-main">
-                        <div class="gym-ej-nombre ${gymGuiaDe(e)?'con-guia':''}" ${gymGuiaDe(e)?`onclick="gymVerGuia(${e.id})"`:''}>${escHtml(e.nombre)}</div>
+                        <div class="gym-ej-nombre ${ef.guia?'con-guia':''}" ${ef.guia?`onclick="gymVerGuia(${e.id})"`:''}>${escHtml(ef.nombre)}</div>
+                        ${ef.alt ? `<div class="gym-alt-tag">🔄 Hoy, en lugar de ${escHtml(e.nombre)}</div>` : ''}
                         ${meta.length ? `<div class="gym-ej-meta">${meta.join(' · ')}</div>` : ''}
-                        ${e.nota ? `<div class="gym-ej-nota">${escHtml(e.nota)}</div>` : ''}
+                        ${e.nota && !ef.alt ? `<div class="gym-ej-nota">${escHtml(e.nota)}</div>` : ''}
+                        ${conAlt ? `<button class="gym-cambiar ${ef.alt || gymCambiando?.ejId === e.id ? 'on' : ''}" onclick="gymAbrirCambio(${e.id})">🔄 ${ef.alt ? 'Cambiar o volver' : 'Alternativas'}</button>` : ''}
                     </div>
-                    <label class="gym-kg"><input inputmode="decimal" value="${e.peso ?? ''}" placeholder="—"
+                    <label class="gym-kg"><input inputmode="decimal" value="${ef.peso ?? ''}" placeholder="—"
                            onchange="gymPeso(${e.id},this.value)">kg</label>
-                </div>${ctrl}${gymAbiertos.has(e.id) && gymGuiaDe(e) ? gymGuiaHTML(gymGuiaDe(e)) : ''}`;
+                </div>${ctrl}${gymCambiando?.ejId === e.id ? gymCambioHTML(e, ef) : ''}${gymAbiertos.has(e.id) && ef.guia ? gymGuiaHTML(ef.guia) : ''}`;
             }).join('');
             cuerpo = `
                 <div class="gym-sub"><span>${toca} · hoy ${n}/${gymActivos(r).length}</span>
                     <button class="gym-link" onclick="gymEditar()">✏️ Editar</button></div>
-                ${r.ejercicios.some(gymGuiaDe) ? '<div class="gym-sub">Tocá el nombre (ⓘ) para ver cómo se hace. Tocá el número de cada serie al terminarla: arranca el descanso.</div>' : ''}
+                ${r.ejercicios.some(gymGuiaDe) ? '<div class="gym-sub">Tocá el nombre (ⓘ) para ver cómo se hace, y 🔄 si la máquina está ocupada. Tocá el número de cada serie al terminarla: arranca el descanso.</div>' : ''}
                 ${filas || '<div class="gym-vacio">Esta rutina no tiene ejercicios. Tocá <strong>✏️ Editar</strong> para cargarlos.</div>'}
                 ${r.notas ? `<details class="gym-pautas"><summary>📋 Pautas</summary><div>${escHtml(r.notas)}</div></details>` : ''}`;
         }
