@@ -282,7 +282,7 @@ Botón 🏋️ en el encabezado. Datos en `vpremoldeados/gimnasio` (localStorage
 
 - Se tilda cada ejercicio hecho y se anota el peso; ese peso queda como el de la próxima vez y al lado se ve el de la vez pasada.
 - Las rutinas con días cargados aparecen arriba de **Mi Día** (`gymHoyHTML()`). Sin días, se sugiere la que sigue a la última (A → B → C).
-- Peso corporal contra la meta de 74 kg (`GYM_META_KG`), cintura en cm (`gym.cintura: [{fecha, cm}]`) contra la meta de 90 cm (`GYM_META_CINTURA`, pedida por Marcelo el 10/10) y contra la primera medida y registro de las últimas idas.
+- Peso corporal contra la meta de 74 kg (`GYM_META_KG`), cintura en cm (`gym.cintura: [{fecha, cm}]`) contra la meta de 86 cm (`GYM_META_CINTURA`; primero 90, el 10/10 Marcelo la pasó a 86, la de su plan) y contra la primera medida y registro de las últimas idas.
 - Las claves de `pesos` llevan prefijo `e` para que Firebase no las convierta en array.
 - **Cargada su rutina Día 1** (8 ejercicios, todos los días desde el 10/10 a pedido de Marcelo; antes Lun y Jue). La Hack Slide está en pausa (`pausado`) por molestia en la rodilla: se ve pero no cuenta.
 - Cada ejercicio tiene `nota`, `pausado`, `descanso` (segundos, 90 por defecto) y `guia`. La rutina tiene `notas` (las pautas).
