@@ -2806,6 +2806,7 @@
     // queda como el de la próxima vez, así la planilla muestra con qué arrancar.
     // Los días marcados en una rutina la hacen aparecer arriba de Mi Día.
     const GYM_META_KG = 74;   // el objetivo "Gimnasio 74 kg"
+    const GYM_META_CINTURA = 90;   // cm, pedido por Marcelo el 10/10
 
     // Guías de técnica. Las fotos son de free-exercise-db (dominio público) y
     // están copiadas en hosting/gym/ para no depender de otro sitio.
@@ -3462,8 +3463,7 @@
     }
 
     // ── Peso corporal ──
-    // Cintura en cm. La rutina no fija un número: la meta es que baje, así que
-    // se compara contra la primera medida.
+    // Cintura en cm: contra la meta de 90 y contra la primera medida.
     function gymAnotarCintura() {
         const cm = gymKg(document.getElementById('gymCintura').value);
         if (cm == null || cm < 50 || cm > 200) { alert('Escribí la medida en cm, por ejemplo 96,5'); return; }
@@ -3590,14 +3590,17 @@
             return `<div class="gym-linea"><span>${gymFecha(p.fecha)}</span><span>${p.kg} kg${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span></div>`;
         }).join('');
 
-        // Cintura, contra la primera medida
+        // Cintura, contra la meta y contra la primera medida
         const ultC = gym.cintura[gym.cintura.length - 1], priC = gym.cintura[0];
         const bajo = ultC && priC !== ultC ? Math.round((priC.cm - ultC.cm) * 10) / 10 : null;
-        const cinturaTxt = !ultC ? 'Medila a la altura del ombligo, de pie, con la panza relajada y siempre a la misma hora (mejor en ayunas).'
-            : bajo == null ? `${ultC.cm} cm (${gymFecha(ultC.fecha)}) · primera medida`
-            : bajo > 0 ? `${ultC.cm} cm · <strong>${bajo} cm menos</strong> desde el ${gymFecha(priC.fecha)}`
-            : bajo < 0 ? `${ultC.cm} cm · ${-bajo} cm más que el ${gymFecha(priC.fecha)}`
-            : `${ultC.cm} cm · igual que el ${gymFecha(priC.fecha)}`;
+        const faltaC = ultC ? Math.round((ultC.cm - GYM_META_CINTURA) * 10) / 10 : null;
+        const cinturaTxt = !ultC ? `Meta: ${GYM_META_CINTURA} cm. Medila a la altura del ombligo, de pie, con la panza relajada y siempre a la misma hora (mejor en ayunas).`
+            : [ faltaC > 0 ? `${ultC.cm} cm · faltan <strong>${faltaC} cm</strong> para ${GYM_META_CINTURA}`
+                           : `${ultC.cm} cm · <strong>meta de ${GYM_META_CINTURA} cm cumplida</strong> 🎉`,
+                bajo == null ? 'primera medida'
+                : bajo > 0 ? `${bajo} cm menos desde el ${gymFecha(priC.fecha)}`
+                : bajo < 0 ? `${-bajo} cm más que el ${gymFecha(priC.fecha)}`
+                : `igual que el ${gymFecha(priC.fecha)}` ].join(' · ');
         const cinturas = gym.cintura.slice(-5).reverse().map((p,i,a) => {
             const prev = a[i+1]; const d = prev ? Math.round((p.cm - prev.cm) * 10) / 10 : null;
             return `<div class="gym-linea"><span>${gymFecha(p.fecha)}</span><span>${p.cm} cm${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span></div>`;
