@@ -777,6 +777,23 @@
             color:var(--text-3); font-family:'Inter',sans-serif; }
         .vista-toggle button.active { background:var(--surface); color:var(--accent); box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 
+        /* Elegir los días en que una tarea se repite */
+        .rep-dias { display: flex; flex-wrap: wrap; gap: 5px; }
+        .rep-dia {
+            width: 38px; padding: 7px 0; text-align: center;
+            border: 1px solid var(--border); border-radius: 8px;
+            background: var(--surface); color: var(--text-2);
+            font-size: 11.5px; font-weight: 600; font-family: inherit;
+            cursor: pointer; user-select: none;
+        }
+        .rep-dia:hover { border-color: var(--accent); }
+        .rep-dia.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .rep-badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            font-size: 9.5px; font-weight: 700; color: var(--accent);
+            background: rgba(99,102,241,.13); padding: 1px 6px; border-radius: 20px;
+        }
+
         /* Objetivos: metas, hábitos con racha y recordatorios */
         .obj-seccion { margin-top: 14px; }
         .obj-seccion-tit {
@@ -1075,6 +1092,48 @@
         .btn-cancel { background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
         .btn-cancel:hover { background:rgba(255,255,255,0.07); color:var(--text); }
 
+        /* ── Gimnasio ── */
+        .gym-rutinas { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+        .gym-chip { padding:6px 12px; border-radius:999px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; }
+        .gym-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+        .gym-chip.toca::after { content:' •'; color:var(--success); }
+        .gym-chip.active.toca::after { color:#fff; }
+        .gym-sub { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px; color:var(--text-3); margin-bottom:6px; }
+        .gym-ej { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+        .gym-ej:last-child { border-bottom:none; }
+        .gym-ej.hecho .day-check-btn { background:var(--success); color:#fff; }
+        .gym-ej-main { flex:1; min-width:0; }
+        .gym-ej-nombre { font-size:13.5px; font-weight:500; color:var(--text); }
+        .gym-ej.hecho .gym-ej-nombre { text-decoration:line-through; color:var(--text-3); }
+        .gym-ej-meta { font-size:11.5px; color:var(--text-3); margin-top:2px; }
+        .gym-kg { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-3); flex-shrink:0; }
+        .modal-box .gym-kg input { width:62px; margin:0; padding:7px 8px; text-align:right; }
+        .gym-ej-edit { display:grid; grid-template-columns:1fr 42px 54px 28px 28px; gap:5px; align-items:center; padding:4px 0; }
+        .gym-add { display:grid; grid-template-columns:1fr 42px 54px 54px; gap:5px; margin-top:8px; }
+        .modal-box .gym-ej-edit input, .modal-box .gym-add input, .modal-box .gym-fila input { margin:0; padding:7px 8px; }
+        .gym-mini { height:30px; border:1px solid var(--border); background:var(--surface-2); border-radius:6px; cursor:pointer; font-size:12px; color:var(--text-2); font-family:inherit; }
+        .gym-mini.del { color:var(--danger); border-color:rgba(239,68,68,0.25); }
+        .gym-dias { display:flex; gap:4px; flex-wrap:wrap; margin:6px 0 10px; }
+        .gym-dia { padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); font-size:12px; cursor:pointer; color:var(--text-2); font-family:inherit; }
+        .gym-dia.on { background:var(--success); border-color:var(--success); color:#fff; }
+        .gym-fila { display:flex; gap:6px; align-items:center; }
+        .gym-fila button { flex-shrink:0; padding:8px 12px; border:none; border-radius:var(--radius-sm); background:var(--accent); color:#fff; font-weight:600; font-size:12.5px; cursor:pointer; font-family:inherit; }
+        .gym-link { background:none; border:none; color:var(--accent); font-size:12px; font-weight:600; cursor:pointer; padding:2px 0; font-family:inherit; }
+        .gym-link.del { color:var(--danger); }
+        .gym-section { margin-top:16px; padding-top:12px; border-top:1px solid var(--border); }
+        .gym-section h4 { font-size:12.5px; font-weight:600; color:var(--text); margin-bottom:8px; }
+        .gym-linea { display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:3px 0; color:var(--text-2); }
+        .gym-linea span:last-child { white-space:nowrap; }
+        .gym-vacio { font-size:12.5px; color:var(--text-3); padding:10px 0; }
+        .gym-hoy {
+            display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:14px;
+            background:linear-gradient(135deg, rgba(16,185,129,0.10), rgba(16,185,129,0.04));
+            border:1px solid rgba(16,185,129,0.32); border-radius:var(--radius); padding:12px 15px;
+            font-size:13px; color:var(--text);
+        }
+        .gym-hoy span { margin-left:auto; font-size:12px; font-weight:600; color:var(--success); }
+        .gym-hoy.ok { opacity:0.7; }
+
         /* ── Scrollbar ── */
         ::-webkit-scrollbar { width:4px; height:4px; }
         ::-webkit-scrollbar-track { background:transparent; }
@@ -1132,6 +1191,7 @@
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <button class="icon-btn" onclick="openObjetivosModal()" title="Mis objetivos y metas">🎯</button>
             <button class="icon-btn" onclick="openComprasModal()" title="Compras supermercado">🛒</button>
+            <button class="icon-btn" onclick="openGymModal()" title="Rutina de gimnasio">🏋️</button>
             <button class="icon-btn" onclick="openTeamModal()" title="Equipo: responsables y operarios">👥</button>
             <button class="icon-btn" id="notifBtn" onclick="toggleNotificaciones()" title="Notificaciones de tareas vencidas">🔔</button>
             <button class="icon-btn" onclick="cerrarSesion()" title="Cerrar sesión">🚪</button>
@@ -1373,6 +1433,17 @@
     </div>
 </div>
 
+<!-- Modal: Gimnasio -->
+<div id="gymModal" class="modal">
+    <div class="modal-box pm-modal-box">
+        <h3>🏋️ Gimnasio</h3>
+        <div id="gymView"></div>
+        <div class="modal-btns" style="margin-top:14px;">
+            <button class="btn-cancel" onclick="closeGymModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Nueva tarea (unificado) -->
 <div id="nuevaTareaModal" class="modal">
     <div class="modal-box pm-modal-box">
@@ -1530,6 +1601,12 @@
         <div class="form-group">
             <label>Fecha Límite:</label>
             <input type="date" id="taskDueDate">
+        </div>
+
+        <div class="form-group">
+            <label>¿Se repite? Elegí los días:</label>
+            <div class="rep-dias" id="repDias"></div>
+            <div class="hint" id="repHint">No se repite: es una tarea que se hace una vez.</div>
         </div>
         <div class="form-group">
             <label>Responsable:</label>
@@ -1773,6 +1850,7 @@
 
     let tasks     = (JSON.parse(localStorage.getItem('tasks'))     || initialTasks).map(migrate);
     let shopping  = JSON.parse(localStorage.getItem('shopping'))   || initialShopping;
+    let gym       = gymNormalizar(JSON.parse(localStorage.getItem('gimnasio') || 'null'));
     let objetivos = JSON.parse(localStorage.getItem('objetivos'))  || [];
     let editingId = null, fbLoading = false;
 
@@ -1801,6 +1879,14 @@
             renderObjetivos();
             if (document.getElementById('tab-dia')?.classList.contains('active')) renderDayPlan();
         }
+    });
+
+    db.ref('vpremoldeados/gimnasio').on('value', snap => {
+        if (fbLoading) return;
+        gym = gymNormalizar(snap.val());
+        localStorage.setItem('gimnasio', JSON.stringify(gym));
+        if (document.getElementById('gymModal').classList.contains('show')) renderGym();
+        if (document.getElementById('tab-dia')?.classList.contains('active')) renderDayPlan();
     });
 
     function saveTasks() {
@@ -1907,6 +1993,65 @@
         if (fn) fn();
     }
 
+    // ── Tareas que se repiten ─────────────────────────────────────────────
+    // Una rutina no es una tarea con fecha: es algo que vuelve. Se guarda en
+    // `repetir.dias` (0 domingo … 6 sábado). Al marcarla hecha no se cierra:
+    // salta al próximo día que toca y vuelve a aparecer en Mi Día ese día.
+    const NOMBRE_DIA = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+    function esRecurrente(t) { return !!(t && t.repetir && (t.repetir.dias||[]).length); }
+
+    // Próxima fecha, a partir de mañana, que caiga en uno de los días elegidos.
+    function proximaFechaRepetida(dias, desde) {
+        const d = desde ? parseYMD(desde) : new Date();
+        d.setHours(0,0,0,0);
+        for (let i = 1; i <= 7; i++) {
+            const x = new Date(d.getTime() + i * 86400000);
+            if (dias.includes(x.getDay())) return ymd(x);
+        }
+        return '';
+    }
+
+    // El espejo vivo de una tarea de proyecto (ignora los ya completados, que
+    // son el registro de las veces anteriores).
+    function espejoVivo(pmTaskId) {
+        return tasks.find(t => t && t.proyectoTaskId === pmTaskId && !t.completed) || null;
+    }
+
+    // Al abrir la app: lo que toca hoy aparece solo en Mi Día.
+    function cargarRecurrentesDeHoy() {
+        const hoy = hoyYMD(), dia = new Date().getDay();
+        let hubo = false;
+        proyectosActivos().forEach(p => (p.tasks||[]).forEach(t => {
+            if (!esRecurrente(t) || t.state === 'hecho') return;
+            if (t.responsable && t.responsable !== DUENIO) return;   // Mi Día es de Marcelo
+            if (!t.repetir.dias.includes(dia)) return;
+            if (t.hechaEl === hoy) return;              // ya se hizo hoy
+            if (espejoVivo(t.id)) return;               // ya está en la lista
+            if (t.dueDate !== hoy) { t.dueDate = hoy; hubo = true; }
+            enviarAMiDia(p.id, t.id);
+            hubo = true;
+        }));
+        if (hubo) { savePmData(); saveTasks(); }
+    }
+
+    // Marcar hecha una recurrente: se anota la vuelta y se reprograma.
+    function cumplirRecurrente(pt) {
+        pt.hechaEl = hoyYMD();
+        pt.vueltas = (pt.vueltas || 0) + 1;
+        pt.dueDate = proximaFechaRepetida(pt.repetir.dias, pt.hechaEl);
+        pt.state   = 'en-curso';
+        delete pt.miDia;
+    }
+
+    function textoRepeticion(t) {
+        if (!esRecurrente(t)) return '';
+        const d = [...t.repetir.dias].sort();
+        if (d.length === 7) return 'todos los días';
+        if (d.join() === '1,2,3,4,5') return 'de lunes a viernes';
+        return d.map(x => NOMBRE_DIA[x]).join(' y ');
+    }
+
     // ── Tildar una tarea desde Mi Día ─────────────────────────────────────
     // El ✓ de Mi Día cierra la tarea de verdad, no solo la tacha:
     //   · si viene de un proyecto → la tarea del proyecto pasa a HECHO
@@ -1927,6 +2072,20 @@
         }
 
         const pt = tareaDeProyectoDe(t);
+        if (pt && esRecurrente(pt)) {
+            const antes = {dueDate: pt.dueDate, hechaEl: pt.hechaEl, vueltas: pt.vueltas};
+            cumplirRecurrente(pt);
+            t.completed = true; t.completedAt = Date.now();
+            t.enDia = false; t.dayOrder = null;
+            savePmData(); saveTasks(); render(); pmRefresh();
+            toast(`🔁 "${pt.title}" hecha. Vuelve el ${NOMBRE_DIA[parseYMD(pt.dueDate).getDay()]}`, () => {
+                pt.dueDate = antes.dueDate; pt.vueltas = antes.vueltas; pt.miDia = true;
+                if (antes.hechaEl) pt.hechaEl = antes.hechaEl; else delete pt.hechaEl;
+                t.completed = false; t.completedAt = null; t.enDia = true;
+                savePmData(); saveTasks(); render(); pmRefresh();
+            });
+            return;
+        }
         if (pt) {
             const estadoAnterior = pt.state;
             pt.state = 'hecho';
@@ -2267,6 +2426,10 @@
             if (t.area) meta.push(`📁 ${escHtml(t.area)}`);
             if (t.proyecto) meta.push(`🗂️ ${escHtml(t.proyecto)}`);
             if (fecha) meta.push(`📅 ${fecha}${t.time ? ' · '+t.time : ''}`);
+            const _pt = tareaDeProyectoDe(t);
+            if (esRecurrente(_pt)) meta.push(`🔁 ${textoRepeticion(_pt)}`);
+            const _arr = (_pt && _pt.arrastres) || t.arrastres || 0;
+            if (_arr > 0) meta.push(`⏭️ arrastrada ${_arr} ${_arr === 1 ? 'vez' : 'veces'}`);
             return `<div class="day-plan-item ${t.completed?'done-day':''}" data-id="${t.id}"
                  draggable="true"
                  ondragstart="diaDragStart(event,${t.id})" ondragend="diaDragEnd(event)"
@@ -2287,6 +2450,7 @@
 
         document.getElementById('dayPlanView').innerHTML = `
             ${sugerenciasHoyHTML()}
+            ${gymHoyHTML()}
             ${objetivosBoxHTML()}
             <div class="day-plan-header">
                 <div class="day-progress-info">
@@ -2579,6 +2743,287 @@
     function openComprasModal()    { renderShopping(); document.getElementById('comprasModal').classList.add('show'); }
     function closeComprasModal()   { document.getElementById('comprasModal').classList.remove('show'); }
 
+    // ── Gimnasio ────────────────────────────────────────────────────────────
+    // Rutinas (Día A, Día B…) con sus ejercicios, y un registro de cada vez que
+    // se fue: qué ejercicios se hicieron y con cuánto peso. El peso que se anota
+    // queda como el de la próxima vez, así la planilla muestra con qué arrancar.
+    // Los días marcados en una rutina la hacen aparecer arriba de Mi Día.
+    const GYM_META_KG = 74;   // el objetivo "Gimnasio 74 kg"
+    let gymRutinaSel = null, gymEditando = false;
+
+    function gymNormalizar(d) {
+        d = d || {};
+        // Firebase devuelve arrays u objetos, y descarta los vacíos. Ojo: el 0 es domingo.
+        const arr = x => x ? (Array.isArray(x) ? x : Object.values(x)).filter(v => v != null) : [];
+        return {
+            rutinas:  arr(d.rutinas).map(r => ({ ...r, dias: arr(r.dias), ejercicios: arr(r.ejercicios) })),
+            sesiones: arr(d.sesiones).map(s => ({ ...s, hechos: arr(s.hechos), pesos: s.pesos || {} })),
+            peso:     arr(d.peso)
+        };
+    }
+    function saveGym() {
+        fbLoading = true; setSyncStatus('syncing','Guardando...');
+        localStorage.setItem('gimnasio', JSON.stringify(gym));
+        db.ref('vpremoldeados/gimnasio').set(gym)
+            .then(()   => setSyncStatus('connected','Sincronizado'))
+            .catch(()  => setSyncStatus('error','Error al guardar'))
+            .finally(() => { fbLoading = false; });
+    }
+
+    const gymRutina      = id  => gym.rutinas.find(r => r.id === id);
+    const gymRutinasHoy  = ()  => gym.rutinas.filter(r => r.dias.includes(new Date().getDay()));
+    const gymSesionHoy   = rid => gym.sesiones.find(s => s.fecha === hoyYMD() && s.rutinaId === rid);
+    const gymKg          = v   => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; };
+    const gymFecha       = f   => parseYMD(f).toLocaleDateString('es-AR', {weekday:'short', day:'numeric', month:'short'});
+
+    // Qué rutina abrir: la que toca hoy; si no hay días cargados, la que sigue
+    // a la última que se hizo (A → B → C → A).
+    function gymRutinaSugerida() {
+        const hoy = gymRutinasHoy();
+        if (hoy.length) return hoy[0].id;
+        const ult = [...gym.sesiones].sort((a,b) => a.fecha < b.fecha ? 1 : -1)[0];
+        const i = ult ? gym.rutinas.findIndex(r => r.id === ult.rutinaId) : -1;
+        return gym.rutinas.length ? gym.rutinas[(i + 1) % gym.rutinas.length].id : null;
+    }
+    // El peso de la última vez que se hizo ese ejercicio, sin contar hoy.
+    function gymPesoAnterior(ejId) {
+        const h = hoyYMD();
+        const s = gym.sesiones.filter(s => s.fecha < h && s.pesos['e'+ejId] != null)
+                              .sort((a,b) => a.fecha < b.fecha ? 1 : -1)[0];
+        return s ? s.pesos['e'+ejId] : null;
+    }
+    function gymSesionDeHoyCreando(r) {
+        let s = gymSesionHoy(r.id);
+        if (!s) { s = { id: Date.now(), fecha: hoyYMD(), rutinaId: r.id, rutina: r.nombre, hechos: [], pesos: {} }; gym.sesiones.push(s); }
+        return s;
+    }
+
+    function openGymModal(rid) {
+        gymRutinaSel = (rid && gymRutina(rid)) ? rid : gymRutinaSugerida();
+        gymEditando = false;
+        renderGym();
+        document.getElementById('gymModal').classList.add('show');
+    }
+    function closeGymModal() {
+        document.getElementById('gymModal').classList.remove('show');
+        if (document.getElementById('tab-dia')?.classList.contains('active')) renderDayPlan();
+    }
+    function gymElegir(rid)  { gymRutinaSel = rid; gymEditando = false; renderGym(); }
+    function gymEditar()     { gymEditando = !gymEditando; renderGym(); }
+
+    // ── Entrenar ──
+    function gymMarcar(ejId) {
+        const r = gymRutina(gymRutinaSel); if (!r) return;
+        const s = gymSesionDeHoyCreando(r);
+        const ej = r.ejercicios.find(e => e.id === ejId);
+        if (s.hechos.includes(ejId)) s.hechos = s.hechos.filter(x => x !== ejId);
+        else {
+            s.hechos.push(ejId);
+            if (ej && ej.peso != null && s.pesos['e'+ejId] == null) s.pesos['e'+ejId] = ej.peso;
+        }
+        saveGym(); renderGym();
+    }
+    function gymPeso(ejId, valor) {
+        const r = gymRutina(gymRutinaSel); if (!r) return;
+        const ej = r.ejercicios.find(e => e.id === ejId); if (!ej) return;
+        const kg = gymKg(valor);
+        ej.peso = kg;
+        const s = gymSesionDeHoyCreando(r);
+        if (kg == null) delete s.pesos['e'+ejId]; else s.pesos['e'+ejId] = kg;
+        saveGym(); renderGym();
+    }
+
+    // ── Armar rutinas ──
+    function gymNuevaRutina() {
+        const nombre = (prompt('Nombre de la rutina (ej: Día A — Pecho y tríceps)') || '').trim();
+        if (!nombre) return;
+        const r = { id: Date.now(), nombre, dias: [], ejercicios: [] };
+        gym.rutinas.push(r);
+        gymRutinaSel = r.id; gymEditando = true;
+        saveGym(); renderGym();
+    }
+    function gymRenombrar(valor) {
+        const r = gymRutina(gymRutinaSel); const v = valor.trim();
+        if (!r || !v) return renderGym();
+        r.nombre = v; saveGym(); renderGym();
+    }
+    function gymBorrarRutina() {
+        const r = gymRutina(gymRutinaSel); if (!r) return;
+        if (!confirm(`¿Borrar la rutina "${r.nombre}"? El historial de lo que ya hiciste se conserva.`)) return;
+        gym.rutinas = gym.rutinas.filter(x => x.id !== r.id);
+        gymRutinaSel = gym.rutinas[0]?.id || null; gymEditando = false;
+        saveGym(); renderGym();
+    }
+    function gymDia(d) {
+        const r = gymRutina(gymRutinaSel); if (!r) return;
+        r.dias = r.dias.includes(d) ? r.dias.filter(x => x !== d) : [...r.dias, d].sort();
+        saveGym(); renderGym();
+    }
+    function gymAgregarEj() {
+        const r = gymRutina(gymRutinaSel); if (!r) return;
+        const val = id => document.getElementById(id).value.trim();
+        const nombre = val('gymNuevoNombre');
+        if (!nombre) { document.getElementById('gymNuevoNombre').focus(); return; }
+        r.ejercicios.push({ id: Date.now(), nombre, series: parseInt(val('gymNuevoSeries')) || null,
+                            reps: val('gymNuevoReps') || '', peso: gymKg(val('gymNuevoPeso')) });
+        saveGym(); renderGym();
+        document.getElementById('gymNuevoNombre')?.focus();
+    }
+    function gymEditEj(ejId, campo, valor) {
+        const r = gymRutina(gymRutinaSel); const ej = r?.ejercicios.find(e => e.id === ejId); if (!ej) return;
+        if (campo === 'nombre') { if (!valor.trim()) return renderGym(); ej.nombre = valor.trim(); }
+        if (campo === 'series') ej.series = parseInt(valor) || null;
+        if (campo === 'reps')   ej.reps = valor.trim();
+        saveGym();
+    }
+    function gymSubirEj(ejId) {
+        const r = gymRutina(gymRutinaSel); const i = r ? r.ejercicios.findIndex(e => e.id === ejId) : -1;
+        if (i < 1) return;
+        [r.ejercicios[i-1], r.ejercicios[i]] = [r.ejercicios[i], r.ejercicios[i-1]];
+        saveGym(); renderGym();
+    }
+    function gymBorrarEj(ejId) {
+        const r = gymRutina(gymRutinaSel); if (!r) return;
+        const ej = r.ejercicios.find(e => e.id === ejId);
+        if (!ej || !confirm(`¿Sacar "${ej.nombre}" de la rutina?`)) return;
+        r.ejercicios = r.ejercicios.filter(e => e.id !== ejId);
+        saveGym(); renderGym();
+    }
+
+    // ── Peso corporal ──
+    function gymAnotarPeso() {
+        const kg = gymKg(document.getElementById('gymPesoCorporal').value);
+        if (kg == null || kg < 30 || kg > 250) { alert('Escribí tu peso en kg, por ejemplo 78,5'); return; }
+        const h = hoyYMD();
+        gym.peso = gym.peso.filter(p => p.fecha !== h);
+        gym.peso.push({ fecha: h, kg });
+        gym.peso.sort((a,b) => a.fecha < b.fecha ? -1 : 1);
+        saveGym(); renderGym();
+    }
+
+    function renderGym() {
+        const el = document.getElementById('gymView'); if (!el) return;
+        const r = gymRutina(gymRutinaSel) || null;
+        const hoyDia = new Date().getDay();
+
+        const chips = gym.rutinas.map(x =>
+            `<button class="gym-chip ${x.id===gymRutinaSel?'active':''} ${x.dias.includes(hoyDia)?'toca':''}"
+                     onclick="gymElegir(${x.id})">${escHtml(x.nombre)}</button>`).join('')
+            + `<button class="gym-chip" onclick="gymNuevaRutina()">+ Rutina</button>`;
+
+        let cuerpo = '';
+        if (!r) {
+            cuerpo = `<div class="gym-vacio">Todavía no hay rutinas. Tocá <strong>+ Rutina</strong> y armá la primera
+                      (por ejemplo "Día A — Pecho y tríceps"), después le cargás los ejercicios.</div>`;
+        } else if (gymEditando) {
+            const dias = [1,2,3,4,5,6,0].map(d =>
+                `<button class="gym-dia ${r.dias.includes(d)?'on':''}" onclick="gymDia(${d})">${NOMBRE_DIA[d]}</button>`).join('');
+            const filas = r.ejercicios.map((e,i) => `
+                <div class="gym-ej-edit">
+                    <input value="${escHtml(e.nombre)}" onchange="gymEditEj(${e.id},'nombre',this.value)">
+                    <input type="number" inputmode="numeric" value="${e.series ?? ''}" placeholder="ser" title="Series" onchange="gymEditEj(${e.id},'series',this.value)">
+                    <input value="${escHtml(e.reps || '')}" placeholder="reps" title="Repeticiones" onchange="gymEditEj(${e.id},'reps',this.value)">
+                    <button class="gym-mini" onclick="gymSubirEj(${e.id})" title="Subir" ${i?'':'disabled'}>▲</button>
+                    <button class="gym-mini del" onclick="gymBorrarEj(${e.id})" title="Sacar">✕</button>
+                </div>`).join('');
+            cuerpo = `
+                <input value="${escHtml(r.nombre)}" onchange="gymRenombrar(this.value)" title="Nombre de la rutina">
+                <div class="gym-sub">Qué días toca (aparece arriba de Mi Día)</div>
+                <div class="gym-dias">${dias}</div>
+                <div class="gym-sub">Ejercicio · series · repeticiones</div>
+                ${filas || '<div class="gym-vacio">Sin ejercicios todavía.</div>'}
+                <div class="gym-add">
+                    <input id="gymNuevoNombre" placeholder="Ejercicio" onkeydown="if(event.key==='Enter')gymAgregarEj()">
+                    <input id="gymNuevoSeries" type="number" inputmode="numeric" placeholder="ser" value="4">
+                    <input id="gymNuevoReps" placeholder="reps" value="10">
+                    <input id="gymNuevoPeso" inputmode="decimal" placeholder="kg">
+                </div>
+                <div class="modal-btns" style="margin-top:8px;">
+                    <button class="btn-save" onclick="gymAgregarEj()">+ Agregar ejercicio</button>
+                </div>
+                <div class="gym-sub" style="margin-top:12px;">
+                    <button class="gym-link del" onclick="gymBorrarRutina()">Borrar rutina</button>
+                    <button class="gym-link" onclick="gymEditar()">✓ Listo</button>
+                </div>`;
+        } else {
+            const s = gymSesionHoy(r.id);
+            const hechos = s ? s.hechos : [];
+            const n = r.ejercicios.filter(e => hechos.includes(e.id)).length;
+            const toca = r.dias.length ? 'Toca ' + [1,2,3,4,5,6,0].filter(d => r.dias.includes(d)).map(d => NOMBRE_DIA[d]).join(' · ') : 'Sin días fijos';
+            const filas = r.ejercicios.map(e => {
+                const hecho = hechos.includes(e.id);
+                const ant = gymPesoAnterior(e.id);
+                const meta = [];
+                if (e.series || e.reps) meta.push(`${e.series || '?'} × ${escHtml(e.reps || '?')}`);
+                if (ant != null) meta.push(`la vez pasada ${ant} kg` + (e.peso != null && e.peso > ant ? ' ↑' : ''));
+                return `<div class="gym-ej ${hecho?'hecho':''}">
+                    <button class="day-check-btn" onclick="gymMarcar(${e.id})" title="Hecho">${hecho?'✓':''}</button>
+                    <div class="gym-ej-main">
+                        <div class="gym-ej-nombre">${escHtml(e.nombre)}</div>
+                        ${meta.length ? `<div class="gym-ej-meta">${meta.join(' · ')}</div>` : ''}
+                    </div>
+                    <label class="gym-kg"><input inputmode="decimal" value="${e.peso ?? ''}" placeholder="—"
+                           onchange="gymPeso(${e.id},this.value)">kg</label>
+                </div>`;
+            }).join('');
+            cuerpo = `
+                <div class="gym-sub"><span>${toca} · hoy ${n}/${r.ejercicios.length}</span>
+                    <button class="gym-link" onclick="gymEditar()">✏️ Editar</button></div>
+                ${filas || '<div class="gym-vacio">Esta rutina no tiene ejercicios. Tocá <strong>✏️ Editar</strong> para cargarlos.</div>'}`;
+        }
+
+        // Peso corporal, contra la meta de 74 kg
+        const ultP = gym.peso[gym.peso.length - 1];
+        const falta = ultP ? Math.round((ultP.kg - GYM_META_KG) * 10) / 10 : null;
+        const pesoTxt = !ultP ? `Meta: ${GYM_META_KG} kg. Anotá tu peso para ver cuánto falta.`
+            : falta > 0 ? `${ultP.kg} kg (${gymFecha(ultP.fecha)}) · faltan <strong>${falta} kg</strong> para ${GYM_META_KG}`
+            : `${ultP.kg} kg · <strong>meta de ${GYM_META_KG} kg cumplida</strong> 🎉`;
+        const pesos = gym.peso.slice(-5).reverse().map((p,i,a) => {
+            const prev = a[i+1]; const d = prev ? Math.round((p.kg - prev.kg) * 10) / 10 : null;
+            return `<div class="gym-linea"><span>${gymFecha(p.fecha)}</span><span>${p.kg} kg${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span></div>`;
+        }).join('');
+
+        // Historial: las últimas idas y cuántas en los últimos 7 días
+        const conAlgo = gym.sesiones.filter(s => s.hechos.length).sort((a,b) => a.fecha < b.fecha ? 1 : -1);
+        const hace7 = new Date(); hace7.setDate(hace7.getDate() - 6);
+        const semana = new Set(conAlgo.filter(s => s.fecha >= ymd(hace7)).map(s => s.fecha)).size;
+        const hist = conAlgo.slice(0, 8).map(s => {
+            const rr = gymRutina(s.rutinaId);
+            return `<div class="gym-linea"><span>${gymFecha(s.fecha)} · ${escHtml(rr ? rr.nombre : s.rutina)}</span>
+                    <span>${s.hechos.length}${rr ? '/' + rr.ejercicios.length : ''} ejercicios</span></div>`;
+        }).join('');
+
+        el.innerHTML = `
+            <div class="gym-rutinas">${chips}</div>
+            ${cuerpo}
+            <div class="gym-section">
+                <h4>⚖️ Peso corporal</h4>
+                <div class="gym-sub"><span>${pesoTxt}</span></div>
+                <div class="gym-fila">
+                    <input id="gymPesoCorporal" inputmode="decimal" placeholder="Peso de hoy (kg)"
+                           onkeydown="if(event.key==='Enter')gymAnotarPeso()">
+                    <button onclick="gymAnotarPeso()">Anotar</button>
+                </div>
+                ${pesos}
+            </div>
+            <div class="gym-section">
+                <h4>📅 Últimas idas · ${semana} en los últimos 7 días</h4>
+                ${hist || '<div class="gym-vacio">Cuando marques ejercicios, acá queda el registro.</div>'}
+            </div>`;
+    }
+
+    // Aviso arriba de Mi Día los días que toca una rutina.
+    function gymHoyHTML() {
+        return gymRutinasHoy().map(r => {
+            const s = gymSesionHoy(r.id);
+            const n = s ? r.ejercicios.filter(e => s.hechos.includes(e.id)).length : 0;
+            const ok = r.ejercicios.length && n >= r.ejercicios.length;
+            return `<div class="gym-hoy ${ok?'ok':''}" onclick="openGymModal(${r.id})">
+                🏋️ <strong>${ok ? 'Gimnasio hecho' : 'Hoy toca gimnasio'}</strong> · ${escHtml(r.nombre)}
+                <span>${n}/${r.ejercicios.length}</span></div>`;
+        }).join('');
+    }
+
     // ── Objetivos y metas personales ────────────────────────────────────────
     function escHtml(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -2792,7 +3237,7 @@
                                 title="${listo ? 'Tocá para desmarcar' : 'Marcar como hecho hoy'}">
                             <span class="obj-habito-check">${listo ? '✓' : ''}</span>
                             <span class="obj-habito-txt">${escHtml(o.text)}</span>
-                            ${racha > 1 ? `<span class="obj-racha">${racha}d</span>` : ''}
+                            ${racha > 0 ? `<span class="obj-racha">${racha}d</span>` : ''}
                         </button>`;
                     }).join('')}
                 </div>
@@ -2898,6 +3343,7 @@
     document.getElementById('editAmbito').addEventListener('change', () => editLlenarAreas(''));
     document.getElementById('objetivosModal').addEventListener('click', e => { if(e.target===document.getElementById('objetivosModal')) closeObjetivosModal(); });
     document.getElementById('comprasModal').addEventListener('click',   e => { if(e.target===document.getElementById('comprasModal'))   closeComprasModal(); });
+    document.getElementById('gymModal').addEventListener('click',       e => { if(e.target===document.getElementById('gymModal'))       closeGymModal(); });
     document.getElementById('waModal').addEventListener('click',        e => { if(e.target===document.getElementById('waModal'))        closeWaModal(); });
     document.getElementById('projectModal').addEventListener('click', e => { if(e.target===document.getElementById('projectModal')) closeProjectModal(); });
     document.getElementById('taskModal').addEventListener('click',    e => { if(e.target===document.getElementById('taskModal'))    pmCloseTaskModal(); });
@@ -3072,7 +3518,7 @@
         db.ref('proyectos').set(pmData)
             .then(()  => setSyncStatus('connected','Sincronizado'))
             .catch(() => setSyncStatus('error','Error al guardar'))
-            .finally(() => { fbLoading = false; });
+            .finally(() => { fbLoading = false; pmRefresh(); });
     }
 
     function pmNormalizar() {
@@ -3098,7 +3544,8 @@
     function pmRefresh() {
         pmHeaderStatsRender(); checkVencidas();
         const act = document.querySelector('.tab-content.active')?.id;
-        if      (act === 'tab-proyectos')  { renderProjects(); renderFilters(); }
+        if      (act === 'tab-dia')        renderDayPlan();
+        else if (act === 'tab-proyectos')  { renderProjects(); renderFilters(); }
         else if (act === 'tab-calendario') renderCalendario();
         else if (act === 'tab-metricas')   { renderMetricas(); renderWeeklyReview(); }
         else if (act === 'tab-reuniones')  renderReunionesTab();
@@ -3689,7 +4136,7 @@
                 const sol = vin ? `<span class="sun-badge" title="${vin.completed?'Completada en Mi Día':'En tu lista de tareas'}">${vin.completed?'☀️✅':'☀️'}</span>` : '';
                 return `<div class="t-linea ${st.class}" onclick="editPmTask('${p.id}','${t.id}')">
                     <span class="t-estado" style="background:${STATE_COLORS[t.state]||'var(--text-3)'};">${STATE_LABELS[t.state]||t.state}</span>
-                    <span class="t-nombre">${esc(t.title)}</span>${ejecutorBadge(t)}${sol}${badgeHTML(t)}</div>`;
+                    <span class="t-nombre">${esc(t.title)}</span>${ejecutorBadge(t)}${esRecurrente(t)?`<span class="rep-badge" title="Se repite ${textoRepeticion(t)}">🔁 ${textoRepeticion(t)}</span>`:''}${sol}${badgeHTML(t)}</div>`;
             }).join('');
             return `<div class="proy-card ${venc?'con-atraso':''}">
                 <div class="proy-card-head">
@@ -3865,6 +4312,23 @@
     }
     function backToProjects() { currentProjectId = null; goTab('tab-proyectos'); }
 
+    // Los días elegidos viven acá mientras el modal está abierto
+    let repDiasSel = [];
+    function pintarRepDias() {
+        const box = document.getElementById('repDias'); if (!box) return;
+        box.innerHTML = [1,2,3,4,5,6,0].map(d =>
+            `<button type="button" class="rep-dia ${repDiasSel.includes(d)?'on':''}"
+                     onclick="toggleRepDia(${d})">${NOMBRE_DIA[d]}</button>`).join('');
+        const h = document.getElementById('repHint');
+        if (h) h.textContent = repDiasSel.length
+            ? 'Se repite ' + textoRepeticion({repetir:{dias:repDiasSel}}) + '. Al marcarla hecha vuelve el próximo día que toca.'
+            : 'No se repite: es una tarea que se hace una vez.';
+    }
+    function toggleRepDia(d) {
+        repDiasSel = repDiasSel.includes(d) ? repDiasSel.filter(x=>x!==d) : repDiasSel.concat(d);
+        pintarRepDias();
+    }
+
     // ── Modal Tarea de proyecto ───────────────────────────────────────────
     function pmCloseTaskModal() {
         document.getElementById('taskModal').classList.remove('show');
@@ -3887,6 +4351,7 @@
         const p = (pmData.projects||[]).find(x=>x.id===currentProjectId);
         llenarSelectResponsables('taskResponsable', p ? p.responsable : '');
         llenarSelectEjecutor('');
+        repDiasSel = []; pintarRepDias();
         renderMiDiaBox();
         document.getElementById('taskModal').classList.add('show');
     }
@@ -3901,12 +4366,97 @@
         document.getElementById('taskDueDate').value = t.dueDate || '';
         llenarSelectResponsables('taskResponsable', t.responsable || '');
         llenarSelectEjecutor(t.ejecutor || '');
+        repDiasSel = (t.repetir && t.repetir.dias) ? [...t.repetir.dias] : [];
+        pintarRepDias();
         document.getElementById('deleteTaskBtn').style.display = 'block';
         renderMiDiaBox();
         document.getElementById('taskModal').classList.add('show');
     }
     function registrarOperarioSiEsNuevo(n) {
         if (n && !pmData.team.operarios.includes(n)) pmData.team.operarios.push(n);
+    }
+    // El espejo en `tasks` es lo que dibuja Mi Día. Si cambia la tarea del proyecto
+    // y no se actualiza acá, Mi Día sigue mostrando el título viejo.
+    function sincronizarEspejo(t, p) {
+        const esp = tasks.find(x => x && x.proyectoTaskId === t.id);
+        if (!esp) return false;
+        esp.title = t.title;
+        esp.date  = t.dueDate || null;
+        if (p) { esp.proyecto = p.name; esp.proyectoId = p.id; esp.area = p.area || esp.area; }
+        if (t.state === 'hecho' && !esp.completed) { esp.completed = true; esp.completedAt = Date.now(); }
+        return true;
+    }
+    function borrarEspejo(taskId) {
+        const n = tasks.length;
+        tasks = tasks.filter(x => !(x && x.proyectoTaskId === taskId));
+        return tasks.length !== n;
+    }
+    // ── Arrastre: lo que no se hizo pasa al día siguiente ─────────────────
+    // Solo las de Marcelo. Las de Gustavo y Sofía se hablan en la reunión, así que
+    // conservan su fecha: ahí el atraso es el dato que hay que ver.
+    // `arrastres` cuenta cuántas veces se corrió, para que el atraso no se esconda.
+    function arrastrarPendientes() {
+        const hoy = hoyYMD();
+        let n = 0;
+        (pmData.projects || []).forEach(p => (p.tasks || []).forEach(t => {
+            if (!t.dueDate || t.state === 'hecho') return;
+            if (t.responsable && t.responsable !== DUENIO) return;
+            if (t.dueDate >= hoy) return;
+            if (esRecurrente(t)) return;          // las recurrentes ya tienen su propia fecha
+            t.dueDate = hoy;
+            t.arrastres = (t.arrastres || 0) + 1;
+            n++;
+        }));
+        let m = 0;
+        tasks.forEach(e => {
+            if (!e || e.completed || !e.enDia) return;
+            if (e.proyectoTaskId) {
+                const pt = tareaDeProyectoDe(e);
+                if (pt && pt.dueDate) { e.date = pt.dueDate; }
+                return;
+            }
+            if (e.date && e.date < hoy) { e.date = hoy; e.arrastres = (e.arrastres || 0) + 1; m++; }
+        });
+        if (n) savePmData();
+        if (m) saveTasks();
+        if (n || m) { pmRefresh(); render(); }
+        return n + m;
+    }
+    // ── Lo que vence hoy entra solo a Mi Día ──────────────────────────────
+    // Marcelo trabaja mirando Mi Día: lo que no está ahí, no existe. Antes había que
+    // acordarse de agregarlo a mano y una tarea con fecha de hoy podía pasar de largo.
+    // `diaCargado` guarda el día en que se ofreció, así que si la saca con la ✕ no vuelve.
+    function cargarDeHoyEnMiDia() {
+        const hoy = hoyYMD();
+        let cambios = 0, tocarTasks = false;
+        tasks.forEach(e => {
+            if (!e || e.completed || e.enDia || e.proyectoTaskId) return;
+            if (e.date !== hoy || e.diaCargado === hoy) return;
+            e.enDia = true; e.diaCargado = hoy; e.dayOrder = 999; cambios++; tocarTasks = true;
+        });
+        (pmData.projects || []).forEach(p => (p.tasks || []).forEach(t => {
+            if (!t.dueDate || t.dueDate !== hoy || t.state === 'hecho') return;
+            if (t.responsable && t.responsable !== DUENIO) return;
+            const esp = tasks.find(x => x && x.proyectoTaskId === t.id);
+            if (esp) {
+                if (esp.enDia || esp.completed || esp.diaCargado === hoy) return;
+                esp.enDia = true; esp.diaCargado = hoy; esp.date = t.dueDate;
+                esp.title = t.title; esp.dayOrder = 999;
+            } else {
+                tasks.push({id: Date.now() + Math.floor(Math.random()*1000), title: t.title,
+                    urgency: 'urgent', importance: 'importante', date: t.dueDate, time: null,
+                    alertBefore: 0, alerted: false, completed: false, createdAt: Date.now(),
+                    completedAt: null, daySize: null, enDia: true, diaCargado: hoy, dayOrder: 999,
+                    area: p.area || null, ambito: p.type || 'empresa', origen: 'proyectos',
+                    proyecto: p.name, proyectoId: p.id, proyectoTaskId: t.id});
+            }
+            cambios++; tocarTasks = true;
+        }));
+        if (tocarTasks) {
+            renumerarDia(tareasDelDia());
+            saveTasks(); render();
+        }
+        return cambios;
     }
     function pmSaveTask() {
         const title = document.getElementById('taskTitle').value.trim();
@@ -3921,6 +4471,8 @@
             t.dueDate = document.getElementById('taskDueDate').value;
             t.responsable = document.getElementById('taskResponsable').value;
             t.ejecutor = ejecutor;
+            if (repDiasSel.length) t.repetir = {dias: [...repDiasSel]}; else delete t.repetir;
+            if (sincronizarEspejo(t, p)) saveTasks();
         } else {
             const pid = document.getElementById('taskProject').value;
             if (!pid) return alert('Seleccioná un proyecto');
@@ -3930,7 +4482,8 @@
             p.tasks.push({id:nuevoId, title,
                 state: document.getElementById('taskState').value || 'backlog',
                 dueDate: document.getElementById('taskDueDate').value || '',
-                responsable: document.getElementById('taskResponsable').value || '', ejecutor});
+                responsable: document.getElementById('taskResponsable').value || '', ejecutor,
+                ...(repDiasSel.length ? {repetir:{dias:[...repDiasSel]}} : {})});
             const chk = document.getElementById('taskEnDia');
             if (chk && chk.checked) { savePmData(); enviarAMiDia(pid, nuevoId); }
         }
@@ -3941,6 +4494,7 @@
         const t = (p.tasks||[]).find(x=>x.id===editingTaskId);
         if (!confirm(`¿Borrar la tarea "${t?t.title:''}"?`)) return;
         p.tasks = (p.tasks||[]).filter(x=>x.id!==editingTaskId);
+        if (borrarEspejo(editingTaskId)) saveTasks();
         savePmData(); pmCloseTaskModal(); pmRefresh();
     }
 
@@ -4604,7 +5158,8 @@
             pmNormalizar();
             localStorage.setItem('vph_pm_v1', JSON.stringify(pmData));
         }
-        if (!pmPrimeraCarga) { pmPrimeraCarga = true; pmNormalizar(); }
+        if (!pmPrimeraCarga) { pmPrimeraCarga = true; pmNormalizar();
+            setTimeout(() => { try { arrastrarPendientes(); cargarRecurrentesDeHoy(); cargarDeHoyEnMiDia(); } catch(e) { console.warn(e); } }, 1500); }
         pmRefresh();
     }, err => { console.warn('Proyectos:', err.message); pmNormalizar(); });
 
@@ -4616,6 +5171,7 @@
 
     initTabs();
     render();
+    setTimeout(() => { try { arrastrarPendientes(); cargarRecurrentesDeHoy(); cargarDeHoyEnMiDia(); } catch(e) { console.warn(e); } }, 2500);
     checkVencidas();
     requestNotifPermission();
     checkNotifications();
