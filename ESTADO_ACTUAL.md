@@ -235,6 +235,14 @@ automático con las variables redefinidas en prefers-color-scheme: dark.
   se ven solo en Tareas (clase en-tab-tareas en el body). Las pestañas de arriba ya no se usan.
   El menú se oculta con el botón junto al título o Ctrl+B (clase lateral-oculta, guardada en
   localStorage vph_lateral_oculta).
+- **Herramientas como páginas en la compu (10/10, a Marcelo no le gustan las ventanas encimadas):**
+  Claude, Objetivos, Compras, Gimnasio, Alimentación y Equipo (modales con clase `herramienta`) se
+  muestran al lado del menú ocupando el área de contenido, sin fondo oscuro ni ventana flotante, con
+  título grande. Se abre una sola por vez y el menú la marca (data-herramienta). Ir a otra sección la
+  cierra (goTab → cerrarHerramientas), y al cerrarla vuelve la sección en la que estaba (MutationObserver
+  vigilarHerramientas → marcarHerramienta). Los formularios chicos (nueva tarea, editar) siguen como
+  ventana. En el celular no cambió: siguen siendo hojas que suben. Respaldo:
+  _respaldo/app_2026-10-10_antes_herramientas_pagina.html
 - Respaldo antes de la barra lateral: _respaldo/app_2026-10-10_antes_diseno_pc.html
 - marcarPestania(id) sincroniza las dos barras y el título; goTab y showPmOnlyTab la llaman.
 - Los campos van a 16 px en el celular: con menos, iOS agranda la pantalla al tocarlos.

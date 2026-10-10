@@ -1607,6 +1607,16 @@
             .day-progress-info h3 { display:none; }   /* ya está el título grande */
             #toast { left:calc(50% + var(--lateral) / 2); bottom:28px; }
             .modal-box { max-width:520px; }
+            /* Herramientas (gimnasio, alimentación, compras, objetivos, equipo,
+               Claude): se abren como una página más al lado del menú, no como
+               ventana encima. Los formularios chicos siguen siendo ventanas. */
+            .modal.herramienta { left:var(--lateral); width:auto; right:0; background:var(--bg); backdrop-filter:none; -webkit-backdrop-filter:none;
+                                 align-items:stretch; justify-content:stretch; overflow-y:auto; z-index:850; }
+            body.lateral-oculta .modal.herramienta { left:0; }
+            .modal.herramienta .modal-box { width:100%; max-width:none !important; max-height:none; min-height:100%; overflow:visible;
+                                            border-radius:0; box-shadow:none; padding:30px max(40px, calc((100% - 760px) / 2)) 70px; }
+            .modal.herramienta .modal-box > h3 { font-size:34px; font-weight:700; letter-spacing:-0.03em; line-height:1.1; margin:22px 0 20px; }
+            .modal.herramienta .modal-box > .modal-btns:last-child { max-width:320px; margin-left:auto; }
         }
         @media (min-width:769px) and (max-width:1100px) {
             .container { padding:24px 28px 60px; }
@@ -1695,12 +1705,12 @@
     <button class="lateral-item" data-lateral="tab-calendario" onclick="goTab('tab-calendario')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.8h17M8 3.2v3.6M16 3.2v3.6"/></svg>Calendario</button>
     <button class="lateral-item" data-lateral="tab-metricas" onclick="goTab('tab-metricas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-10M3 20.5h18"/></svg>Métricas</button>
     <div class="lateral-tit">Herramientas</div>
-    <button class="lateral-item" onclick="abrirClaude()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.3 14.8l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Preguntarle a Claude</button>
-    <button class="lateral-item" onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Objetivos y metas</button>
-    <button class="lateral-item" onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg>Compras del súper</button>
-    <button class="lateral-item" onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg>Gimnasio</button>
-    <button class="lateral-item" onclick="abrirComidas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7.5M4.5 3v4.8a2.5 2.5 0 0 0 5 0V3M7 10.5V21"/><path d="M17 3c-1.9 0-3.2 2.3-3.2 5.3 0 2.4 1.2 3.9 3.2 4.1V21"/></svg>Alimentación</button>
-    <button class="lateral-item" onclick="openTeamModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.3-5.6 6.5-5.6s5.8 2 6.5 5.6"/></svg>Equipo</button>
+    <button class="lateral-item" data-herramienta="claudeModal" onclick="abrirClaude()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.3 14.8l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Preguntarle a Claude</button>
+    <button class="lateral-item" data-herramienta="objetivosModal" onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Objetivos y metas</button>
+    <button class="lateral-item" data-herramienta="comprasModal" onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg>Compras del súper</button>
+    <button class="lateral-item" data-herramienta="gymModal" onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg>Gimnasio</button>
+    <button class="lateral-item" data-herramienta="comidaModal" onclick="abrirComidas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7.5M4.5 3v4.8a2.5 2.5 0 0 0 5 0V3M7 10.5V21"/><path d="M17 3c-1.9 0-3.2 2.3-3.2 5.3 0 2.4 1.2 3.9 3.2 4.1V21"/></svg>Alimentación</button>
+    <button class="lateral-item" data-herramienta="teamModal" onclick="openTeamModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.3-5.6 6.5-5.6s5.8 2 6.5 5.6"/></svg>Equipo</button>
     <button class="lateral-item" onclick="toggleNotificaciones()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>Avisos de vencidas</button>
     <div class="lateral-pie"><button class="lateral-item salir" onclick="cerrarSesion()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h9"/></svg>Cerrar sesión</button></div>
 </nav>
@@ -1941,7 +1951,7 @@
 </div>
 
 <!-- Modal: Objetivos y metas -->
-<div id="objetivosModal" class="modal">
+<div id="objetivosModal" class="modal herramienta">
     <div class="modal-box pm-modal-box">
         <h3>🎯 Mis Objetivos y Metas</h3>
         <p style="font-size:12px;color:var(--text-3);margin-bottom:14px;">
@@ -1961,7 +1971,7 @@
 </div>
 
 <!-- Modal: Compras supermercado -->
-<div id="comprasModal" class="modal">
+<div id="comprasModal" class="modal herramienta">
     <div class="modal-box pm-modal-box">
         <h3>🛒 Compras Supermercado</h3>
         <div class="shopping-add">
@@ -1986,7 +1996,7 @@
 </div>
 
 <!-- Modal: Preguntarle a Claude (abre la app de Claude con el pedido; usa el conector) -->
-<div id="claudeModal" class="modal">
+<div id="claudeModal" class="modal herramienta">
     <div class="modal-box claude-box">
         <h3>✨ Preguntarle a Claude</h3>
         <p class="claude-sub">Se abre Claude con tu pedido. Lee y carga directo en Mis Gestiones con el conector.</p>
@@ -2008,7 +2018,7 @@
 </div>
 
 <!-- Modal: Alimentación (registro del día, recetas y plan) -->
-<div id="comidaModal" class="modal">
+<div id="comidaModal" class="modal herramienta">
     <div class="modal-box nut-box">
         <h3>🍽️ Alimentación</h3>
         <div id="comidaView"></div>
@@ -2019,7 +2029,7 @@
 </div>
 
 <!-- Modal: Gimnasio -->
-<div id="gymModal" class="modal">
+<div id="gymModal" class="modal herramienta">
     <div class="modal-box pm-modal-box">
         <h3>🏋️ Gimnasio</h3>
         <div id="gymView"></div>
@@ -2216,7 +2226,7 @@
 </div>
 
 <!-- Modal: Equipo -->
-<div id="teamModal" class="modal">
+<div id="teamModal" class="modal herramienta">
     <div class="modal-box pm-modal-box" style="max-width:440px;">
         <h3>👥 Equipo</h3>
         <div class="team-hint">Arrastrá ⠿ para reordenar. Clic en un nombre para renombrar — se
@@ -4866,7 +4876,34 @@
     document.getElementById('tabBar')?.addEventListener('scroll', sombrasBarra, { passive: true });
     window.addEventListener('resize', sombrasBarra);
 
+    // ── Herramientas como páginas (computadora) ──
+    // En la compu, gimnasio, alimentación, compras, objetivos, equipo y Claude
+    // se ven como una página al lado del menú (CSS .modal.herramienta): se
+    // abre una sola por vez, el menú marca cuál está abierta y al ir a otra
+    // sección se cierra. En el celular siguen siendo hojas que suben.
+    const HERRAMIENTAS = { claudeModal: cerrarClaude, objetivosModal: closeObjetivosModal, comprasModal: closeComprasModal,
+                           gymModal: closeGymModal, comidaModal: cerrarComidas, teamModal: closeTeamModal };
+    const herramientaAbierta = () => Object.keys(HERRAMIENTAS).find(id => document.getElementById(id)?.classList.contains('show'));
+    function cerrarHerramientas(salvo) {
+        Object.entries(HERRAMIENTAS).forEach(([id, cerrar]) => { if (id !== salvo && document.getElementById(id)?.classList.contains('show')) cerrar(); });
+    }
+    function marcarHerramienta() {
+        const abierta = herramientaAbierta();
+        let t = document.querySelector('.tab-content.active')?.id;
+        if (t === 'tab-proyecto-detail') t = 'tab-proyectos';
+        document.querySelectorAll('.lateral-item[data-herramienta]').forEach(b => b.classList.toggle('active', b.dataset.herramienta === abierta));
+        document.querySelectorAll('.lateral-item[data-lateral]').forEach(b => b.classList.toggle('active', !abierta && b.dataset.lateral === t));
+    }
+    const vigilarHerramientas = new MutationObserver(cambios => {
+        cambios.forEach(({ target: el }) => {
+            if (el.classList.contains('show') && matchMedia('(min-width:769px)').matches) { cerrarHerramientas(el.id); el.scrollTop = 0; }
+        });
+        marcarHerramienta();
+    });
+    Object.keys(HERRAMIENTAS).forEach(id => { const el = document.getElementById(id); if (el) vigilarHerramientas.observe(el, { attributes: true, attributeFilter: ['class'] }); });
+
     function goTab(id) {
+        cerrarHerramientas();
         document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
         marcarPestania(id);
         document.getElementById(id)?.classList.add('active');
