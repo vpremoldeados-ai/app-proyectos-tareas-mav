@@ -3237,6 +3237,7 @@
             rutinas:  arr(d.rutinas).map(r => ({ ...r, dias: arr(r.dias), ejercicios: arr(r.ejercicios) })),
             sesiones: arr(d.sesiones).map(s => ({ ...s, hechos: arr(s.hechos), pesos: s.pesos || {} })),
             peso:     arr(d.peso),
+            cintura:  arr(d.cintura),
             pesosAlt: d.pesosAlt || {}
         };
     }
@@ -3461,6 +3462,17 @@
     }
 
     // ── Peso corporal ──
+    // Cintura en cm. La rutina no fija un número: la meta es que baje, así que
+    // se compara contra la primera medida.
+    function gymAnotarCintura() {
+        const cm = gymKg(document.getElementById('gymCintura').value);
+        if (cm == null || cm < 50 || cm > 200) { alert('Escribí la medida en cm, por ejemplo 96,5'); return; }
+        const h = hoyYMD();
+        gym.cintura = gym.cintura.filter(p => p.fecha !== h);
+        gym.cintura.push({ fecha: h, cm });
+        gym.cintura.sort((a,b) => a.fecha < b.fecha ? -1 : 1);
+        saveGym(); renderGym();
+    }
     function gymAnotarPeso() {
         const kg = gymKg(document.getElementById('gymPesoCorporal').value);
         if (kg == null || kg < 30 || kg > 250) { alert('Escribí tu peso en kg, por ejemplo 78,5'); return; }
@@ -3578,6 +3590,19 @@
             return `<div class="gym-linea"><span>${gymFecha(p.fecha)}</span><span>${p.kg} kg${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span></div>`;
         }).join('');
 
+        // Cintura, contra la primera medida
+        const ultC = gym.cintura[gym.cintura.length - 1], priC = gym.cintura[0];
+        const bajo = ultC && priC !== ultC ? Math.round((priC.cm - ultC.cm) * 10) / 10 : null;
+        const cinturaTxt = !ultC ? 'Medila a la altura del ombligo, de pie, con la panza relajada y siempre a la misma hora (mejor en ayunas).'
+            : bajo == null ? `${ultC.cm} cm (${gymFecha(ultC.fecha)}) · primera medida`
+            : bajo > 0 ? `${ultC.cm} cm · <strong>${bajo} cm menos</strong> desde el ${gymFecha(priC.fecha)}`
+            : bajo < 0 ? `${ultC.cm} cm · ${-bajo} cm más que el ${gymFecha(priC.fecha)}`
+            : `${ultC.cm} cm · igual que el ${gymFecha(priC.fecha)}`;
+        const cinturas = gym.cintura.slice(-5).reverse().map((p,i,a) => {
+            const prev = a[i+1]; const d = prev ? Math.round((p.cm - prev.cm) * 10) / 10 : null;
+            return `<div class="gym-linea"><span>${gymFecha(p.fecha)}</span><span>${p.cm} cm${d ? ` (${d > 0 ? '+' : ''}${d})` : ''}</span></div>`;
+        }).join('');
+
         // Historial: las últimas idas y cuántas en los últimos 7 días
         const conAlgo = gym.sesiones.filter(s => s.hechos.length).sort((a,b) => a.fecha < b.fecha ? 1 : -1);
         const hace7 = new Date(); hace7.setDate(hace7.getDate() - 6);
@@ -3600,6 +3625,16 @@
                     <button onclick="gymAnotarPeso()">Anotar</button>
                 </div>
                 ${pesos}
+            </div>
+            <div class="gym-section">
+                <h4>📏 Cintura</h4>
+                <div class="gym-sub"><span>${cinturaTxt}</span></div>
+                <div class="gym-fila">
+                    <input id="gymCintura" inputmode="decimal" placeholder="Cintura de hoy (cm)"
+                           onkeydown="if(event.key==='Enter')gymAnotarCintura()">
+                    <button onclick="gymAnotarCintura()">Anotar</button>
+                </div>
+                ${cinturas}
             </div>
             <div class="gym-section">
                 <h4>📅 Últimas idas · ${semana} en los últimos 7 días</h4>
