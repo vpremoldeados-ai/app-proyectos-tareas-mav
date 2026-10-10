@@ -1133,6 +1133,16 @@
         }
         .gym-hoy span { margin-left:auto; font-size:12px; font-weight:600; color:var(--success); }
         .gym-hoy.ok { opacity:0.7; }
+        .gym-ej.pausado { opacity:0.55; }
+        .gym-ej.pausado .day-check-btn { border-color:var(--text-3); color:var(--text-3); cursor:default; }
+        .gym-ej-nota { font-size:11.5px; color:var(--warning); margin-top:2px; }
+        .gym-ej-edit2 { display:grid; grid-template-columns:1fr 61px; gap:5px; padding:0 0 8px; border-bottom:1px solid var(--border); }
+        .modal-box .gym-ej-edit2 input { margin:0; padding:6px 8px; font-size:12px; }
+        .gym-mini.on { background:var(--warning); border-color:var(--warning); color:#fff; }
+        .gym-pautas { font-size:12px; color:var(--text-2); margin:10px 0 2px; }
+        .gym-pautas summary { cursor:pointer; color:var(--accent); font-weight:600; }
+        .gym-pautas div { white-space:pre-line; margin-top:6px; line-height:1.5; }
+        .modal-box textarea.gym-notas { width:100%; min-height:90px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2); color:var(--text); font-family:inherit; font-size:12.5px; margin-bottom:9px; resize:vertical; }
 
         /* ── Scrollbar ── */
         ::-webkit-scrollbar { width:4px; height:4px; }
@@ -2773,6 +2783,7 @@
     const gymRutina      = id  => gym.rutinas.find(r => r.id === id);
     const gymRutinasHoy  = ()  => gym.rutinas.filter(r => r.dias.includes(new Date().getDay()));
     const gymSesionHoy   = rid => gym.sesiones.find(s => s.fecha === hoyYMD() && s.rutinaId === rid);
+    const gymActivos     = r   => r.ejercicios.filter(e => !e.pausado);
     const gymKg          = v   => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; };
     const gymFecha       = f   => parseYMD(f).toLocaleDateString('es-AR', {weekday:'short', day:'numeric', month:'short'});
 
@@ -2820,6 +2831,7 @@
         else {
             s.hechos.push(ejId);
             if (ej && ej.peso != null && s.pesos['e'+ejId] == null) s.pesos['e'+ejId] = ej.peso;
+            if (ej && ej.reps) { s.reps = s.reps || {}; s.reps['e'+ejId] = (ej.series ? ej.series + ' × ' : '') + ej.reps; }
         }
         saveGym(); renderGym();
     }
@@ -2874,7 +2886,13 @@
         if (campo === 'nombre') { if (!valor.trim()) return renderGym(); ej.nombre = valor.trim(); }
         if (campo === 'series') ej.series = parseInt(valor) || null;
         if (campo === 'reps')   ej.reps = valor.trim();
+        if (campo === 'nota')   ej.nota = valor.trim();
+        if (campo === 'pausado') { ej.pausado = !ej.pausado; saveGym(); return renderGym(); }
         saveGym();
+    }
+    function gymNotas(valor) {
+        const r = gymRutina(gymRutinaSel); if (!r) return;
+        r.notas = valor.trim(); saveGym();
     }
     function gymSubirEj(ejId) {
         const r = gymRutina(gymRutinaSel); const i = r ? r.ejercicios.findIndex(e => e.id === ejId) : -1;
@@ -2925,6 +2943,10 @@
                     <input value="${escHtml(e.reps || '')}" placeholder="reps" title="Repeticiones" onchange="gymEditEj(${e.id},'reps',this.value)">
                     <button class="gym-mini" onclick="gymSubirEj(${e.id})" title="Subir" ${i?'':'disabled'}>▲</button>
                     <button class="gym-mini del" onclick="gymBorrarEj(${e.id})" title="Sacar">✕</button>
+                </div>
+                <div class="gym-ej-edit2">
+                    <input value="${escHtml(e.nota || '')}" placeholder="Nota (ej: por mancuerna)" onchange="gymEditEj(${e.id},'nota',this.value)">
+                    <button class="gym-mini ${e.pausado?'on':''}" onclick="gymEditEj(${e.id},'pausado')" title="Suspenderlo sin borrarlo">${e.pausado?'▶ Volver':'⏸ Pausa'}</button>
                 </div>`).join('');
             cuerpo = `
                 <input value="${escHtml(r.nombre)}" onchange="gymRenombrar(this.value)" title="Nombre de la rutina">
@@ -2932,6 +2954,8 @@
                 <div class="gym-dias">${dias}</div>
                 <div class="gym-sub">Ejercicio · series · repeticiones</div>
                 ${filas || '<div class="gym-vacio">Sin ejercicios todavía.</div>'}
+                <div class="gym-sub" style="margin-top:10px;">Pautas de la rutina</div>
+                <textarea class="gym-notas" onchange="gymNotas(this.value)" placeholder="Descansos, cuidados, objetivo…">${escHtml(r.notas || '')}</textarea>
                 <div class="gym-add">
                     <input id="gymNuevoNombre" placeholder="Ejercicio" onkeydown="if(event.key==='Enter')gymAgregarEj()">
                     <input id="gymNuevoSeries" type="number" inputmode="numeric" placeholder="ser" value="4">
@@ -2948,28 +2972,30 @@
         } else {
             const s = gymSesionHoy(r.id);
             const hechos = s ? s.hechos : [];
-            const n = r.ejercicios.filter(e => hechos.includes(e.id)).length;
+            const n = gymActivos(r).filter(e => hechos.includes(e.id)).length;
             const toca = r.dias.length ? 'Toca ' + [1,2,3,4,5,6,0].filter(d => r.dias.includes(d)).map(d => NOMBRE_DIA[d]).join(' · ') : 'Sin días fijos';
             const filas = r.ejercicios.map(e => {
                 const hecho = hechos.includes(e.id);
                 const ant = gymPesoAnterior(e.id);
                 const meta = [];
-                if (e.series || e.reps) meta.push(`${e.series || '?'} × ${escHtml(e.reps || '?')}`);
+                if (e.series || e.reps) meta.push(e.series ? `${e.series} × ${escHtml(e.reps || '?')}` : escHtml(e.reps));
                 if (ant != null) meta.push(`la vez pasada ${ant} kg` + (e.peso != null && e.peso > ant ? ' ↑' : ''));
-                return `<div class="gym-ej ${hecho?'hecho':''}">
-                    <button class="day-check-btn" onclick="gymMarcar(${e.id})" title="Hecho">${hecho?'✓':''}</button>
+                return `<div class="gym-ej ${hecho?'hecho':''} ${e.pausado?'pausado':''}">
+                    <button class="day-check-btn" ${e.pausado ? 'disabled title="En pausa"' : `onclick="gymMarcar(${e.id})" title="Hecho"`}>${e.pausado?'⏸':hecho?'✓':''}</button>
                     <div class="gym-ej-main">
                         <div class="gym-ej-nombre">${escHtml(e.nombre)}</div>
                         ${meta.length ? `<div class="gym-ej-meta">${meta.join(' · ')}</div>` : ''}
+                        ${e.nota ? `<div class="gym-ej-nota">${escHtml(e.nota)}</div>` : ''}
                     </div>
                     <label class="gym-kg"><input inputmode="decimal" value="${e.peso ?? ''}" placeholder="—"
                            onchange="gymPeso(${e.id},this.value)">kg</label>
                 </div>`;
             }).join('');
             cuerpo = `
-                <div class="gym-sub"><span>${toca} · hoy ${n}/${r.ejercicios.length}</span>
+                <div class="gym-sub"><span>${toca} · hoy ${n}/${gymActivos(r).length}</span>
                     <button class="gym-link" onclick="gymEditar()">✏️ Editar</button></div>
-                ${filas || '<div class="gym-vacio">Esta rutina no tiene ejercicios. Tocá <strong>✏️ Editar</strong> para cargarlos.</div>'}`;
+                ${filas || '<div class="gym-vacio">Esta rutina no tiene ejercicios. Tocá <strong>✏️ Editar</strong> para cargarlos.</div>'}
+                ${r.notas ? `<details class="gym-pautas"><summary>📋 Pautas</summary><div>${escHtml(r.notas)}</div></details>` : ''}`;
         }
 
         // Peso corporal, contra la meta de 74 kg
@@ -2990,7 +3016,7 @@
         const hist = conAlgo.slice(0, 8).map(s => {
             const rr = gymRutina(s.rutinaId);
             return `<div class="gym-linea"><span>${gymFecha(s.fecha)} · ${escHtml(rr ? rr.nombre : s.rutina)}</span>
-                    <span>${s.hechos.length}${rr ? '/' + rr.ejercicios.length : ''} ejercicios</span></div>`;
+                    <span>${s.hechos.length}${rr ? '/' + gymActivos(rr).length : ''} ejercicios</span></div>`;
         }).join('');
 
         el.innerHTML = `
@@ -3016,11 +3042,12 @@
     function gymHoyHTML() {
         return gymRutinasHoy().map(r => {
             const s = gymSesionHoy(r.id);
-            const n = s ? r.ejercicios.filter(e => s.hechos.includes(e.id)).length : 0;
-            const ok = r.ejercicios.length && n >= r.ejercicios.length;
+            const act = gymActivos(r);
+            const n = s ? act.filter(e => s.hechos.includes(e.id)).length : 0;
+            const ok = act.length && n >= act.length;
             return `<div class="gym-hoy ${ok?'ok':''}" onclick="openGymModal(${r.id})">
                 🏋️ <strong>${ok ? 'Gimnasio hecho' : 'Hoy toca gimnasio'}</strong> · ${escHtml(r.nombre)}
-                <span>${n}/${r.ejercicios.length}</span></div>`;
+                <span>${n}/${act.length}</span></div>`;
         }).join('');
     }
 
