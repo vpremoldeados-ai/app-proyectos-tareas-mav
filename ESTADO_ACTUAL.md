@@ -198,7 +198,7 @@ Datos en vpremoldeados/nutricion (localStorage nutricion):
   en Hoy o el atajo en ✨ Claude. Se marcan ingredientes en chips (proteínas, carbohidratos, verduras) más
   un campo "Otros". La app muestra al instante cuáles de sus recetas salen: tiene que tener todas las
   proteínas y carbohidratos, o con un cambio como mucho (arroz↔fideos↔papa↔batata, salvo el carbohidrato
-  base del plato; pollo↔carne↔cerdo). Pueden faltar verduras. Aceite, sal y condimentos se dan por
+  base del plato; pollo↔carne↔cerdo). Pueden faltar verduras, y acelga↔espinaca no cuenta como cambio. Aceite, sal y condimentos se dan por
   sentados. El botón arma el pedido para Claude (ingredientes, proteína y kcal del día, recetas que
   sirven) y le pide no anotar nada hasta que diga qué comió. Lo marcado se guarda solo en ese
   navegador (localStorage nutCocina), no en la base. Las instrucciones del conector también explican

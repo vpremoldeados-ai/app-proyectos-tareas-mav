@@ -4597,15 +4597,16 @@
         ['carb', 'Carbohidratos', [['arroz','🍚','Arroz','\\barroz'], ['pasta','🍝','Fideos','\\bpasta|\\bfideo'], ['papa','🥔','Papa','\\bpapa'], ['batata','🍠','Batata','\\bbatata'],
                                    ['avena','🌾','Avena','\\bavena'], ['pan','🍞','Pan integral','\\bpan\\b'], ['banana','🍌','Banana','\\bbanana'], ['manzana','🍎','Manzana','\\bmanzana']]],
         ['verd', 'Verduras', [['tomate','🍅','Tomate','\\btomate'], ['cebolla','🧅','Cebolla','\\bcebolla'], ['zanahoria','🥕','Zanahoria','\\bzanahoria'], ['zapallo','🎃','Zapallo','\\bzapallo(?!ito)'],
-                              ['zapallito','🥒','Zapallito','\\bzapallito'], ['espinaca','🥬','Espinaca','\\bespinaca'], ['lechuga','🥗','Lechuga o rúcula','\\blechuga|\\brucula|ensalada verde'],
+                              ['zapallito','🥒','Zapallito','\\bzapallito'], ['espinaca','🥬','Espinaca','\\bespinaca'], ['acelga','🥬','Acelga','\\bacelga'],['lechuga','🥗','Lechuga o rúcula','\\blechuga|\\brucula|ensalada verde'],
                               ['palta','🥑','Palta','\\bpalta'], ['morron','🫑','Morrón','\\bmorron'], ['brocoli','🥦','Brócoli','\\bbrocoli']]]
     ];
     const NUT_INGR_TODOS = NUT_INGR.flatMap(([g, , xs]) => xs.map(([k, e, n, re]) => ({ k, e, n, g, re: new RegExp(re) })));
     // Lo que siempre hay en la alacena: no cuenta como faltante.
     const NUT_ALACENA = /aceite|manteca|mayonesa|mostaza|salsa de soja|chorrito|\bsal\b|pimienta|condimento|ajo/;
     // Se pueden cambiar entre sí. El carbohidrato que es la base del plato
-    // (la papa de la tortilla) no se cambia.
-    const NUT_CAMBIOS = [['arroz', 'pasta', 'papa', 'batata'], ['pollo', 'carne', 'cerdo']];
+    // (la papa de la tortilla) no se cambia. Cambiar una verdura (acelga por
+    // espinaca) no cuenta para el límite de un cambio por receta.
+    const NUT_CAMBIOS = [['arroz', 'pasta', 'papa', 'batata'], ['pollo', 'carne', 'cerdo'], ['espinaca', 'acelga']];
     const nutSinTildes = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     let nutCocina = (() => { try { const c = JSON.parse(localStorage.getItem('nutCocina') || 'null'); if (c && Array.isArray(c.sel)) return { sel: c.sel, otros: String(c.otros || '') }; } catch (e) {} return { sel: [], otros: '' }; })();
     let nutCocinaComida = null;
@@ -4632,12 +4633,12 @@
                 if (its.some(x => tengo.has(x.k))) { tiene++; return; }
                 const it = its[0], grupo = (i > 0 || it.g === 'prot') && NUT_CAMBIOS.find(gr => gr.includes(it.k));
                 const otro = grupo && grupo.find(k => k !== it.k && tengo.has(k) && !usados.has(k) && !r.ingredientes.some(l => NUT_INGR_TODOS.find(x => x.k === k).re.test(nutSinTildes(l))));
-                if (otro) { tiene++; cambios.push([NUT_INGR_TODOS.find(x => x.k === otro).n, it.n]); }
+                if (otro) { tiene++; cambios.push([NUT_INGR_TODOS.find(x => x.k === otro).n, it.n, it.g]); }
                 else if (!falta.some(f => f.k === it.k)) falta.push(it);
             });
             const faltaBase = falta.filter(f => f.g !== 'verd').length;
             return { r, tiene, falta, cambios, faltaBase };
-        }).filter(m => m.tiene > 0 && m.cambios.length <= 1 && (m.faltaBase === 0 || (m.faltaBase === 1 && m.falta.length === 1)))
+        }).filter(m => m.tiene > 0 && m.cambios.filter(c => c[2] !== 'verd').length <= 1 && (m.faltaBase === 0 || (m.faltaBase === 1 && m.falta.length === 1)))
           .sort((a, b) => (a.faltaBase - b.faltaBase) || (a.falta.length + a.cambios.length - b.falta.length - b.cambios.length) || (b.r.porcion.prot - a.r.porcion.prot))
           .slice(0, 5);
     }
