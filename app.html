@@ -1134,6 +1134,37 @@
         .gym-hoy span { margin-left:auto; font-size:12px; font-weight:600; color:var(--success); }
         .gym-hoy.ok { opacity:0.7; }
         .gym-ej.pausado { opacity:0.55; }
+        .gym-ej-nombre.con-guia { cursor:pointer; }
+        .gym-ej.con-ctrl { border-bottom:none; padding-bottom:4px; }
+        .gym-ctrl { display:flex; align-items:center; gap:5px; flex-wrap:wrap; padding:0 0 10px 32px; border-bottom:1px solid var(--border); }
+        .gym-serie { width:30px; height:30px; border-radius:50%; border:2px solid var(--accent); background:transparent; color:var(--accent); font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; }
+        .gym-serie.on { background:var(--accent); color:#fff; }
+        .gym-ctrl label { font-size:11.5px; color:var(--text-3); display:flex; align-items:center; gap:3px; }
+        .modal-box .gym-ctrl input { width:50px; margin:0; padding:6px; text-align:center; }
+        .modal-box .gym-ctrl select { width:auto; margin:0; padding:6px; }
+        #gymTimer { position:sticky; bottom:0; z-index:2; }
+        .gym-reloj { position:relative; overflow:hidden; display:flex; align-items:center; gap:8px; background:#111827; color:#fff; border-radius:12px; padding:10px 12px; margin-top:10px; box-shadow:0 8px 24px rgba(0,0,0,0.25); }
+        .gym-reloj-barra { position:absolute; left:0; top:0; bottom:0; background:rgba(16,185,129,0.4); transition:width .25s linear; }
+        .gym-reloj .t { position:relative; font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; }
+        .gym-reloj .n { position:relative; flex:1; min-width:0; font-size:11.5px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .gym-reloj button { position:relative; background:rgba(255,255,255,.16); border:none; color:#fff; border-radius:8px; padding:8px 9px; font-weight:600; font-size:12px; cursor:pointer; font-family:inherit; }
+        .gym-reloj.fin { background:var(--success); }
+        .gym-ej-nombre.con-guia::after { content:' ⓘ'; color:var(--accent); font-size:12px; }
+        .gym-guia { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; margin:0 0 10px; }
+        .gym-fotos { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+        .gym-fotos figure { margin:0; }
+        .gym-fotos img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:6px; display:block; background:var(--border); }
+        .gym-fotos figcaption { font-size:10.5px; color:var(--text-3); text-align:center; margin-top:2px; }
+        .gym-cuerpo { display:flex; gap:10px; align-items:center; margin-top:10px; }
+        .gym-cuerpo svg { width:150px; flex-shrink:0; }
+        .gym-musc { font-size:12px; color:var(--text-2); line-height:1.6; }
+        .gym-musc b { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-3); margin-top:4px; }
+        .gym-musc .p { color:#dc2626; font-weight:600; }
+        .gym-musc .s { color:#f87171; }
+        .gym-guia h5 { font-size:12px; font-weight:700; color:var(--text); margin:10px 0 4px; }
+        .gym-guia ol, .gym-guia ul { padding-left:18px; font-size:12.5px; color:var(--text-2); line-height:1.5; }
+        .gym-cuidado { font-size:12px; color:#b45309; background:rgba(245,158,11,0.12); border-radius:6px; padding:7px 9px; margin-top:8px; }
+        .gym-credito { font-size:10px; color:var(--text-3); margin-top:8px; }
         .gym-ej.pausado .day-check-btn { border-color:var(--text-3); color:var(--text-3); cursor:default; }
         .gym-ej-nota { font-size:11.5px; color:var(--warning); margin-top:2px; }
         .gym-ej-edit2 { display:grid; grid-template-columns:1fr 61px; gap:5px; padding:0 0 8px; border-bottom:1px solid var(--border); }
@@ -1448,6 +1479,7 @@
     <div class="modal-box pm-modal-box">
         <h3>🏋️ Gimnasio</h3>
         <div id="gymView"></div>
+        <div id="gymTimer"></div>
         <div class="modal-btns" style="margin-top:14px;">
             <button class="btn-cancel" onclick="closeGymModal()">Cerrar</button>
         </div>
@@ -2759,6 +2791,145 @@
     // queda como el de la próxima vez, así la planilla muestra con qué arrancar.
     // Los días marcados en una rutina la hacen aparecer arriba de Mi Día.
     const GYM_META_KG = 74;   // el objetivo "Gimnasio 74 kg"
+
+    // Guías de técnica. Las fotos son de free-exercise-db (dominio público) y
+    // están copiadas en hosting/gym/ para no depender de otro sitio.
+    // Músculos: ids del mapa del cuerpo de gymCuerpoSVG().
+    const GYM_GUIAS = {
+        cinta: { foto:'Jogging_Treadmill', p:['cuadriceps','isquios','gemelos'], s:['gluteos'],
+            pasos:['Subí con la cinta parada y agarrate de las barandas para arrancar.',
+                   'Empezá caminando 1–2 minutos y subí de a poco a un trote suave.',
+                   'Torso erguido, mirada al frente, brazos sueltos a los costados.',
+                   'Pisada corta y debajo del cuerpo, sin estirar la pierna adelante.',
+                   'Ritmo en el que todavía puedas hablar: es calentamiento, no carrera.'],
+            errores:['Agarrarse de las barandas todo el tiempo.','Zancadas largas que caen con el talón muy adelante.'],
+            cuidado:'Si molesta la rodilla al trotar, bajá a caminata rápida con un poco de inclinación.' },
+        pressPlano: { foto:'Dumbbell_Bench_Press', p:['pecho'], s:['hombros','triceps'],
+            pasos:['Sentate en el banco con las mancuernas apoyadas en los muslos y acostate llevándolas al pecho.',
+                   'Pies firmes en el piso, omóplatos juntos y apoyados en el banco.',
+                   'Empujá hacia arriba hasta casi estirar los brazos, sin chocar las mancuernas.',
+                   'Bajá controlado (2–3 segundos) hasta que los codos queden un poco por debajo del banco.',
+                   'Soltá el aire al subir, tomalo al bajar.'],
+            errores:['Codos abiertos a 90° del cuerpo: llevalos a unos 45°.','Despegar la cadera o arquear de más la espalda.'],
+            cuidado:'Hombro: no bajes más de lo cómodo. Si hay pinchazo adelante del hombro, acortá el recorrido.' },
+        jalon: { foto:'Wide-Grip_Lat_Pulldown', p:['dorsales'], s:['biceps','espaldaMedia','hombrosPost'],
+            pasos:['Ajustá el rodillo para que trabe bien los muslos.',
+                   'Agarrá la barra un poco más ancho que los hombros, palmas hacia adelante.',
+                   'Pecho arriba y leve inclinación hacia atrás.',
+                   'Llevá la barra hacia el pecho bajando los codos hacia las costillas y juntando los omóplatos.',
+                   'Subí despacio hasta estirar los brazos sin soltar la tensión.'],
+            errores:['Bajar la barra por detrás de la nuca.','Tirar con impulso balanceando el torso.'],
+            cuidado:'Hombro: siempre adelante del cuerpo, nunca detrás de la nuca.' },
+        pressMilitar: { foto:'Dumbbell_Shoulder_Press', p:['hombros'], s:['triceps','trapecio'],
+            pasos:['Sentado con respaldo vertical, espalda bien apoyada.',
+                   'Mancuernas a la altura de las orejas, palmas al frente, codos un poco adelante del cuerpo.',
+                   'Empujá hacia arriba hasta casi estirar, sin juntar las mancuernas arriba.',
+                   'Bajá controlado hasta la altura de las orejas.',
+                   'Abdomen firme para no arquear la zona lumbar.'],
+            errores:['Arquear la espalda para ayudar el empuje.','Bajar las mancuernas muy por debajo de las orejas.'],
+            cuidado:'Hombro: si molesta, trabajá con las palmas mirándose entre sí (agarre neutro).' },
+        remo: { foto:'Seated_Cable_Rows', p:['espaldaMedia','dorsales'], s:['biceps','hombrosPost','trapecio'],
+            pasos:['Sentado, pies en la plataforma y rodillas apenas flexionadas.',
+                   'Espalda recta, pecho arriba; el torso no se mueve durante la serie.',
+                   'Tirá del agarre hacia el ombligo llevando los codos pegados y hacia atrás.',
+                   'Apretá los omóplatos un segundo al final.',
+                   'Volvé despacio estirando los brazos sin encorvar la espalda.'],
+            errores:['Balancear el torso adelante y atrás.','Encoger los hombros hacia las orejas.'],
+            cuidado:'Lumbares: si la espalda se redondea al estirar, bajá el peso.' },
+        hack: { foto:'Hack_Squat', p:['cuadriceps','gluteos'], s:['isquios','gemelos'],
+            pasos:['Espalda y hombros bien apoyados en el respaldo.',
+                   'Pies al ancho de hombros, en el medio de la plataforma, puntas un poco afuera.',
+                   'Destrabá y bajá controlado, rodillas en la misma dirección que las puntas de los pies.',
+                   'Bajá solo hasta donde no haya molestia (como mucho, muslos paralelos a la plataforma).',
+                   'Subí empujando con todo el pie, sin trabar las rodillas arriba.'],
+            errores:['Rodillas que se van hacia adentro.','Despegar los talones.'],
+            cuidado:'SUSPENDIDO por molestia en la parte externa de la rodilla al bajar. Retomar solo sin dolor, con recorrido corto y pies un poco más altos en la plataforma.' },
+        curlFemoral: { foto:'Lying_Leg_Curls', p:['isquios'], s:['gemelos'],
+            pasos:['Boca abajo, rodillas justo pasando el borde del banco.',
+                   'El rodillo apoya arriba del talón, no sobre la pantorrilla.',
+                   'Agarrate de las manijas y mantené la cadera pegada al banco.',
+                   'Flexioná las rodillas llevando los talones hacia la cola.',
+                   'Bajá despacio, sin dejar caer el peso.'],
+            errores:['Levantar la cadera para ayudar.','Bajar de golpe.'],
+            cuidado:'Rodilla: si molesta, acortá el recorrido y bajá el peso.' },
+        plancha: { foto:'Plank', p:['abdominales'], s:['oblicuos','hombros','lumbares'],
+            pasos:['Antebrazos en el piso, codos debajo de los hombros.',
+                   'Estirá las piernas y apoyate en las puntas de los pies.',
+                   'Cuerpo en línea recta de la cabeza a los talones.',
+                   'Apretá abdomen y glúteos; meté un poco la pelvis.',
+                   'Respirá normal. Cortá la serie cuando se pierda la postura.'],
+            errores:['Cadera caída (carga la zona lumbar).','Cola muy levantada.'],
+            cuidado:'Si molesta la zona lumbar, apoyá las rodillas.' }
+    };
+    const GYM_ALIAS = [[/cinta|trote|camin/i,'cinta'], [/press (plano|banca)/i,'pressPlano'], [/jal[oó]n/i,'jalon'],
+                       [/press militar/i,'pressMilitar'], [/remo/i,'remo'], [/hack|sentadilla/i,'hack'],
+                       [/femoral/i,'curlFemoral'], [/plancha/i,'plancha']];
+    const gymGuiaDe = e => GYM_GUIAS[e.guia] || GYM_GUIAS[(GYM_ALIAS.find(([re]) => re.test(e.nombre)) || [])[1]] || null;
+    const gymAbiertos = new Set();
+    function gymVerGuia(ejId) { gymAbiertos.has(ejId) ? gymAbiertos.delete(ejId) : gymAbiertos.add(ejId); renderGym(); }
+
+    const GYM_MUSC_NOMBRE = { pecho:'Pecho', hombros:'Hombros (frente)', hombrosPost:'Hombros (atrás)', biceps:'Bíceps',
+        triceps:'Tríceps', antebrazos:'Antebrazos', abdominales:'Abdominales', oblicuos:'Oblicuos', cuadriceps:'Cuádriceps',
+        trapecio:'Trapecio', dorsales:'Dorsales', espaldaMedia:'Espalda media', lumbares:'Lumbares', gluteos:'Glúteos',
+        isquios:'Isquiotibiales', gemelos:'Gemelos' };
+
+    // Mapa esquemático del cuerpo, de frente y de espalda. Rojo fuerte: lo que
+    // más trabaja. Rojo claro: lo que ayuda.
+    function gymCuerpoSVG(p, s) {
+        const col = id => p.includes(id) ? '#ef4444' : s.includes(id) ? '#fca5a5' : 'var(--surface)';
+        const m = (id, forma) => forma.replace(/\/>/g, ` fill="${col(id)}" stroke="#9ca3af" stroke-width="0.6"><title>${GYM_MUSC_NOMBRE[id]}</title></${forma.match(/^<(\w+)/)[1]}>`);
+        const par = (id, tag, x1, x2, rest) => m(id, `<${tag} cx="${x1}" ${rest}/>`) + m(id, `<${tag} cx="${x2}" ${rest}/>`);
+        const base = 'fill="var(--border)"';
+        const silueta = cx => `<circle cx="${cx}" cy="13" r="8" ${base}/><rect x="${cx-4}" y="20" width="8" height="7" ${base}/>
+            <path d="M${cx-20} 28 Q${cx} 25 ${cx+20} 28 L${cx+15} 88 L${cx-15} 88 Z" ${base}/>
+            <path d="M${cx-15} 86 L${cx+15} 86 L${cx+14} 168 L${cx+3} 168 L${cx} 104 L${cx-3} 168 L${cx-14} 168 Z" ${base}/>
+            <path d="M${cx-20} 30 L${cx-30} 86 L${cx-24} 87 L${cx-15} 40 Z M${cx+20} 30 L${cx+30} 86 L${cx+24} 87 L${cx+15} 40 Z" ${base}/>`;
+        const a = 40, b = 120;   // centro de cada figura
+        return `<svg viewBox="0 0 160 180" role="img" aria-label="Músculos que trabaja">
+            ${silueta(a)}
+            ${par('hombros','ellipse',a-19,a+19,'cy="34" rx="5.5" ry="6.5"')}
+            ${par('pecho','ellipse',a-7,a+7,'cy="40" rx="7.5" ry="6.5"')}
+            ${par('biceps','ellipse',a-24,a+24,'cy="51" rx="3.6" ry="8"')}
+            ${par('antebrazos','ellipse',a-27,a+27,'cy="71" rx="3" ry="9"')}
+            ${m('abdominales',`<rect x="${a-5.5}" y="49" width="11" height="30" rx="4"/>`)}
+            ${par('oblicuos','ellipse',a-10.5,a+10.5,'cy="64" rx="3.6" ry="10"')}
+            ${par('cuadriceps','ellipse',a-7.5,a+7.5,'cy="113" rx="6" ry="17"')}
+            ${silueta(b)}
+            ${m('trapecio',`<polygon points="${b-14},30 ${b+14},30 ${b+6},44 ${b},50 ${b-6},44"/>`)}
+            ${par('hombrosPost','ellipse',b-19,b+19,'cy="34" rx="5.5" ry="6.5"')}
+            ${m('dorsales',`<polygon points="${b-15},40 ${b-5},50 ${b-5},72 ${b-13},64"/>`)}
+            ${m('dorsales',`<polygon points="${b+15},40 ${b+5},50 ${b+5},72 ${b+13},64"/>`)}
+            ${m('espaldaMedia',`<rect x="${b-4.5}" y="47" width="9" height="20" rx="3"/>`)}
+            ${m('lumbares',`<rect x="${b-6}" y="70" width="12" height="13" rx="3"/>`)}
+            ${par('triceps','ellipse',b-24,b+24,'cy="51" rx="3.6" ry="8"')}
+            ${par('antebrazos','ellipse',b-27,b+27,'cy="71" rx="3" ry="9"')}
+            ${par('gluteos','ellipse',b-6.5,b+6.5,'cy="94" rx="6.5" ry="7.5"')}
+            ${par('isquios','ellipse',b-7.5,b+7.5,'cy="118" rx="5.5" ry="13"')}
+            ${par('gemelos','ellipse',b-8,b+8,'cy="148" rx="4.5" ry="10"')}
+            <text x="${a}" y="179" text-anchor="middle" font-size="9" fill="#9ca3af">Frente</text>
+            <text x="${b}" y="179" text-anchor="middle" font-size="9" fill="#9ca3af">Espalda</text>
+        </svg>`;
+    }
+    function gymGuiaHTML(g) {
+        const lista = ids => ids.map(id => GYM_MUSC_NOMBRE[id]).join(', ');
+        return `<div class="gym-guia">
+            <div class="gym-fotos">
+                <figure><img src="gym/${g.foto}_0.jpg" alt="Posición inicial" loading="lazy"><figcaption>Inicio</figcaption></figure>
+                <figure><img src="gym/${g.foto}_1.jpg" alt="Posición final" loading="lazy"><figcaption>Final</figcaption></figure>
+            </div>
+            <div class="gym-cuerpo">
+                ${gymCuerpoSVG(g.p, g.s)}
+                <div class="gym-musc"><b>Trabaja</b><span class="p">${lista(g.p)}</span>
+                    ${g.s.length ? `<b>Ayudan</b><span class="s">${lista(g.s)}</span>` : ''}</div>
+            </div>
+            <h5>Cómo hacerlo</h5>
+            <ol>${g.pasos.map(x => `<li>${x}</li>`).join('')}</ol>
+            <h5>Errores comunes</h5>
+            <ul>${g.errores.map(x => `<li>${x}</li>`).join('')}</ul>
+            ${g.cuidado ? `<div class="gym-cuidado">⚠️ ${g.cuidado}</div>` : ''}
+            <div class="gym-credito">Fotos: free-exercise-db (dominio público)</div>
+        </div>`;
+    }
     let gymRutinaSel = null, gymEditando = false;
 
     function gymNormalizar(d) {
@@ -2823,16 +2994,96 @@
     function gymEditar()     { gymEditando = !gymEditando; renderGym(); }
 
     // ── Entrenar ──
+    // Deja un ejercicio hecho o no, y guarda con cuánto peso y cuántas repeticiones.
+    function gymSetHecho(s, ej, hecho) {
+        s.hechos = s.hechos.filter(x => x !== ej.id);
+        if (!hecho) return;
+        s.hechos.push(ej.id);
+        if (ej.peso != null) s.pesos['e'+ej.id] = ej.peso;
+        if (ej.reps) { s.reps = s.reps || {}; s.reps['e'+ej.id] = (ej.series ? ej.series + ' × ' : '') + ej.reps; }
+    }
+    const gymDescansoDe = ej => ej.descanso || 90;
+    // Tocar la serie N la marca (y las anteriores) y arranca el descanso.
+    // Tocar la última marcada la desmarca.
+    function gymSerie(ejId, i) {
+        const r = gymRutina(gymRutinaSel); const ej = r?.ejercicios.find(e => e.id === ejId); if (!ej) return;
+        const s = gymSesionDeHoyCreando(r);
+        s.series = s.series || {};
+        const antes = s.series['e'+ejId] || 0;
+        const ahora = i <= antes ? i - 1 : i;
+        s.series['e'+ejId] = ahora;
+        gymSetHecho(s, ej, ahora >= (ej.series || 1));
+        saveGym(); renderGym();
+        if (ahora > antes) gymDescansar(gymDescansoDe(ej), ahora >= ej.series ? `${ej.nombre} terminado` : `${ej.nombre} · serie ${ahora + 1} de ${ej.series}`);
+    }
+    function gymDescansoEj(ejId, seg) {
+        const r = gymRutina(gymRutinaSel); const ej = r?.ejercicios.find(e => e.id === ejId); if (!ej) return;
+        ej.descanso = parseInt(seg) || 90; saveGym();
+    }
+
+    // ── Cuenta regresiva del descanso ──
+    // Suena tres pitidos cortos al final y uno largo al terminar, y vibra.
+    // Pide mantener la pantalla prendida mientras corre.
+    let gymReloj = null, gymAudio = null;
+    function gymBeep(dur, freq = 880) {
+        try {
+            gymAudio = gymAudio || new (window.AudioContext || window.webkitAudioContext)();
+            if (gymAudio.state === 'suspended') gymAudio.resume();
+            if (!dur) return;
+            const o = gymAudio.createOscillator(), g = gymAudio.createGain(), t = gymAudio.currentTime;
+            o.frequency.value = freq; o.connect(g); g.connect(gymAudio.destination);
+            g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            o.start(t); o.stop(t + dur);
+        } catch (e) {}
+    }
+    function gymDescansar(seg, texto) {
+        gymBeep(0);   // el audio se habilita con el toque del usuario
+        gymPararReloj();
+        gymReloj = { fin: Date.now() + seg * 1000, total: seg, avisos: new Set() };
+        document.getElementById('gymTimer').innerHTML = `<div class="gym-reloj"><div class="gym-reloj-barra"></div>
+            <span class="t"></span><span class="n">Descanso<br>${escHtml(texto || '')}</span>
+            <button onclick="gymAjustarReloj(-15)">−15</button><button onclick="gymAjustarReloj(15)">+15</button>
+            <button onclick="gymPararReloj()" title="Cortar el descanso">✕</button></div>`;
+        gymReloj.intervalo = setInterval(gymTic, 250); gymTic();
+        if (navigator.wakeLock) navigator.wakeLock.request('screen').then(l => { if (gymReloj) gymReloj.lock = l; else l.release(); }).catch(() => {});
+    }
+    function gymTic() {
+        if (!gymReloj) return;
+        const quedan = Math.ceil((gymReloj.fin - Date.now()) / 1000);
+        const box = document.querySelector('#gymTimer .gym-reloj'); if (!box) return;
+        if (quedan <= 0) {
+            gymBeep(0.7, 990); if (navigator.vibrate) navigator.vibrate([300, 120, 300]);
+            gymPararReloj();
+            document.getElementById('gymTimer').innerHTML = '<div class="gym-reloj fin"><span class="n" style="font-size:14px;font-weight:600;">✅ ¡Listo! A la próxima serie</span><button onclick="gymPararReloj()">✕</button></div>';
+            setTimeout(() => { if (!gymReloj) document.getElementById('gymTimer').innerHTML = ''; }, 5000);
+            return;
+        }
+        if (quedan <= 3 && !gymReloj.avisos.has(quedan)) { gymReloj.avisos.add(quedan); gymBeep(0.12, 660); }
+        box.querySelector('.t').textContent = `${Math.floor(quedan / 60)}:${String(quedan % 60).padStart(2, '0')}`;
+        box.querySelector('.gym-reloj-barra').style.width = Math.max(0, 100 - (quedan / gymReloj.total) * 100) + '%';
+    }
+    function gymAjustarReloj(d) {
+        if (!gymReloj) return;
+        gymReloj.fin = Math.max(Date.now() + 1000, gymReloj.fin + d * 1000);
+        gymReloj.total = Math.max(gymReloj.total, Math.ceil((gymReloj.fin - Date.now()) / 1000));
+        gymReloj.avisos.clear(); gymTic();
+    }
+    function gymPararReloj() {
+        if (!gymReloj) { document.getElementById('gymTimer').innerHTML = ''; return; }
+        clearInterval(gymReloj.intervalo);
+        if (gymReloj.lock) gymReloj.lock.release().catch(() => {});
+        gymReloj = null;
+        document.getElementById('gymTimer').innerHTML = '';
+    }
+
     function gymMarcar(ejId) {
         const r = gymRutina(gymRutinaSel); if (!r) return;
         const s = gymSesionDeHoyCreando(r);
-        const ej = r.ejercicios.find(e => e.id === ejId);
-        if (s.hechos.includes(ejId)) s.hechos = s.hechos.filter(x => x !== ejId);
-        else {
-            s.hechos.push(ejId);
-            if (ej && ej.peso != null && s.pesos['e'+ejId] == null) s.pesos['e'+ejId] = ej.peso;
-            if (ej && ej.reps) { s.reps = s.reps || {}; s.reps['e'+ejId] = (ej.series ? ej.series + ' × ' : '') + ej.reps; }
-        }
+        const ej = r.ejercicios.find(e => e.id === ejId); if (!ej) return;
+        const hecho = !s.hechos.includes(ejId);
+        gymSetHecho(s, ej, hecho);
+        s.series = s.series || {};
+        s.series['e'+ejId] = hecho ? (ej.series || 1) : 0;
         saveGym(); renderGym();
     }
     function gymPeso(ejId, valor) {
@@ -2978,22 +3229,34 @@
                 const hecho = hechos.includes(e.id);
                 const ant = gymPesoAnterior(e.id);
                 const meta = [];
-                if (e.series || e.reps) meta.push(e.series ? `${e.series} × ${escHtml(e.reps || '?')}` : escHtml(e.reps));
+                if (!e.series && e.reps) meta.push(escHtml(e.reps));
                 if (ant != null) meta.push(`la vez pasada ${ant} kg` + (e.peso != null && e.peso > ant ? ' ↑' : ''));
-                return `<div class="gym-ej ${hecho?'hecho':''} ${e.pausado?'pausado':''}">
+                const hechas = Math.min(s?.series?.['e'+e.id] ?? (hecho ? e.series || 0 : 0), e.series || 0);
+                const desc = gymDescansoDe(e);
+                const ctrl = e.pausado || !e.series ? '' : `<div class="gym-ctrl">
+                    ${Array.from({length: e.series}, (_, k) =>
+                        `<button class="gym-serie ${k < hechas ? 'on' : ''}" onclick="gymSerie(${e.id},${k+1})" title="Serie ${k+1}">${k+1}</button>`).join('')}
+                    <label>× <input value="${escHtml(e.reps || '')}" onchange="gymEditEj(${e.id},'reps',this.value); renderGym()" title="Repeticiones"></label>
+                    <label>⏱ <select onchange="gymDescansoEj(${e.id},this.value)" title="Descanso entre series">
+                        ${[30,45,60,75,90,105,120,150,180].concat([desc]).filter((v,i,a) => a.indexOf(v) === i).sort((x,y) => x-y)
+                            .map(v => `<option value="${v}" ${v===desc?'selected':''}>${v<60 ? v+' s' : Math.floor(v/60)+':'+String(v%60).padStart(2,'0')}</option>`).join('')}
+                    </select></label>
+                </div>`;
+                return `<div class="gym-ej ${hecho?'hecho':''} ${e.pausado?'pausado':''} ${ctrl?'con-ctrl':''}">
                     <button class="day-check-btn" ${e.pausado ? 'disabled title="En pausa"' : `onclick="gymMarcar(${e.id})" title="Hecho"`}>${e.pausado?'⏸':hecho?'✓':''}</button>
                     <div class="gym-ej-main">
-                        <div class="gym-ej-nombre">${escHtml(e.nombre)}</div>
+                        <div class="gym-ej-nombre ${gymGuiaDe(e)?'con-guia':''}" ${gymGuiaDe(e)?`onclick="gymVerGuia(${e.id})"`:''}>${escHtml(e.nombre)}</div>
                         ${meta.length ? `<div class="gym-ej-meta">${meta.join(' · ')}</div>` : ''}
                         ${e.nota ? `<div class="gym-ej-nota">${escHtml(e.nota)}</div>` : ''}
                     </div>
                     <label class="gym-kg"><input inputmode="decimal" value="${e.peso ?? ''}" placeholder="—"
                            onchange="gymPeso(${e.id},this.value)">kg</label>
-                </div>`;
+                </div>${ctrl}${gymAbiertos.has(e.id) && gymGuiaDe(e) ? gymGuiaHTML(gymGuiaDe(e)) : ''}`;
             }).join('');
             cuerpo = `
                 <div class="gym-sub"><span>${toca} · hoy ${n}/${gymActivos(r).length}</span>
                     <button class="gym-link" onclick="gymEditar()">✏️ Editar</button></div>
+                ${r.ejercicios.some(gymGuiaDe) ? '<div class="gym-sub">Tocá el nombre (ⓘ) para ver cómo se hace. Tocá el número de cada serie al terminarla: arranca el descanso.</div>' : ''}
                 ${filas || '<div class="gym-vacio">Esta rutina no tiene ejercicios. Tocá <strong>✏️ Editar</strong> para cargarlos.</div>'}
                 ${r.notas ? `<details class="gym-pautas"><summary>📋 Pautas</summary><div>${escHtml(r.notas)}</div></details>` : ''}`;
         }
