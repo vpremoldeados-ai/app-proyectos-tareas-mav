@@ -1511,6 +1511,18 @@
         .nut-metas-edit label { font-size:12px; color:var(--text-2); }
         .modal-box .nut-metas-edit input { margin:2px 0 0; }
         .nut-nota { font-size:12px; color:var(--text-3); margin-top:12px; line-height:1.45; }
+        /* ¿Qué cocino? */
+        .nut-coc-intro { font-size:14px; color:var(--text-2); line-height:1.45; margin-bottom:4px; }
+        .nut-chips { display:flex; flex-wrap:wrap; gap:6px; }
+        .nut-chips button { border:none; background:var(--surface); box-shadow:var(--sombra); border-radius:999px; padding:7px 12px; font-size:14px; color:var(--text); cursor:pointer; }
+        .nut-chips button.on { background:var(--accent); color:#fff; }
+        .modal-box input.nut-otros { margin:10px 0 0; background:var(--surface); }
+        .nut-match { display:flex; gap:12px; align-items:center; background:var(--surface); border-radius:14px; box-shadow:var(--sombra); padding:10px 12px; margin-bottom:8px; cursor:pointer; }
+        .nut-match b { display:block; font-size:15px; font-weight:600; line-height:1.25; }
+        .nut-match .m { font-size:12.5px; color:var(--text-3); margin-top:2px; }
+        .nut-match .f { font-size:13px; color:var(--text-2); margin-top:3px; }
+        .nut-match .f.ok { color:var(--success); font-weight:500; }
+        .nut-match .ir { color:var(--text-3); font-size:18px; flex-shrink:0; }
         /* Tarjeta en Mi Día */
         .nut-hoy { display:flex; align-items:center; gap:12px; cursor:pointer; margin-bottom:14px; background:var(--surface);
                    border-radius:var(--radius); box-shadow:var(--sombra); padding:12px 15px; font-size:14px; color:var(--text); }
@@ -1979,6 +1991,7 @@
             <button onclick="preguntarAClaude('Prepará la reunión con Gustavo: sus pendientes, lo vencido y qué le tengo que preguntar.')">Reunión con Gustavo</button>
             <button onclick="preguntarAClaude('Prepará la reunión con Sofía: sus pendientes, lo vencido y qué le tengo que preguntar.')">Reunión con Sofía</button>
             <button onclick="preguntarAClaude('Mostrame la rutina de gimnasio de hoy.')">Gimnasio de hoy</button>
+            <button onclick="cerrarClaude(); abrirComidas('cocinar')">¿Qué cocino con lo que tengo?</button>
         </div>
         <textarea class="claude-texto" id="claudeTexto" placeholder="O escribí (o dictá con el micrófono del teclado) lo que necesitás. Ej: pasá lo de compras para el lunes"></textarea>
         <div class="modal-btns">
@@ -4572,10 +4585,109 @@
         t.value = texto; t.focus(); t.setSelectionRange(t.value.length, t.value.length);
     }
 
+    // ── ¿Qué cocino? ──
+    // Marca lo que tiene en la heladera: la app le muestra al instante cuáles
+    // de sus recetas le salen, y con un toque le pide a Claude ideas con eso,
+    // contándole cuánta proteína lleva en el día. Lo marcado queda guardado en
+    // este celular hasta que lo limpie.
+    const NUT_INGR = [
+        ['prot', 'Proteínas', [['pollo','🍗','Pollo','\\bpollo|\\bpechuga'], ['carne','🥩','Carne magra','\\bcarne|\\bnalga|\\bpeceto|\\bbife'], ['cerdo','🐖','Cerdo','\\bcerdo'],
+                               ['atun','🐟','Atún','\\batun'], ['huevos','🥚','Huevos','\\bhuevo|\\bclara'], ['queso','🧀','Queso','\\bqueso'], ['yogur','🥣','Yogur','\\byogur'],
+                               ['leche','🥛','Leche','\\bleche'], ['whey','💪','Whey','\\bwhey'], ['lentejas','🫘','Lentejas','\\blenteja'], ['garbanzos','🧆','Garbanzos','\\bgarbanzo']]],
+        ['carb', 'Carbohidratos', [['arroz','🍚','Arroz','\\barroz'], ['pasta','🍝','Fideos','\\bpasta|\\bfideo'], ['papa','🥔','Papa','\\bpapa'], ['batata','🍠','Batata','\\bbatata'],
+                                   ['avena','🌾','Avena','\\bavena'], ['pan','🍞','Pan integral','\\bpan\\b'], ['banana','🍌','Banana','\\bbanana'], ['manzana','🍎','Manzana','\\bmanzana']]],
+        ['verd', 'Verduras', [['tomate','🍅','Tomate','\\btomate'], ['cebolla','🧅','Cebolla','\\bcebolla'], ['zanahoria','🥕','Zanahoria','\\bzanahoria'], ['zapallo','🎃','Zapallo','\\bzapallo(?!ito)'],
+                              ['zapallito','🥒','Zapallito','\\bzapallito'], ['espinaca','🥬','Espinaca','\\bespinaca'], ['lechuga','🥗','Lechuga o rúcula','\\blechuga|\\brucula|ensalada verde'],
+                              ['palta','🥑','Palta','\\bpalta'], ['morron','🫑','Morrón','\\bmorron'], ['brocoli','🥦','Brócoli','\\bbrocoli']]]
+    ];
+    const NUT_INGR_TODOS = NUT_INGR.flatMap(([g, , xs]) => xs.map(([k, e, n, re]) => ({ k, e, n, g, re: new RegExp(re) })));
+    // Lo que siempre hay en la alacena: no cuenta como faltante.
+    const NUT_ALACENA = /aceite|manteca|mayonesa|mostaza|salsa de soja|chorrito|\bsal\b|pimienta|condimento|ajo/;
+    // Se pueden cambiar entre sí. El carbohidrato que es la base del plato
+    // (la papa de la tortilla) no se cambia.
+    const NUT_CAMBIOS = [['arroz', 'pasta', 'papa', 'batata'], ['pollo', 'carne', 'cerdo']];
+    const nutSinTildes = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    let nutCocina = (() => { try { const c = JSON.parse(localStorage.getItem('nutCocina') || 'null'); if (c && Array.isArray(c.sel)) return { sel: c.sel, otros: String(c.otros || '') }; } catch (e) {} return { sel: [], otros: '' }; })();
+    let nutCocinaComida = null;
+    const nutCocGuardar = () => { try { localStorage.setItem('nutCocina', JSON.stringify(nutCocina)); } catch (e) {} };
+    const nutCocComidaActual = () => nutCocinaComida || (new Date().getHours() < 10 ? 'desayuno' : new Date().getHours() < 16 ? 'almuerzo' : 'cena');
+    // Lo marcado más lo que se reconozca en "otros".
+    function nutCocTengo() {
+        const s = new Set(nutCocina.sel), o = nutSinTildes(nutCocina.otros);
+        if (o) NUT_INGR_TODOS.forEach(i => { if (i.re.test(o)) s.add(i.k); });
+        return s;
+    }
+    // Recetas que salen con lo que tiene: todas las proteínas y carbohidratos
+    // (con un cambio razonable como mucho), aunque falte alguna verdura.
+    function nutCocRecetas() {
+        const tengo = nutCocTengo(); if (!tengo.size) return [];
+        const c = nutCocComidaActual();
+        const tipos = c === 'desayuno' ? ['desayuno', 'colacion'] : c === 'merienda' ? ['colacion', 'desayuno'] : ['principal'];
+        return nut.recetas.filter(r => tipos.includes(r.tipo)).map(r => {
+            let tiene = 0; const falta = [], cambios = [], usados = new Set();
+            r.ingredientes.forEach((linea, i) => {
+                const n = nutSinTildes(linea); if (NUT_ALACENA.test(n)) return;
+                const its = NUT_INGR_TODOS.filter(x => x.re.test(n)); if (!its.length) return;
+                its.forEach(x => usados.add(x.k));
+                if (its.some(x => tengo.has(x.k))) { tiene++; return; }
+                const it = its[0], grupo = (i > 0 || it.g === 'prot') && NUT_CAMBIOS.find(gr => gr.includes(it.k));
+                const otro = grupo && grupo.find(k => k !== it.k && tengo.has(k) && !usados.has(k) && !r.ingredientes.some(l => NUT_INGR_TODOS.find(x => x.k === k).re.test(nutSinTildes(l))));
+                if (otro) { tiene++; cambios.push([NUT_INGR_TODOS.find(x => x.k === otro).n, it.n]); }
+                else if (!falta.some(f => f.k === it.k)) falta.push(it);
+            });
+            const faltaBase = falta.filter(f => f.g !== 'verd').length;
+            return { r, tiene, falta, cambios, faltaBase };
+        }).filter(m => m.tiene > 0 && m.cambios.length <= 1 && (m.faltaBase === 0 || (m.faltaBase === 1 && m.falta.length === 1)))
+          .sort((a, b) => (a.faltaBase - b.faltaBase) || (a.falta.length + a.cambios.length - b.falta.length - b.cambios.length) || (b.r.porcion.prot - a.r.porcion.prot))
+          .slice(0, 5);
+    }
+    const nutCocNota = m => [...m.cambios.map(([con, en]) => 'con ' + con.toLowerCase() + ' en vez de ' + en.toLowerCase()),
+                             ...(m.falta.length ? ['te falta: ' + m.falta.map(f => f.n.toLowerCase()).join(', ')] : [])].join(' · ');
+    function nutCocRecetasHTML() {
+        const ms = nutCocRecetas();
+        if (!nutCocTengo().size) return '<div class="nut-vacio">Marcá lo que tenés y te muestro qué recetas te salen.</div>';
+        if (!ms.length) return '<div class="nut-vacio">Ninguna de tus recetas cierra con eso. Pedile ideas a Claude.</div>';
+        return ms.map(m => { const nota = nutCocNota(m);
+            return '<div class="nut-match" onclick="nutVerReceta(\'' + m.r.id + '\')"><span class="nut-emoji">' + (m.r.emoji || '🍽️') + '</span><div style="flex:1;min-width:0"><b>' + escHtml(m.r.nombre) + '</b>' +
+                   '<div class="m">' + nutFmt(m.r.porcion.kcal) + ' kcal · ' + nutFmt(m.r.porcion.prot) + ' g de proteína</div>' +
+                   '<div class="f' + (nota ? '' : ' ok') + '">' + (nota ? escHtml(nota.charAt(0).toUpperCase() + nota.slice(1)) : '✓ Tenés todo') + '</div></div><span class="ir">›</span></div>'; }).join('');
+    }
+    function nutCocPintarRecetas() { const el = document.getElementById('nutCocRecetas'); if (el) el.innerHTML = nutCocRecetasHTML(); }
+    function nutIngr(k) {
+        const i = nutCocina.sel.indexOf(k);
+        if (i >= 0) nutCocina.sel.splice(i, 1); else nutCocina.sel.push(k);
+        nutCocGuardar(); renderNut();
+    }
+    function nutCocOtros(v) { nutCocina.otros = v; nutCocGuardar(); nutCocPintarRecetas(); }
+    function nutCocComida(c) { nutCocinaComida = c; renderNut(); }
+    function nutCocLimpiar() { nutCocina = { sel: [], otros: '' }; nutCocGuardar(); renderNut(); }
+    function nutVerReceta(id) {
+        nutVista = 'recetas'; nutFiltro = 'todas'; nutAbierta = id; renderNut();
+        document.getElementById('nutR-' + id)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+    // Arma el pedido para Claude con lo que tiene, lo que lleva comido y las recetas que le salen.
+    function nutCocPreguntar() {
+        const tengo = NUT_INGR_TODOS.filter(i => nutCocina.sel.includes(i.k)).map(i => i.n.toLowerCase());
+        const otros = nutCocina.otros.trim();
+        if (!tengo.length && !otros) { toast('Marcá o escribí lo que tenés.'); return; }
+        const c = nutCocComidaActual(), o = nut.objetivos, t = nutTotales(hoyYMD());
+        const para = { desayuno: 'el desayuno', almuerzo: 'el almuerzo', merienda: 'la merienda', cena: 'la cena' }[c];
+        const ms = nutCocRecetas();
+        const texto = 'Para ' + para + ' tengo: ' + [...tengo, ...(otros ? [otros] : [])].join(', ') + '. ¿Qué puedo cocinar? ' +
+            (t.kcal || t.prot ? 'Hoy llevo ' + nutFmt(t.prot) + ' g de proteína y ' + nutFmt(t.kcal) + ' kcal' : 'Hoy todavía no anoté comidas') +
+            ' (objetivo ' + o.protMin + '–' + o.protMax + ' g de proteína). ' +
+            (ms.length ? 'De mis recetas me podrían servir: ' + ms.map(m => { const n = nutCocNota(m); return m.r.nombre + ' [' + m.r.id + ']' + (n ? ' (' + n + ')' : ''); }).join('; ') + '. ' : '') +
+            'Proponeme 2 o 3 opciones simples para 1 porción, con cantidades, pasos cortos y kcal y proteína aproximadas, que entren en mi plan' +
+            (c === 'almuerzo' || c === 'cena' ? ' (bastante proteína y carbohidrato porque es comida principal)' : ' (bastante proteína)') +
+            '. Si alguna conviene hacerla por tanda, decímelo. No anotes nada todavía: cuando te diga cuál comí, anotala en mi alimentación, y si te pido, guardala en mis recetas.';
+        cerrarComidas();
+        preguntarAClaude(texto);
+    }
+
     function renderNut() {
         const el = document.getElementById('comidaView'); if (!el) return;
         const o = nut.objetivos, hoy = hoyYMD();
-        const seg = '<div class="nut-seg">' + [['hoy', 'Hoy'], ['recetas', 'Recetas'], ['plan', 'Mi plan']].map(([k, l]) =>
+        const seg = '<div class="nut-seg">' + [['hoy', 'Hoy'], ['cocinar', 'Cocinar'], ['recetas', 'Recetas'], ['plan', 'Mi plan']].map(([k, l]) =>
             '<button class="' + (nutVista === k ? 'active' : '') + '" onclick="nutVer(\'' + k + '\')">' + l + '</button>').join('') + '</div>';
         let cuerpo = '';
 
@@ -4609,6 +4721,7 @@
                 '<div class="nut-acciones"><button class="nut-btn-1" onclick="nutAgregarManual()">Anotar</button>' +
                     '<button class="nut-btn-2" onclick="nutVer(\'recetas\')">📖 De una receta</button></div>' +
                 '<div class="nut-acciones"><button class="nut-btn-2" onclick="cerrarComidas(); abrirClaudeCon(\'Anotá en mi alimentación lo que comí: \')">✨ Contale a Claude y que calcule él</button></div>' +
+                '<div class="nut-acciones"><button class="nut-btn-2" onclick="nutVer(\'cocinar\')">🍳 ¿Qué cocino con lo que tengo?</button></div>' +
                 (hist ? '<div class="nut-sub">Días anteriores</div><div class="nut-hist">' + hist + '</div>' : '');
         }
 
@@ -4629,12 +4742,25 @@
                         '<div class="nut-agregar"><select id="nutComidaR">' + NUT_COMIDAS.map(([k, l]) => '<option value="' + k + '"' + (k === porDefecto(r) ? ' selected' : '') + '>' + l + '</option>').join('') + '</select>' +
                         '<select id="nutPorc">' + [0.5, 1, 1.5, 2].map(p => '<option value="' + p + '"' + (p === 1 ? ' selected' : '') + '>' + String(p).replace('.', ',') + ' porc.</option>').join('') + '</select>' +
                         '<button onclick="nutAgregarReceta(\'' + r.id + '\')">Anotar en hoy</button></div></div>';
-                    return '<div class="nut-receta"><div class="nut-receta-top" onclick="nutAbrir(\'' + r.id + '\')"><span class="nut-emoji">' + (r.emoji || '🍽️') + '</span><div style="flex:1;min-width:0">' +
+                    return '<div class="nut-receta" id="nutR-' + r.id + '"><div class="nut-receta-top" onclick="nutAbrir(\'' + r.id + '\')"><span class="nut-emoji">' + (r.emoji || '🍽️') + '</span><div style="flex:1;min-width:0">' +
                         '<b>' + escHtml(r.nombre) + '</b><div class="m">' + nutFmt(pc.kcal) + ' kcal · ' + nutFmt(pc.prot) + ' g de proteína por porción</div>' +
                         '<span class="nut-tag">' + (NUT_TIPOS[r.tipo] || r.tipo) + '</span>' + (r.tanda ? '<span class="nut-tag">Por tanda · rinde ' + r.porciones + '</span>' : '') +
                         '</div></div>' + det + '</div>';
                 }).join('') || '<div class="nut-vacio">No hay recetas en este grupo.</div>') +
                 '<div class="nut-nota">Valores aproximados por porción. Para sumar una receta tuya, pedíselo a Claude ("agregá esta receta a mis recetas").</div>';
+        }
+
+        if (nutVista === 'cocinar') {
+            const c = nutCocComidaActual(), tengo = nutCocTengo();
+            cuerpo = '<div class="nut-coc-intro">Marcá lo que tenés. Abajo ves qué recetas tuyas te salen, o pedile ideas a Claude.</div>' +
+                '<div class="nut-sub">Para</div><div class="nut-filtros">' + [['desayuno', 'Desayuno'], ['almuerzo', 'Almuerzo'], ['merienda', 'Merienda'], ['cena', 'Cena']].map(([k, l]) => '<button class="' + (c === k ? 'active' : '') + '" onclick="nutCocComida(\'' + k + '\')">' + l + '</button>').join('') + '</div>' +
+                NUT_INGR.map(([, titulo, xs]) => '<div class="nut-sub">' + titulo + '</div><div class="nut-chips">' +
+                    xs.map(([k, e, n]) => '<button class="' + (nutCocina.sel.includes(k) ? 'on' : '') + '" onclick="nutIngr(\'' + k + '\')">' + e + ' ' + n + '</button>').join('') + '</div>').join('') +
+                '<input id="nutOtros" class="nut-otros" placeholder="Otros: medio morrón, queso rallado…" value="' + escHtml(nutCocina.otros) + '" oninput="nutCocOtros(this.value)">' +
+                '<div class="nut-acciones" style="margin-top:14px"><button class="nut-btn-1" onclick="nutCocPreguntar()">✨ Preguntarle a Claude qué cocino</button></div>' +
+                '<div class="nut-sub">De tus recetas</div><div id="nutCocRecetas">' + nutCocRecetasHTML() + '</div>' +
+                (tengo.size ? '<div class="nut-acciones"><button class="nut-btn-2" onclick="nutCocLimpiar()">Limpiar lo marcado</button></div>' : '') +
+                '<div class="nut-nota">Cuenta como que siempre tenés aceite, sal y condimentos. Claude te arma la receta con cantidades, proteína y calorías, y la anota cuando le digas cuál comiste.</div>';
         }
 
         if (nutVista === 'plan') {
