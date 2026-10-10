@@ -1451,6 +1451,71 @@
             button:active, .chip-f:active, .day-item-title:active, .rec-item-tit:active { opacity:0.55; }
         }
 
+        /* ── Alimentación ── */
+        .nut-box { background:var(--bg); }
+        .nut-seg { display:flex; background:var(--relleno); border-radius:10px; padding:2px; margin-bottom:14px; }
+        .nut-seg button { flex:1; border:none; background:transparent; border-radius:8px; padding:7px 4px; font-size:14px; font-weight:500; color:var(--text); cursor:pointer; }
+        .nut-seg button.active { background:var(--surface); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.12); }
+        @media (prefers-color-scheme: dark) { .nut-seg button.active { background:#636366; } }
+        .nut-metas { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+        .nut-meta { background:var(--surface); border-radius:14px; padding:12px 14px; box-shadow:var(--sombra); }
+        .nut-meta small { display:block; font-size:12px; color:var(--text-2); }
+        .nut-meta b { display:block; font-size:26px; font-weight:700; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; margin:2px 0; }
+        .nut-barra { height:6px; border-radius:3px; background:var(--relleno); margin-top:8px; overflow:hidden; }
+        .nut-barra i { display:block; height:100%; border-radius:3px; background:var(--accent); }
+        .nut-barra i.ok { background:var(--success); }
+        .nut-aviso { font-size:13px; color:var(--naranja-texto); margin:-4px 0 12px; line-height:1.4; }
+        .nut-lista { background:var(--surface); border-radius:14px; padding:2px 14px; box-shadow:var(--sombra); }
+        .nut-grupo h4 { font-size:12px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.03em; margin:12px 0 2px; }
+        .nut-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:0.5px solid var(--separador); font-size:15px; }
+        .nut-grupo:last-child .nut-item:last-child { border-bottom:none; }
+        .nut-item .n { flex:1; min-width:0; }
+        .nut-item .v, .nut-hoy .v { font-size:12.5px; color:var(--text-3); white-space:nowrap; font-variant-numeric:tabular-nums; }
+        .nut-item button { border:none; background:none; color:var(--text-3); font-size:13px; cursor:pointer; width:28px; height:28px; border-radius:50%; flex-shrink:0; }
+        .nut-vacio { font-size:14px; color:var(--text-3); padding:14px 0; text-align:center; }
+        .nut-form { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px; }
+        .nut-form .ancho { grid-column:1 / -1; }
+        .modal-box .nut-form input, .modal-box .nut-form select, .modal-box .nut-agregar select { margin:0; background:var(--surface); }
+        .nut-acciones { display:flex; gap:8px; margin-top:8px; }
+        .nut-acciones button { flex:1; border:none; border-radius:12px; padding:12px 10px; font-size:15px; font-weight:600; cursor:pointer; }
+        .nut-btn-1 { background:var(--accent); color:#fff; }
+        .nut-btn-2 { background:var(--accent-tinte); color:var(--accent); }
+        .nut-sub { font-size:12px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.03em; margin:20px 0 6px; }
+        .nut-hist { background:var(--surface); border-radius:14px; padding:4px 14px; box-shadow:var(--sombra); }
+        .nut-hist div { display:flex; justify-content:space-between; gap:10px; font-size:14px; padding:8px 0; border-bottom:0.5px solid var(--separador); font-variant-numeric:tabular-nums; }
+        .nut-hist div:last-child { border-bottom:none; }
+        .nut-hist span:last-child { color:var(--text-2); }
+        .nut-filtros { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-bottom:12px; }
+        .nut-filtros::-webkit-scrollbar { display:none; }
+        .nut-filtros button { flex-shrink:0; border:none; background:var(--surface); box-shadow:var(--sombra); border-radius:999px; padding:7px 13px; font-size:13.5px; font-weight:500; color:var(--text); cursor:pointer; }
+        .nut-filtros button.active { background:var(--accent); color:#fff; }
+        .nut-receta { background:var(--surface); border-radius:14px; box-shadow:var(--sombra); margin-bottom:10px; overflow:hidden; }
+        .nut-receta-top { display:flex; gap:12px; align-items:center; padding:12px 14px; cursor:pointer; }
+        .nut-emoji { font-size:26px; width:46px; height:46px; border-radius:12px; background:var(--relleno); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .nut-receta-top b { display:block; font-size:15px; font-weight:600; line-height:1.25; }
+        .nut-receta-top .m { font-size:13px; color:var(--text-2); margin-top:3px; }
+        .nut-tag { display:inline-block; font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-tinte); border-radius:999px; padding:1px 7px; margin:5px 4px 0 0; }
+        .nut-receta-det { padding:0 14px 14px; font-size:14.5px; color:var(--text); line-height:1.5; }
+        .nut-receta-det h5 { font-size:12px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.03em; margin:10px 0 4px; }
+        .nut-receta-det ul, .nut-receta-det ol { padding-left:20px; }
+        .nut-macros { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+        .nut-macros span { font-size:12px; background:var(--relleno); border-radius:999px; padding:3px 9px; color:var(--text-2); }
+        .nut-porque { font-size:13.5px; color:var(--text-2); background:var(--relleno); border-radius:10px; padding:9px 11px; margin-top:10px; }
+        .nut-agregar { display:grid; grid-template-columns:1fr 96px; gap:8px; margin-top:12px; }
+        .nut-agregar button { grid-column:1 / -1; border:none; border-radius:12px; padding:12px; font-size:15px; font-weight:600; background:var(--accent); color:#fff; cursor:pointer; }
+        .nut-plan section { background:var(--surface); border-radius:14px; padding:12px 14px; box-shadow:var(--sombra); margin-bottom:10px; }
+        .nut-plan h4 { font-size:15px; font-weight:600; margin-bottom:6px; }
+        .nut-plan ul { padding-left:18px; font-size:14px; line-height:1.5; color:var(--text); }
+        .nut-plan li + li { margin-top:4px; }
+        .nut-metas-edit { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .nut-metas-edit label { font-size:12px; color:var(--text-2); }
+        .modal-box .nut-metas-edit input { margin:2px 0 0; }
+        .nut-nota { font-size:12px; color:var(--text-3); margin-top:12px; line-height:1.45; }
+        /* Tarjeta en Mi Día */
+        .nut-hoy { display:flex; align-items:center; gap:12px; cursor:pointer; margin-bottom:14px; background:var(--surface);
+                   border-radius:var(--radius); box-shadow:var(--sombra); padding:12px 15px; font-size:14px; color:var(--text); }
+        .nut-hoy-main { flex:1; min-width:0; }
+
         /* ── Preguntarle a Claude ── */
         .claude-sub { font-size:13px; color:var(--text-2); margin:-6px 0 14px; line-height:1.45; }
         .claude-rapidos { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
@@ -1542,7 +1607,9 @@
             .titulo-fecha { display:block; font-size:13px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.02em; }
             .titulo-fecha::first-letter { text-transform:uppercase; }
             .titulo-grande { display:block; font-size:34px; font-weight:700; letter-spacing:-0.03em; line-height:1.1; color:var(--text); margin-top:1px; }
-            .header-acciones { flex-wrap:nowrap; gap:8px; margin-top:4px; }
+            .header-acciones { flex-wrap:nowrap; gap:6px; margin-top:4px; }
+            .header-acciones .icon-btn { min-width:34px; height:34px; padding:0 8px; font-size:16px; }
+            .titulo-fecha { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
             .solo-escritorio { display:none !important; }
             .stats-section, .tabs { display:none; }
             .tabbar { display:flex; }
@@ -1614,6 +1681,7 @@
     <button class="lateral-item" onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Objetivos y metas</button>
     <button class="lateral-item" onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg>Compras del súper</button>
     <button class="lateral-item" onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg>Gimnasio</button>
+    <button class="lateral-item" onclick="abrirComidas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7.5M4.5 3v4.8a2.5 2.5 0 0 0 5 0V3M7 10.5V21"/><path d="M17 3c-1.9 0-3.2 2.3-3.2 5.3 0 2.4 1.2 3.9 3.2 4.1V21"/></svg>Alimentación</button>
     <button class="lateral-item" onclick="openTeamModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.3-5.6 6.5-5.6s5.8 2 6.5 5.6"/></svg>Equipo</button>
     <button class="lateral-item" onclick="toggleNotificaciones()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>Avisos de vencidas</button>
     <div class="lateral-pie"><button class="lateral-item salir" onclick="cerrarSesion()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h9"/></svg>Cerrar sesión</button></div>
@@ -1636,6 +1704,7 @@
             <button class="icon-btn" onclick="openComprasModal()" title="Compras supermercado">🛒</button>
             <button class="icon-btn" onclick="openGymModal()" title="Rutina de gimnasio">🏋️</button>
             <button class="icon-btn" onclick="abrirClaude()" title="Preguntarle a Claude">✨</button>
+            <button class="icon-btn" onclick="abrirComidas()" title="Alimentación">🍽️</button>
             <button class="icon-btn solo-escritorio" onclick="openTeamModal()" title="Equipo: responsables y operarios">👥</button>
             <button class="icon-btn solo-escritorio" id="notifBtn" onclick="toggleNotificaciones()" title="Notificaciones de tareas vencidas">🔔</button>
             <button class="icon-btn solo-escritorio" onclick="cerrarSesion()" title="Cerrar sesión">🚪</button>
@@ -1755,6 +1824,7 @@
     <button onclick="abrirClaude()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.3 14.8l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>Claude</span></button>
     <button onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg><span>Compras</span></button>
     <button onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg><span>Gimnasio</span></button>
+    <button onclick="abrirComidas()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v7.5M4.5 3v4.8a2.5 2.5 0 0 0 5 0V3M7 10.5V21"/><path d="M17 3c-1.9 0-3.2 2.3-3.2 5.3 0 2.4 1.2 3.9 3.2 4.1V21"/></svg><span>Comidas</span></button>
     <button onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg><span>Objetivos</span></button>
     <button onclick="openTeamModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.3-5.6 6.5-5.6s5.8 2 6.5 5.6"/></svg><span>Equipo</span></button>
     <button onclick="toggleNotificaciones()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span>Avisos</span></button>
@@ -1914,6 +1984,17 @@
         <div class="modal-btns">
             <button class="btn-cancel" onclick="cerrarClaude()">Cancelar</button>
             <button class="btn-save" onclick="preguntarAClaude(document.getElementById('claudeTexto').value)">Abrir en Claude</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Alimentación (registro del día, recetas y plan) -->
+<div id="comidaModal" class="modal">
+    <div class="modal-box nut-box">
+        <h3>🍽️ Alimentación</h3>
+        <div id="comidaView"></div>
+        <div class="modal-btns" style="margin-top:16px;">
+            <button class="btn-cancel" onclick="cerrarComidas()">Cerrar</button>
         </div>
     </div>
 </div>
@@ -2337,6 +2418,7 @@
     let tasks     = (JSON.parse(localStorage.getItem('tasks'))     || initialTasks).map(migrate);
     let shopping  = JSON.parse(localStorage.getItem('shopping'))   || initialShopping;
     let gym       = gymNormalizar(JSON.parse(localStorage.getItem('gimnasio') || 'null'));
+    let nut       = nutNormalizar(JSON.parse(localStorage.getItem('nutricion') || 'null'));
     let objetivos = JSON.parse(localStorage.getItem('objetivos'))  || [];
     let editingId = null, fbLoading = false;
 
@@ -2372,6 +2454,14 @@
         gym = gymNormalizar(snap.val());
         localStorage.setItem('gimnasio', JSON.stringify(gym));
         if (document.getElementById('gymModal').classList.contains('show')) renderGym();
+        if (document.getElementById('tab-dia')?.classList.contains('active')) renderDayPlan();
+    });
+
+    db.ref('vpremoldeados/nutricion').on('value', snap => {
+        if (fbLoading) return;
+        nut = nutNormalizar(snap.val());
+        localStorage.setItem('nutricion', JSON.stringify(nut));
+        if (document.getElementById('comidaModal').classList.contains('show')) renderNut();
         if (document.getElementById('tab-dia')?.classList.contains('active')) renderDayPlan();
     });
 
@@ -2938,6 +3028,7 @@
             <div class="dia-lado">
             ${sugerenciasHoyHTML()}
             ${gymHoyHTML()}
+            ${nutHoyHTML()}
             ${objetivosBoxHTML()}
             </div>
             <div class="dia-lista">
@@ -4398,6 +4489,176 @@
     document.addEventListener('keydown', e => {
         if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b') { e.preventDefault(); alternarLateral(); }
     });
+    // ── Alimentación ──────────────────────────────────────────────────────
+    // Registro de lo que se come en el día y recetas, contra los objetivos del
+    // plan (proteína 130–140 g por día). Datos en vpremoldeados/nutricion.
+    // Todo es aproximado: las recetas base se calcularon con una tabla de
+    // referencia y las etiquetas de sus productos (whey, atún, leche).
+    const NUT_COMIDAS = [['desayuno', '☕ Desayuno'], ['almuerzo', '🍽️ Almuerzo'], ['merienda', '🥤 Merienda o colación'], ['cena', '🌙 Cena']];
+    const NUT_TIPOS = { desayuno: 'Desayuno', principal: 'Almuerzo o cena', colacion: 'Colación' };
+    let nutVista = 'hoy', nutFiltro = 'todas', nutAbierta = null;
+
+    function nutNormalizar(d) {
+        d = d || {};
+        const arr = x => x ? (Array.isArray(x) ? x : Object.values(x)).filter(v => v != null) : [];
+        return { ...d,
+            objetivos: { protMin: 130, protMax: 140, kcalMin: 1900, kcalMax: 2200, ...(d.objetivos || {}) },
+            recetas: arr(d.recetas).map(r => ({ ...r, ingredientes: arr(r.ingredientes), pasos: arr(r.pasos), porcion: r.porcion || { kcal: 0, prot: 0 } })),
+            registro: arr(d.registro),
+            plan: arr(d.plan).map(p => ({ ...p, items: arr(p.items) })) };
+    }
+    function saveNut() {
+        fbLoading = true; setSyncStatus('syncing','Guardando...');
+        localStorage.setItem('nutricion', JSON.stringify(nut));
+        db.ref('vpremoldeados/nutricion').set(nut)
+            .then(()   => setSyncStatus('connected','Sincronizado'))
+            .catch(()  => setSyncStatus('error','Error al guardar'))
+            .finally(() => { fbLoading = false; });
+    }
+    const nutFmt = n => Math.round(+n || 0).toLocaleString('es-AR');
+    const nutDelDia = f => nut.registro.filter(r => r.fecha === f);
+    const nutTotales = f => nutDelDia(f).reduce((t, r) => ({ kcal: t.kcal + (+r.kcal || 0), prot: t.prot + (+r.prot || 0) }), { kcal: 0, prot: 0 });
+    function nutComidaPorHora() { const h = new Date().getHours(); return h < 11 ? 'desayuno' : h < 16 ? 'almuerzo' : h < 20 ? 'merienda' : 'cena'; }
+
+    function abrirComidas(vista) {
+        if (vista) nutVista = vista;
+        nutAbierta = null;
+        renderNut();
+        document.getElementById('comidaModal').classList.add('show');
+    }
+    function cerrarComidas() {
+        document.getElementById('comidaModal').classList.remove('show');
+        if (document.getElementById('tab-dia')?.classList.contains('active')) renderDayPlan();
+    }
+    function nutVer(v) { nutVista = v; nutAbierta = null; renderNut(); document.querySelector('#comidaModal .modal-box').scrollTop = 0; }
+    function nutFiltrar(f) { nutFiltro = f; nutAbierta = null; renderNut(); }
+    function nutAbrir(id) { nutAbierta = nutAbierta === id ? null : id; renderNut(); }
+
+    function nutAgregarManual() {
+        const v = id => document.getElementById(id).value.trim();
+        const nombre = v('nutNombre');
+        if (!nombre) { document.getElementById('nutNombre').focus(); return; }
+        const kcal = gymKg(v('nutKcal')), prot = gymKg(v('nutProt'));
+        if (kcal == null && prot == null) { alert('Poné al menos las calorías o la proteína. Aproximadas está bien.'); return; }
+        nut.registro.push({ id: Date.now(), fecha: hoyYMD(), comida: v('nutComida'), nombre, kcal: kcal || 0, prot: prot || 0 });
+        saveNut(); renderNut();
+    }
+    function nutAgregarReceta(id) {
+        const r = nut.recetas.find(x => x.id === id); if (!r) return;
+        const p = parseFloat(document.getElementById('nutPorc').value) || 1;
+        nut.registro.push({ id: Date.now(), fecha: hoyYMD(), comida: document.getElementById('nutComidaR').value,
+            nombre: r.nombre + (p !== 1 ? ' (×' + String(p).replace('.', ',') + ')' : ''),
+            kcal: Math.round(r.porcion.kcal * p), prot: Math.round(r.porcion.prot * p), recetaId: r.id, porciones: p });
+        saveNut();
+        nutVista = 'hoy'; nutAbierta = null; renderNut();
+        toast('🍽️ Anotado: ' + r.nombre);
+    }
+    function nutBorrar(id) {
+        const e = nut.registro.find(x => x.id === id);
+        if (!e || !confirm('¿Sacar "' + e.nombre + '" del registro de hoy?')) return;
+        nut.registro = nut.registro.filter(x => x.id !== id);
+        saveNut(); renderNut();
+    }
+    function nutGuardarMetas() {
+        const n = id => parseInt(document.getElementById(id).value, 10);
+        const o = { protMin: n('nutPMin'), protMax: n('nutPMax'), kcalMin: n('nutKMin'), kcalMax: n('nutKMax') };
+        if (Object.values(o).some(x => !x || x < 0) || o.protMin > o.protMax || o.kcalMin > o.kcalMax) { alert('Revisá los números: el mínimo no puede ser mayor que el máximo.'); return; }
+        nut.objetivos = o; saveNut(); renderNut(); toast('✅ Objetivos guardados');
+    }
+    // Abre "Preguntarle a Claude" con el pedido empezado, para completarlo.
+    function abrirClaudeCon(texto) {
+        abrirClaude();
+        const t = document.getElementById('claudeTexto');
+        t.value = texto; t.focus(); t.setSelectionRange(t.value.length, t.value.length);
+    }
+
+    function renderNut() {
+        const el = document.getElementById('comidaView'); if (!el) return;
+        const o = nut.objetivos, hoy = hoyYMD();
+        const seg = '<div class="nut-seg">' + [['hoy', 'Hoy'], ['recetas', 'Recetas'], ['plan', 'Mi plan']].map(([k, l]) =>
+            '<button class="' + (nutVista === k ? 'active' : '') + '" onclick="nutVer(\'' + k + '\')">' + l + '</button>').join('') + '</div>';
+        let cuerpo = '';
+
+        if (nutVista === 'hoy') {
+            const tot = nutTotales(hoy), es = nutDelDia(hoy);
+            const pctP = Math.min(100, tot.prot / o.protMin * 100), pctK = Math.min(100, tot.kcal / o.kcalMax * 100);
+            const bajo = tot.kcal > 0 && tot.kcal < 1400 && new Date().getHours() >= 20;
+            const grupos = NUT_COMIDAS.map(([k, l]) => {
+                const xs = es.filter(e => e.comida === k); if (!xs.length) return '';
+                return '<div class="nut-grupo"><h4>' + l + '</h4>' + xs.map(e =>
+                    '<div class="nut-item"><span class="n">' + escHtml(e.nombre) + '</span><span class="v">' + nutFmt(e.kcal) + ' kcal · ' + nutFmt(e.prot) + ' g</span>' +
+                    '<button onclick="nutBorrar(' + e.id + ')" title="Sacar" aria-label="Sacar">✕</button></div>').join('') + '</div>';
+            }).join('');
+            const dias = [...new Set(nut.registro.map(r => r.fecha))].filter(f => f < hoy).sort().reverse().slice(0, 7);
+            const hist = dias.map(f => { const t = nutTotales(f);
+                return '<div><span>' + parseYMD(f).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' }) + '</span><span>' +
+                       nutFmt(t.kcal) + ' kcal · ' + nutFmt(t.prot) + ' g' + (t.prot >= o.protMin ? ' ✓' : '') + '</span></div>'; }).join('');
+            cuerpo = '<div class="nut-metas">' +
+                '<div class="nut-meta"><small>Proteína</small><b>' + nutFmt(tot.prot) + ' g</b><small>objetivo ' + o.protMin + '–' + o.protMax + ' g</small>' +
+                '<div class="nut-barra"><i class="' + (tot.prot >= o.protMin ? 'ok' : '') + '" style="width:' + pctP + '%"></i></div></div>' +
+                '<div class="nut-meta"><small>Calorías</small><b>' + nutFmt(tot.kcal) + '</b><small>referencia ' + nutFmt(o.kcalMin) + '–' + nutFmt(o.kcalMax) + '</small>' +
+                '<div class="nut-barra"><i style="width:' + pctK + '%"></i></div></div></div>' +
+                (bajo ? '<div class="nut-aviso">⚠️ Va quedando un día bajo en calorías. Tu plan dice no repetir días de 1.300 kcal: sumá una colación.</div>' : '') +
+                (grupos ? '<div class="nut-lista">' + grupos + '</div>' : '<div class="nut-vacio">Todavía no anotaste nada hoy.</div>') +
+                '<div class="nut-form">' +
+                    '<select id="nutComida" class="ancho">' + NUT_COMIDAS.map(([k, l]) => '<option value="' + k + '"' + (k === nutComidaPorHora() ? ' selected' : '') + '>' + l + '</option>').join('') + '</select>' +
+                    '<input id="nutNombre" class="ancho" placeholder="Qué comiste (ej: 2 huevos revueltos)">' +
+                    '<input id="nutKcal" inputmode="decimal" placeholder="kcal">' +
+                    '<input id="nutProt" inputmode="decimal" placeholder="proteína (g)">' +
+                '</div>' +
+                '<div class="nut-acciones"><button class="nut-btn-1" onclick="nutAgregarManual()">Anotar</button>' +
+                    '<button class="nut-btn-2" onclick="nutVer(\'recetas\')">📖 De una receta</button></div>' +
+                '<div class="nut-acciones"><button class="nut-btn-2" onclick="cerrarComidas(); abrirClaudeCon(\'Anotá en mi alimentación lo que comí: \')">✨ Contale a Claude y que calcule él</button></div>' +
+                (hist ? '<div class="nut-sub">Días anteriores</div><div class="nut-hist">' + hist + '</div>' : '');
+        }
+
+        if (nutVista === 'recetas') {
+            const filtros = [['todas', 'Todas'], ['desayuno', 'Desayuno'], ['principal', 'Almuerzo y cena'], ['colacion', 'Colación'], ['tanda', 'Por tanda']];
+            const lista = nut.recetas.filter(r => nutFiltro === 'todas' || (nutFiltro === 'tanda' ? r.tanda : r.tipo === nutFiltro));
+            const porDefecto = r => r.tipo === 'desayuno' ? 'desayuno' : r.tipo === 'colacion' ? 'merienda' : (new Date().getHours() < 17 ? 'almuerzo' : 'cena');
+            cuerpo = '<div class="nut-filtros">' + filtros.map(([k, l]) => '<button class="' + (nutFiltro === k ? 'active' : '') + '" onclick="nutFiltrar(\'' + k + '\')">' + l + '</button>').join('') + '</div>' +
+                (lista.map(r => {
+                    const abierta = nutAbierta === r.id, pc = r.porcion;
+                    let det = '';
+                    if (abierta) det = '<div class="nut-receta-det">' +
+                        '<div class="nut-macros"><span>' + nutFmt(pc.kcal) + ' kcal</span><span>' + nutFmt(pc.prot) + ' g proteína</span>' +
+                        (pc.carb != null ? '<span>' + nutFmt(pc.carb) + ' g carbohidratos</span>' : '') + (pc.gras != null ? '<span>' + nutFmt(pc.gras) + ' g grasas</span>' : '') + '</div>' +
+                        '<h5>Ingredientes' + (r.porciones > 1 ? ' (para ' + r.porciones + ' porciones)' : '') + '</h5><ul>' + r.ingredientes.map(x => '<li>' + escHtml(x) + '</li>').join('') + '</ul>' +
+                        '<h5>Cómo se hace</h5><ol>' + r.pasos.map(x => '<li>' + escHtml(x) + '</li>').join('') + '</ol>' +
+                        (r.porque ? '<div class="nut-porque">💡 ' + escHtml(r.porque) + '</div>' : '') +
+                        '<div class="nut-agregar"><select id="nutComidaR">' + NUT_COMIDAS.map(([k, l]) => '<option value="' + k + '"' + (k === porDefecto(r) ? ' selected' : '') + '>' + l + '</option>').join('') + '</select>' +
+                        '<select id="nutPorc">' + [0.5, 1, 1.5, 2].map(p => '<option value="' + p + '"' + (p === 1 ? ' selected' : '') + '>' + String(p).replace('.', ',') + ' porc.</option>').join('') + '</select>' +
+                        '<button onclick="nutAgregarReceta(\'' + r.id + '\')">Anotar en hoy</button></div></div>';
+                    return '<div class="nut-receta"><div class="nut-receta-top" onclick="nutAbrir(\'' + r.id + '\')"><span class="nut-emoji">' + (r.emoji || '🍽️') + '</span><div style="flex:1;min-width:0">' +
+                        '<b>' + escHtml(r.nombre) + '</b><div class="m">' + nutFmt(pc.kcal) + ' kcal · ' + nutFmt(pc.prot) + ' g de proteína por porción</div>' +
+                        '<span class="nut-tag">' + (NUT_TIPOS[r.tipo] || r.tipo) + '</span>' + (r.tanda ? '<span class="nut-tag">Por tanda · rinde ' + r.porciones + '</span>' : '') +
+                        '</div></div>' + det + '</div>';
+                }).join('') || '<div class="nut-vacio">No hay recetas en este grupo.</div>') +
+                '<div class="nut-nota">Valores aproximados por porción. Para sumar una receta tuya, pedíselo a Claude ("agregá esta receta a mis recetas").</div>';
+        }
+
+        if (nutVista === 'plan') {
+            cuerpo = '<div class="nut-plan">' + nut.plan.map(p => '<section><h4>' + escHtml(p.titulo) + '</h4><ul>' + p.items.map(x => '<li>' + escHtml(x) + '</li>').join('') + '</ul></section>').join('') +
+                '<section><h4>Objetivos del día</h4><div class="nut-metas-edit">' +
+                    '<label>Proteína mínima (g)<input id="nutPMin" inputmode="numeric" value="' + o.protMin + '"></label>' +
+                    '<label>Proteína máxima (g)<input id="nutPMax" inputmode="numeric" value="' + o.protMax + '"></label>' +
+                    '<label>Calorías desde<input id="nutKMin" inputmode="numeric" value="' + o.kcalMin + '"></label>' +
+                    '<label>Calorías hasta<input id="nutKMax" inputmode="numeric" value="' + o.kcalMax + '"></label>' +
+                '</div><div class="nut-acciones"><button class="nut-btn-2" onclick="nutGuardarMetas()">Guardar objetivos</button></div></section></div>' +
+                '<div class="nut-nota">Estimaciones para acompañar tu plan: no reemplazan a tu nutricionista ni a tus médicos.</div>';
+        }
+        el.innerHTML = seg + cuerpo;
+    }
+
+    // Tarjeta en Mi Día: proteína del día contra el objetivo.
+    function nutHoyHTML() {
+        const o = nut.objetivos, t = nutTotales(hoyYMD());
+        const pct = Math.min(100, t.prot / o.protMin * 100);
+        return '<div class="nut-hoy" onclick="abrirComidas(\'hoy\')"><span style="font-size:22px">🍽️</span><div class="nut-hoy-main"><b>Alimentación</b> · ' +
+               nutFmt(t.prot) + ' de ' + o.protMin + ' g de proteína<div class="nut-barra"><i class="' + (t.prot >= o.protMin ? 'ok' : '') + '" style="width:' + pct + '%"></i></div></div>' +
+               '<span class="v">' + nutFmt(t.kcal) + ' kcal</span></div>';
+    }
+
     // ── Preguntarle a Claude ──────────────────────────────────────────────
     // Abre Claude (la app del celular o claude.ai) con el pedido escrito y
     // le indica usar el conector de Mis Gestiones. Además copia el pedido: si
@@ -4482,6 +4743,7 @@
     document.getElementById('editAmbito').addEventListener('change', () => editLlenarAreas(''));
     document.getElementById('objetivosModal').addEventListener('click', e => { if(e.target===document.getElementById('objetivosModal')) closeObjetivosModal(); });
     document.getElementById('comprasModal').addEventListener('click',   e => { if(e.target===document.getElementById('comprasModal'))   closeComprasModal(); });
+    document.getElementById('comidaModal').addEventListener('click',    e => { if(e.target===document.getElementById('comidaModal'))    cerrarComidas(); });
     document.getElementById('claudeModal').addEventListener('click',    e => { if(e.target===document.getElementById('claudeModal'))    cerrarClaude(); });
     document.getElementById('gymModal').addEventListener('click',       e => { if(e.target===document.getElementById('gymModal'))       closeGymModal(); });
     document.getElementById('waModal').addEventListener('click',        e => { if(e.target===document.getElementById('waModal'))        closeWaModal(); });
