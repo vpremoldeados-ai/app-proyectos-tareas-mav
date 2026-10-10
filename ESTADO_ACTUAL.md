@@ -182,7 +182,8 @@ Datos en vpremoldeados/nutricion (localStorage nutricion):
 { objetivos:{protMin:130, protMax:140, kcalMin:1900, kcalMax:2200}, recetas:[{id, emoji, nombre,
   tipo:desayuno|principal|colacion, porciones, tanda, porcion:{kcal,prot,carb,gras}, ingredientes[],
   pasos[], porque, base}], plan:[{titulo, items[]}], registro:[{id, fecha, comida:desayuno|almuerzo|
-  merienda|cena, nombre, kcal, prot, recetaId?, porciones?, origen?, nota?}] }
+  merienda|cena, nombre, kcal, prot, recetaId?, porciones?, origen?, nota?}],
+  ingredientes:[{k:"u…", n, g:prot|carb|verd}] }   ← los que agrega él en Cocinar
 
 - Tres vistas: Hoy (totales contra objetivos, comidas por momento, anotar a mano o desde receta,
   "Contale a Claude"), Recetas (filtros, detalle, anotar porciones) y Mi plan (pautas + objetivos editables).
@@ -201,7 +202,9 @@ Datos en vpremoldeados/nutricion (localStorage nutricion):
   base del plato; pollo↔carne↔cerdo). Pueden faltar verduras, y acelga↔espinaca no cuenta como cambio. Aceite, sal y condimentos se dan por
   sentados. El botón arma el pedido para Claude (ingredientes, proteína y kcal del día, recetas que
   sirven) y le pide no anotar nada hasta que diga qué comió. Lo marcado se guarda solo en ese
-  navegador (localStorage nutCocina), no en la base. Las instrucciones del conector también explican
+  navegador (localStorage nutCocina), no en la base. Con "+ Agregar" en cada grupo suma ingredientes propios a la
+  lista (van a la base, nut.ingredientes); en ese modo tocando ✕ los saca. Si escribe uno que ya está
+  ("rúcula", "morrones") lo marca en vez de duplicarlo. Se buscan en las recetas por nombre sin la ese final. Las instrucciones del conector también explican
   cómo responder "qué cocino".
 
 ---

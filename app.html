@@ -1516,6 +1516,12 @@
         .nut-chips { display:flex; flex-wrap:wrap; gap:6px; }
         .nut-chips button { border:none; background:var(--surface); box-shadow:var(--sombra); border-radius:999px; padding:7px 12px; font-size:14px; color:var(--text); cursor:pointer; }
         .nut-chips button.on { background:var(--accent); color:#fff; }
+        .nut-chips button.agregar { background:transparent; box-shadow:none; border:1px dashed var(--accent); color:var(--accent); padding:6px 12px; }
+        .nut-chips button.quitar { background:var(--relleno); box-shadow:none; }
+        .nut-ingr-nuevo { display:flex; gap:6px; margin-top:8px; }
+        .modal-box .nut-ingr-nuevo input { flex:1; min-width:0; margin:0; background:var(--surface); }
+        .nut-ingr-nuevo button { border:none; border-radius:10px; padding:0 14px; font-size:15px; font-weight:600; background:var(--accent-tinte); color:var(--accent); cursor:pointer; flex-shrink:0; }
+        .nut-ingr-nuevo button.si { background:var(--accent); color:#fff; }
         .modal-box input.nut-otros { margin:10px 0 0; background:var(--surface); }
         .nut-match { display:flex; gap:12px; align-items:center; background:var(--surface); border-radius:14px; box-shadow:var(--sombra); padding:10px 12px; margin-bottom:8px; cursor:pointer; }
         .nut-match b { display:block; font-size:15px; font-weight:600; line-height:1.25; }
@@ -4518,6 +4524,7 @@
             objetivos: { protMin: 130, protMax: 140, kcalMin: 1900, kcalMax: 2200, ...(d.objetivos || {}) },
             recetas: arr(d.recetas).map(r => ({ ...r, ingredientes: arr(r.ingredientes), pasos: arr(r.pasos), porcion: r.porcion || { kcal: 0, prot: 0 } })),
             registro: arr(d.registro),
+            ingredientes: arr(d.ingredientes).filter(i => i.k && i.n && i.g),
             plan: arr(d.plan).map(p => ({ ...p, items: arr(p.items) })) };
     }
     function saveNut() {
@@ -4535,7 +4542,7 @@
 
     function abrirComidas(vista) {
         if (vista) nutVista = vista;
-        nutAbierta = null;
+        nutAbierta = null; nutCocEditando = null;
         renderNut();
         document.getElementById('comidaModal').classList.add('show');
     }
@@ -4543,7 +4550,7 @@
         document.getElementById('comidaModal').classList.remove('show');
         if (document.getElementById('tab-dia')?.classList.contains('active')) renderDayPlan();
     }
-    function nutVer(v) { nutVista = v; nutAbierta = null; renderNut(); document.querySelector('#comidaModal .modal-box').scrollTop = 0; }
+    function nutVer(v) { nutVista = v; nutAbierta = null; nutCocEditando = null; renderNut(); document.querySelector('#comidaModal .modal-box').scrollTop = 0; }
     function nutFiltrar(f) { nutFiltro = f; nutAbierta = null; renderNut(); }
     function nutAbrir(id) { nutAbierta = nutAbierta === id ? null : id; renderNut(); }
 
@@ -4589,7 +4596,8 @@
     // Marca lo que tiene en la heladera: la app le muestra al instante cuáles
     // de sus recetas le salen, y con un toque le pide a Claude ideas con eso,
     // contándole cuánta proteína lleva en el día. Lo marcado queda guardado en
-    // este celular hasta que lo limpie.
+    // este celular hasta que lo limpie; los ingredientes que agrega a la lista
+    // van a la base (nut.ingredientes) y los ve en todos lados.
     const NUT_INGR = [
         ['prot', 'Proteínas', [['pollo','🍗','Pollo','\\bpollo|\\bpechuga'], ['carne','🥩','Carne magra','\\bcarne|\\bnalga|\\bpeceto|\\bbife'], ['cerdo','🐖','Cerdo','\\bcerdo'],
                                ['atun','🐟','Atún','\\batun'], ['huevos','🥚','Huevos','\\bhuevo|\\bclara'], ['queso','🧀','Queso','\\bqueso'], ['yogur','🥣','Yogur','\\byogur'],
@@ -4600,7 +4608,12 @@
                               ['zapallito','🥒','Zapallito','\\bzapallito'], ['espinaca','🥬','Espinaca','\\bespinaca'], ['acelga','🥬','Acelga','\\bacelga'],['lechuga','🥗','Lechuga o rúcula','\\blechuga|\\brucula|ensalada verde'],
                               ['palta','🥑','Palta','\\bpalta'], ['morron','🫑','Morrón','\\bmorron'], ['brocoli','🥦','Brócoli','\\bbrocoli']]]
     ];
-    const NUT_INGR_TODOS = NUT_INGR.flatMap(([g, , xs]) => xs.map(([k, e, n, re]) => ({ k, e, n, g, re: new RegExp(re) })));
+    const NUT_INGR_BASE = NUT_INGR.flatMap(([g, , xs]) => xs.map(([k, e, n, re]) => ({ k, e, n, g, re: new RegExp(re) })));
+    // Los que agrega él ({k, n, g}) se buscan en las recetas por su nombre,
+    // sin la ese final: "champiñones" encuentra "champiñón".
+    const nutRaiz = n => { const s = nutSinTildes(n).trim().replace(/\s+/g, ' '); return s.length > 4 ? s.replace(/(es|s)$/, '') : s; };
+    const nutIngrTodos = () => [...NUT_INGR_BASE, ...nut.ingredientes.map(i => ({ ...i, e: '', re: new RegExp('\\b' + nutRaiz(i.n).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }))];
+    let nutCocEditando = null;   // grupo al que está agregando ingredientes
     // Lo que siempre hay en la alacena: no cuenta como faltante.
     const NUT_ALACENA = /aceite|manteca|mayonesa|mostaza|salsa de soja|chorrito|\bsal\b|pimienta|condimento|ajo/;
     // Se pueden cambiar entre sí. El carbohidrato que es la base del plato
@@ -4615,7 +4628,7 @@
     // Lo marcado más lo que se reconozca en "otros".
     function nutCocTengo() {
         const s = new Set(nutCocina.sel), o = nutSinTildes(nutCocina.otros);
-        if (o) NUT_INGR_TODOS.forEach(i => { if (i.re.test(o)) s.add(i.k); });
+        if (o) nutIngrTodos().forEach(i => { if (i.re.test(o)) s.add(i.k); });
         return s;
     }
     // Recetas que salen con lo que tiene: todas las proteínas y carbohidratos
@@ -4624,16 +4637,17 @@
         const tengo = nutCocTengo(); if (!tengo.size) return [];
         const c = nutCocComidaActual();
         const tipos = c === 'desayuno' ? ['desayuno', 'colacion'] : c === 'merienda' ? ['colacion', 'desayuno'] : ['principal'];
+        const todos = nutIngrTodos();
         return nut.recetas.filter(r => tipos.includes(r.tipo)).map(r => {
             let tiene = 0; const falta = [], cambios = [], usados = new Set();
             r.ingredientes.forEach((linea, i) => {
                 const n = nutSinTildes(linea); if (NUT_ALACENA.test(n)) return;
-                const its = NUT_INGR_TODOS.filter(x => x.re.test(n)); if (!its.length) return;
+                const its = todos.filter(x => x.re.test(n)); if (!its.length) return;
                 its.forEach(x => usados.add(x.k));
                 if (its.some(x => tengo.has(x.k))) { tiene++; return; }
                 const it = its[0], grupo = (i > 0 || it.g === 'prot') && NUT_CAMBIOS.find(gr => gr.includes(it.k));
-                const otro = grupo && grupo.find(k => k !== it.k && tengo.has(k) && !usados.has(k) && !r.ingredientes.some(l => NUT_INGR_TODOS.find(x => x.k === k).re.test(nutSinTildes(l))));
-                if (otro) { tiene++; cambios.push([NUT_INGR_TODOS.find(x => x.k === otro).n, it.n, it.g]); }
+                const otro = grupo && grupo.find(k => k !== it.k && tengo.has(k) && !usados.has(k) && !r.ingredientes.some(l => todos.find(x => x.k === k).re.test(nutSinTildes(l))));
+                if (otro) { tiene++; cambios.push([todos.find(x => x.k === otro).n, it.n, it.g]); }
                 else if (!falta.some(f => f.k === it.k)) falta.push(it);
             });
             const faltaBase = falta.filter(f => f.g !== 'verd').length;
@@ -4662,13 +4676,41 @@
     function nutCocOtros(v) { nutCocina.otros = v; nutCocGuardar(); nutCocPintarRecetas(); }
     function nutCocComida(c) { nutCocinaComida = c; renderNut(); }
     function nutCocLimpiar() { nutCocina = { sel: [], otros: '' }; nutCocGuardar(); renderNut(); }
+    // Agregar y sacar ingredientes propios de la lista. El que agrega queda marcado.
+    function nutIngrEditar(g) { nutCocEditando = g; renderNut(); if (g) document.getElementById('nutIngrNuevo')?.focus(); }
+    function nutIngrAgregar(g) {
+        const inp = document.getElementById('nutIngrNuevo'), n = inp.value.trim().replace(/\s+/g, ' ');
+        if (!n) { inp.focus(); return; }
+        inp.value = '';
+        const nombre = n.charAt(0).toUpperCase() + n.slice(1);
+        // Si ya está en la lista (mismo nombre, o una palabra que ya reconoce, como "pechuga"), lo marca y listo.
+        const ya = nutIngrTodos().find(i => nutRaiz(i.n) === nutRaiz(nombre) || (!nombre.includes(' ') && i.re.test(nutSinTildes(nombre))));
+        if (ya) {
+            if (!nutCocina.sel.includes(ya.k)) nutCocina.sel.push(ya.k);
+            nutCocGuardar(); renderNut(); document.getElementById('nutIngrNuevo')?.focus();
+            toast('Ya estaba en la lista: ' + ya.n + '. Quedó marcado.');
+            return;
+        }
+        const k = 'u' + Date.now();
+        nut.ingredientes.push({ k, n: nombre, g });
+        nutCocina.sel.push(k); nutCocGuardar();
+        saveNut(); renderNut();
+        document.getElementById('nutIngrNuevo')?.focus();
+    }
+    function nutIngrQuitar(k) {
+        const i = nut.ingredientes.find(x => x.k === k);
+        if (!i || !confirm('¿Sacar "' + i.n + '" de la lista?')) return;
+        nut.ingredientes = nut.ingredientes.filter(x => x.k !== k);
+        nutCocina.sel = nutCocina.sel.filter(x => x !== k); nutCocGuardar();
+        saveNut(); renderNut();
+    }
     function nutVerReceta(id) {
         nutVista = 'recetas'; nutFiltro = 'todas'; nutAbierta = id; renderNut();
         document.getElementById('nutR-' + id)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
     // Arma el pedido para Claude con lo que tiene, lo que lleva comido y las recetas que le salen.
     function nutCocPreguntar() {
-        const tengo = NUT_INGR_TODOS.filter(i => nutCocina.sel.includes(i.k)).map(i => i.n.toLowerCase());
+        const tengo = nutIngrTodos().filter(i => nutCocina.sel.includes(i.k)).map(i => i.n.toLowerCase());
         const otros = nutCocina.otros.trim();
         if (!tengo.length && !otros) { toast('Marcá o escribí lo que tenés.'); return; }
         const c = nutCocComidaActual(), o = nut.objetivos, t = nutTotales(hoyYMD());
@@ -4755,9 +4797,19 @@
             const c = nutCocComidaActual(), tengo = nutCocTengo();
             cuerpo = '<div class="nut-coc-intro">Marcá lo que tenés. Abajo ves qué recetas tuyas te salen, o pedile ideas a Claude.</div>' +
                 '<div class="nut-sub">Para</div><div class="nut-filtros">' + [['desayuno', 'Desayuno'], ['almuerzo', 'Almuerzo'], ['merienda', 'Merienda'], ['cena', 'Cena']].map(([k, l]) => '<button class="' + (c === k ? 'active' : '') + '" onclick="nutCocComida(\'' + k + '\')">' + l + '</button>').join('') + '</div>' +
-                NUT_INGR.map(([, titulo, xs]) => '<div class="nut-sub">' + titulo + '</div><div class="nut-chips">' +
-                    xs.map(([k, e, n]) => '<button class="' + (nutCocina.sel.includes(k) ? 'on' : '') + '" onclick="nutIngr(\'' + k + '\')">' + e + ' ' + n + '</button>').join('') + '</div>').join('') +
-                '<input id="nutOtros" class="nut-otros" placeholder="Otros: medio morrón, queso rallado…" value="' + escHtml(nutCocina.otros) + '" oninput="nutCocOtros(this.value)">' +
+                NUT_INGR.map(([g, titulo, xs]) => {
+                    const chip = (k, txt) => '<button class="' + (nutCocina.sel.includes(k) ? 'on' : '') + '" onclick="nutIngr(\'' + k + '\')">' + txt + '</button>';
+                    const propios = nut.ingredientes.filter(i => i.g === g), editando = nutCocEditando === g;
+                    return '<div class="nut-sub">' + titulo + '</div><div class="nut-chips">' +
+                        xs.map(([k, e, n]) => chip(k, e + ' ' + n)).join('') +
+                        propios.map(i => editando ? '<button class="quitar" onclick="nutIngrQuitar(\'' + i.k + '\')">' + escHtml(i.n) + ' ✕</button>' : chip(i.k, escHtml(i.n))).join('') +
+                        (editando ? '' : '<button class="agregar" onclick="nutIngrEditar(\'' + g + '\')">+ Agregar</button>') + '</div>' +
+                        (editando ? '<div class="nut-ingr-nuevo"><input id="nutIngrNuevo" placeholder="Ej: champiñones" enterkeyhint="done" autocapitalize="sentences" ' +
+                                    'onkeydown="if (event.key === \'Enter\') { event.preventDefault(); nutIngrAgregar(\'' + g + '\'); }">' +
+                                    '<button class="si" onclick="nutIngrAgregar(\'' + g + '\')">Agregar</button><button onclick="nutIngrEditar(null)">Listo</button></div>' +
+                                    (propios.length ? '<div class="nut-nota" style="margin-top:6px">Tocá ✕ para sacar de la lista uno de los que agregaste.</div>' : '') : '');
+                }).join('') +
+                '<input id="nutOtros" class="nut-otros" placeholder="Otros: medio limón, queso rallado…" value="' + escHtml(nutCocina.otros) + '" oninput="nutCocOtros(this.value)">' +
                 '<div class="nut-acciones" style="margin-top:14px"><button class="nut-btn-1" onclick="nutCocPreguntar()">✨ Preguntarle a Claude qué cocino</button></div>' +
                 '<div class="nut-sub">De tus recetas</div><div id="nutCocRecetas">' + nutCocRecetasHTML() + '</div>' +
                 (tengo.size ? '<div class="nut-acciones"><button class="nut-btn-2" onclick="nutCocLimpiar()">Limpiar lo marcado</button></div>' : '') +
@@ -4774,7 +4826,10 @@
                 '</div><div class="nut-acciones"><button class="nut-btn-2" onclick="nutGuardarMetas()">Guardar objetivos</button></div></section></div>' +
                 '<div class="nut-nota">Estimaciones para acompañar tu plan: no reemplazan a tu nutricionista ni a tus médicos.</div>';
         }
+        // Si llega un cambio de la base mientras escribe, que no pierda lo escrito.
+        const foco = document.activeElement, idFoco = foco && el.contains(foco) && foco.tagName === 'INPUT' && foco.id, escrito = idFoco && foco.value;
         el.innerHTML = seg + cuerpo;
+        if (idFoco) { const n = document.getElementById(idFoco); if (n) { n.value = escrito; n.focus(); } }
     }
 
     // Tarjeta en Mi Día: proteína del día contra el objetivo.
