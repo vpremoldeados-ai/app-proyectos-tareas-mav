@@ -1448,6 +1448,15 @@
             button:active, .chip-f:active, .mas-fila:active, .day-item-title:active, .rec-item-tit:active { opacity:0.55; }
         }
 
+        /* ── Preguntarle a Claude ── */
+        .claude-sub { font-size:13px; color:var(--text-2); margin:-6px 0 14px; line-height:1.45; }
+        .claude-rapidos { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+        .claude-rapidos button { border:none; background:var(--accent-tinte); color:var(--accent); border-radius:999px;
+                                 padding:8px 13px; font-size:14px; font-weight:600; cursor:pointer; text-align:left; }
+        .modal-box textarea.claude-texto { width:100%; min-height:84px; border:none; background:var(--relleno); border-radius:12px;
+                                           padding:12px 13px; font-size:16px; color:var(--text); resize:vertical; margin-bottom:12px; }
+        .modal-box textarea.claude-texto:focus { outline:none; box-shadow:0 0 0 3px var(--accent-tinte); }
+
         /* ── Computadora: barra lateral estilo Mac ── */
         .lateral, .btn-nueva-header, .btn-lateral { display:none; }
         .btn-lateral { width:36px; height:36px; border:none; border-radius:9px; background:transparent; color:var(--text-2);
@@ -1597,6 +1606,7 @@
     <button class="lateral-item" data-lateral="tab-calendario" onclick="goTab('tab-calendario')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.8h17M8 3.2v3.6M16 3.2v3.6"/></svg>Calendario</button>
     <button class="lateral-item" data-lateral="tab-metricas" onclick="goTab('tab-metricas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20v-6M12 20V6M18 20v-10M3 20.5h18"/></svg>Métricas</button>
     <div class="lateral-tit">Herramientas</div>
+    <button class="lateral-item" onclick="abrirClaude()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.3 14.8l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Preguntarle a Claude</button>
     <button class="lateral-item" onclick="openObjetivosModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Objetivos y metas</button>
     <button class="lateral-item" onclick="openComprasModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.2l2.1 10.6a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.2L20.5 8H6.2"/><circle cx="9.5" cy="19.6" r="1.3"/><circle cx="17" cy="19.6" r="1.3"/></svg>Compras del súper</button>
     <button class="lateral-item" onclick="openGymModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11"/></svg>Gimnasio</button>
@@ -1621,6 +1631,7 @@
             <button class="icon-btn solo-escritorio" onclick="openObjetivosModal()" title="Mis objetivos y metas">🎯</button>
             <button class="icon-btn" onclick="openComprasModal()" title="Compras supermercado">🛒</button>
             <button class="icon-btn" onclick="openGymModal()" title="Rutina de gimnasio">🏋️</button>
+            <button class="icon-btn" onclick="abrirClaude()" title="Preguntarle a Claude">✨</button>
             <button class="icon-btn solo-escritorio" onclick="openTeamModal()" title="Equipo: responsables y operarios">👥</button>
             <button class="icon-btn solo-escritorio" id="notifBtn" onclick="toggleNotificaciones()" title="Notificaciones de tareas vencidas">🔔</button>
             <button class="icon-btn solo-escritorio" onclick="cerrarSesion()" title="Cerrar sesión">🚪</button>
@@ -1746,6 +1757,7 @@
             <button class="mas-fila" onclick="masIr(() => goTab('tab-metricas'))"><span class="mas-ico">📈</span>Métricas</button>
         </div>
         <div class="mas-grupo">
+            <button class="mas-fila" onclick="masIr(abrirClaude)"><span class="mas-ico">✨</span>Preguntarle a Claude</button>
             <button class="mas-fila" onclick="masIr(openObjetivosModal)"><span class="mas-ico">🎯</span>Objetivos y metas</button>
             <button class="mas-fila" onclick="masIr(openComprasModal)"><span class="mas-ico">🛒</span>Compras del súper</button>
             <button class="mas-fila" onclick="masIr(openGymModal)"><span class="mas-ico">🏋️</span>Gimnasio</button>
@@ -1890,6 +1902,27 @@
         <div id="shoppingList"></div>
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closeComprasModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Preguntarle a Claude (abre la app de Claude con el pedido; usa el conector) -->
+<div id="claudeModal" class="modal">
+    <div class="modal-box claude-box">
+        <h3>✨ Preguntarle a Claude</h3>
+        <p class="claude-sub">Se abre Claude con tu pedido. Lee y carga directo en Mis Gestiones con el conector.</p>
+        <div class="claude-rapidos">
+            <button onclick="preguntarAClaude('¿Qué tengo hoy?')">¿Qué tengo hoy?</button>
+            <button onclick="preguntarAClaude('Armame el día: ordená Mi Día por recorrido y decime qué conviene pasar para otro día.')">Armame el día</button>
+            <button onclick="preguntarAClaude('¿Qué está vencido o se vence esta semana?')">¿Qué se vence?</button>
+            <button onclick="preguntarAClaude('Prepará la reunión con Gustavo: sus pendientes, lo vencido y qué le tengo que preguntar.')">Reunión con Gustavo</button>
+            <button onclick="preguntarAClaude('Prepará la reunión con Sofía: sus pendientes, lo vencido y qué le tengo que preguntar.')">Reunión con Sofía</button>
+            <button onclick="preguntarAClaude('Mostrame la rutina de gimnasio de hoy.')">Gimnasio de hoy</button>
+        </div>
+        <textarea class="claude-texto" id="claudeTexto" placeholder="O escribí (o dictá con el micrófono del teclado) lo que necesitás. Ej: pasá lo de compras para el lunes"></textarea>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="cerrarClaude()">Cancelar</button>
+            <button class="btn-save" onclick="preguntarAClaude(document.getElementById('claudeTexto').value)">Abrir en Claude</button>
         </div>
     </div>
 </div>
@@ -4368,6 +4401,22 @@
     document.addEventListener('keydown', e => {
         if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b') { e.preventDefault(); alternarLateral(); }
     });
+    // ── Preguntarle a Claude ──────────────────────────────────────────────
+    // Abre Claude (la app del celular o claude.ai) con el pedido escrito y
+    // le indica usar el conector de Mis Gestiones. Además copia el pedido: si
+    // Claude no lo muestra ya escrito, se pega y listo.
+    function abrirClaude()  { document.getElementById('claudeModal').classList.add('show'); }
+    function cerrarClaude() { document.getElementById('claudeModal').classList.remove('show'); }
+    function preguntarAClaude(texto) {
+        texto = String(texto || '').trim();
+        if (!texto) { document.getElementById('claudeTexto').focus(); return; }
+        const pedido = 'Usá el conector Mis Gestiones. ' + texto;
+        try { navigator.clipboard?.writeText(pedido).catch(() => {}); } catch (e) {}
+        window.open('https://claude.ai/new?q=' + encodeURIComponent(pedido), '_blank', 'noopener');
+        document.getElementById('claudeTexto').value = '';
+        cerrarClaude();
+        toast('✨ Abriendo Claude. Si el pedido no aparece escrito, pegalo: ya está copiado.', null, 7000);
+    }
     function abrirMas()  { document.getElementById('masModal').classList.add('show'); }
     function cerrarMas() { document.getElementById('masModal').classList.remove('show'); }
     function masIr(fn)   { cerrarMas(); fn(); }
@@ -4432,6 +4481,7 @@
     document.getElementById('objetivosModal').addEventListener('click', e => { if(e.target===document.getElementById('objetivosModal')) closeObjetivosModal(); });
     document.getElementById('comprasModal').addEventListener('click',   e => { if(e.target===document.getElementById('comprasModal'))   closeComprasModal(); });
     document.getElementById('masModal').addEventListener('click',       e => { if(e.target===document.getElementById('masModal'))       cerrarMas(); });
+    document.getElementById('claudeModal').addEventListener('click',    e => { if(e.target===document.getElementById('claudeModal'))    cerrarClaude(); });
     document.getElementById('gymModal').addEventListener('click',       e => { if(e.target===document.getElementById('gymModal'))       closeGymModal(); });
     document.getElementById('waModal').addEventListener('click',        e => { if(e.target===document.getElementById('waModal'))        closeWaModal(); });
     document.getElementById('projectModal').addEventListener('click', e => { if(e.target===document.getElementById('projectModal')) closeProjectModal(); });
